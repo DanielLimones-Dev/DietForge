@@ -1,0 +1,42 @@
+name: Build
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm install
+      - run: npm run tauri build
+        env:
+          VITE_FATSECRET_CONSUMER_KEY: ${{ secrets.FS_CONSUMER_KEY }}
+          VITE_FATSECRET_CONSUMER_SECRET: ${{ secrets.FS_CONSUMER_SECRET }}
+          VITE_FATSECRET_WORKER: ${{ secrets.FS_WORKER_URL }}
+          VITE_USDA_API_KEY: ${{ secrets.USDA_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dietforge-macos
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm install
+      - run: npm run tauri build
+        env:
+          VITE_FATSECRET_CONSUMER_KEY: ${{ secrets.FS_CONSUMER_KEY }}
+          VITE_FATSECRET_CONSUMER_SECRET: ${{ secrets.FS_CONSUMER_SECRET }}
+          VITE_FATSECRET_WORKER: ${{ secrets.FS_WORKER_URL }}
+          VITE_USDA_API_KEY: ${{ secrets.USDA_API_KEY }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dietforge-windows
+          path: src-tauri/target/release/bundle/msi/*.msi

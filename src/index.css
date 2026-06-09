@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand-50: #f0f9ff;
+  --color-brand-100: #e0f2fe;
+  --color-brand-200: #bae6fd;
+  --color-brand-300: #7dd3fc;
+  --color-brand-400: #38bdf8;
+  --color-brand-500: #0ea5e9;
+  --color-brand-600: #0284c7;
+  --color-brand-700: #0369a1;
+  --color-brand-800: #075985;
+  --color-brand-900: #0c4a6e;
+  --color-macro-protein: #ef4444;
+  --color-macro-carbs: #f97316;
+  --color-macro-fat: #eab308;
+  --color-macro-fiber: #22c55e;
+}
+
+body {
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+.dark body {
+  background-color: #030712;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  background-color: var(--color-brand-600);
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  cursor: pointer;
+}
+
+@media print {
+  .no-print { display: none !important; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.15s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out;
+}
