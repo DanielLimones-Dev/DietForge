@@ -131,7 +131,7 @@ export function FoodDB() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-gradient-to-r from-brand-500 to-brand-600 text-white hover:from-brand-600 hover:to-brand-700 shadow-sm hover:shadow-md transition-all duration-200"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-gradient-to-r from-brand-500 to-brand-600 text-white hover:from-brand-600 hover:to-brand-700 shadow-sm hover:shadow-md transition-all active:scale-[0.97]"
         >
           <Plus className="w-4 h-4" />
           {showForm ? "Cerrar" : "Agregar Manual"}
@@ -149,7 +149,7 @@ export function FoodDB() {
       </div>
 
       {showForm && (
-        <form onSubmit={handleSave} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm p-6 space-y-4">
+        <form onSubmit={handleSave} className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 space-y-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-sm">
               <Plus className="w-4 h-4" />
@@ -195,13 +195,13 @@ export function FoodDB() {
               <input type="number" className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 dark:text-gray-100" value={form.serving_size} onChange={(e) => setForm({ ...form, serving_size: e.target.value })} />
             </div>
           </div>
-          <button type="submit" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-sm hover:shadow-md transition-all duration-200">
+          <button type="submit" className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-sm hover:shadow-md transition-all active:scale-[0.97]">
             Guardar Alimento
           </button>
         </form>
       )}
 
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
+      <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
         <button
           onClick={() => setShowApi(!showApi)}
           className="w-full px-6 py-4 flex items-center justify-between group"
@@ -238,7 +238,7 @@ export function FoodDB() {
               />
               <button
                 onClick={handleAPISearch}
-                className="px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 shadow-sm hover:shadow-md transition-all duration-200"
+                className="px-4 py-2 rounded-xl text-sm font-medium bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:from-blue-600 hover:to-cyan-600 shadow-sm hover:shadow-md transition-all active:scale-[0.97]"
               >
                 Buscar
               </button>
@@ -258,7 +258,7 @@ export function FoodDB() {
                     </div>
                     <button
                       onClick={() => handleImport(f)}
-                      className="px-3 py-1 rounded-lg text-xs font-medium bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-500 dark:hover:text-white transition-all duration-200"
+                      className="px-3 py-1 rounded-lg text-xs font-medium bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-500 dark:hover:text-white transition-all active:scale-[0.97]"
                     >
                       Importar
                     </button>
@@ -272,7 +272,7 @@ export function FoodDB() {
 
       <div className="space-y-2">
         {filtered.map((f) => (
-          <div key={f.id} className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer" onClick={() => setSelectedFood(f)}>
+          <div key={f.id} className="group bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer" onClick={() => setSelectedFood(f)}>
             <div className="p-4 flex items-center justify-between">
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center text-white text-sm font-bold shrink-0 shadow-sm">
@@ -296,7 +296,7 @@ export function FoodDB() {
                 </div>
               </div>
               <button
-                onClick={() => setDeleteId(f.id)}
+                onClick={(e) => { e.stopPropagation(); setDeleteId(f.id); }}
                 className="p-2 rounded-lg text-gray-400 dark:text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200 opacity-0 group-hover:opacity-100 shrink-0 ml-2"
               >
                 <Trash2 className="w-4 h-4" />
@@ -317,13 +317,13 @@ export function FoodDB() {
               <div className="flex gap-2 mt-4">
                 <button
                   onClick={() => setShowForm(true)}
-                  className="px-4 py-2 rounded-xl text-xs font-medium bg-brand-500 text-white hover:bg-brand-600 transition-colors"
+                  className="px-4 py-2 rounded-xl text-xs font-medium bg-brand-500 text-white hover:bg-brand-600 transition-all active:scale-[0.97]"
                 >
                   Agregar manual
                 </button>
                 <button
                   onClick={() => setShowApi(true)}
-                  className="px-4 py-2 rounded-xl text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"
+                  className="px-4 py-2 rounded-xl text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 transition-all active:scale-[0.97]"
                 >
                   Importar de API
                 </button>

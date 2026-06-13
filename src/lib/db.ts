@@ -1,5 +1,9 @@
-import type { Client, ClientMeasurement, Food, MealPlan, MealPlanItem, DietTemplate } from "@/types";
+import type {
+  Client, ClientMeasurement, Food, MealPlan, MealPlanItem, DietTemplate,
+  Competition, CheckIn, PhotoRef, WeekPlan,
+} from "@/types";
 import { classifyCarbs } from "@/lib/nutrition";
+import { checkSubscription, clearSubscriptionCache, type SubscriptionStatus } from "@/lib/supabase";
 
 const DB_KEY = "dietforge_db";
 const TEMPLATES_KEY = "dietforge_templates";
@@ -9,6 +13,10 @@ interface Database {
   seed_version?: number;
   clients: Client[];
   measurements: ClientMeasurement[];
+  competitions: Competition[];
+  checkins: CheckIn[];
+  photos: PhotoRef[];
+  weekPlans: WeekPlan[];
   foods: Food[];
   mealPlans: MealPlan[];
   mealPlanItems: MealPlanItem[];
@@ -22,10 +30,14 @@ function inTauri(): boolean {
 let cache: Database = {
   clients: [],
   measurements: [],
+  competitions: [],
+  checkins: [],
+  photos: [],
+  weekPlans: [],
   foods: [],
   mealPlans: [],
   mealPlanItems: [],
-  nextId: { clients: 1, measurements: 1, foods: 1, mealPlans: 1, mealPlanItems: 1 },
+  nextId: { clients: 1, measurements: 1, competitions: 1, checkins: 1, photos: 1, weekPlans: 1, foods: 1, mealPlans: 1, mealPlanItems: 1 },
 };
 
 let templatesCache: DietTemplate[] = [];
@@ -53,8 +65,8 @@ async function persist() {
     try {
       for (const c of cache.clients) {
         await sqlite.execute(
-          "INSERT OR REPLACE INTO clients (id, name, email, phone, notes, created_at, updated_at) VALUES (?,?,?,?,?,?,?)",
-          [c.id, c.name, c.email || null, c.phone || null, c.notes || null, c.created_at, c.updated_at]
+          "INSERT OR REPLACE INTO clients (id, name, email, phone, notes, prep_type, tags, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
+          [c.id, c.name, c.email || null, c.phone || null, c.notes || null, c.prep_type || null, c.tags ? JSON.stringify(c.tags) : null, c.created_at, c.updated_at]
         );
       }
       for (const m of cache.measurements) {
@@ -212,7 +224,7 @@ export const db = {
 
   saveClient: (data: Omit<Client, "id" | "created_at" | "updated_at">): Client => {
     const now = new Date().toISOString();
-    const c: Client = { ...data, id: genId("clients"), created_at: now, updated_at: now };
+    const c: Client = { ...data, check_in_interval_days: data.check_in_interval_days || 7, id: genId("clients"), created_at: now, updated_at: now };
     cache.clients.push(c);
     persist();
     return c;
@@ -221,6 +233,12 @@ export const db = {
   updateClient: (id: number, data: Partial<Client>): Client | undefined => {
     const idx = cache.clients.findIndex((c) => c.id === id);
     if (idx === -1) return undefined;
+    if ("check_in_interval_days" in data) {
+      const days = data.check_in_interval_days || 7;
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + days);
+      data.next_check_in_date = nextDate.toISOString();
+    }
     cache.clients[idx] = { ...cache.clients[idx], ...data, updated_at: new Date().toISOString() };
     persist();
     return cache.clients[idx];
@@ -229,6 +247,10 @@ export const db = {
   deleteClient: (id: number): void => {
     cache.clients = cache.clients.filter((c) => c.id !== id);
     cache.measurements = cache.measurements.filter((m) => m.client_id !== id);
+    cache.competitions = cache.competitions.filter((c) => c.client_id !== id);
+    cache.checkins = cache.checkins.filter((c) => c.client_id !== id);
+    cache.photos = cache.photos.filter((p) => p.checkin_id !== id || !cache.checkins.find((c) => c.id === p.checkin_id));
+    cache.weekPlans = cache.weekPlans.filter((w) => w.client_id !== id);
     cache.mealPlans = cache.mealPlans.filter((p) => p.client_id !== id);
     persist();
   },
@@ -248,6 +270,14 @@ export const db = {
     cache.measurements.push(m);
     persist();
     return m;
+  },
+
+  updateMeasurement: (id: number, data: Partial<ClientMeasurement>): void => {
+    const idx = cache.measurements.findIndex((m) => m.id === id);
+    if (idx !== -1) {
+      cache.measurements[idx] = { ...cache.measurements[idx], ...data };
+      persist();
+    }
   },
 
   getFoods: (search?: string): Food[] => {
@@ -331,10 +361,133 @@ export const db = {
     }
   },
 
+  getCompetitions: (clientId: number): Competition[] =>
+    cache.competitions.filter((c) => c.client_id === clientId).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+
+  saveCompetition: (data: Omit<Competition, "id">): Competition => {
+    const c: Competition = { ...data, id: genId("competitions") };
+    cache.competitions.push(c);
+    persist();
+    return c;
+  },
+
+  updateCompetition: (id: number, data: Partial<Competition>): Competition | undefined => {
+    const idx = cache.competitions.findIndex((c) => c.id === id);
+    if (idx === -1) return undefined;
+    cache.competitions[idx] = { ...cache.competitions[idx], ...data };
+    persist();
+    return cache.competitions[idx];
+  },
+
+  deleteCompetition: (id: number): void => {
+    cache.competitions = cache.competitions.filter((c) => c.id !== id);
+    persist();
+  },
+
+  getCheckIns: (clientId: number): CheckIn[] =>
+    cache.checkins
+      .filter((c) => c.client_id === clientId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+
+  getLatestCheckIn: (clientId: number): CheckIn | undefined =>
+    cache.checkins
+      .filter((c) => c.client_id === clientId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0],
+
+  updateNextCheckIn: (clientId: number): void => {
+    const client = cache.clients.find((c) => c.id === clientId);
+    if (!client) return;
+    const days = client.check_in_interval_days || 7;
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + days);
+    client.next_check_in_date = nextDate.toISOString();
+    client.updated_at = new Date().toISOString();
+    persist();
+  },
+
+  saveCheckIn: (data: Omit<CheckIn, "id">): CheckIn => {
+    const c: CheckIn = { ...data, id: genId("checkins") };
+    cache.checkins.push(c);
+    persist();
+    return c;
+  },
+
+  updateCheckIn: (id: number, data: Partial<CheckIn>): CheckIn | undefined => {
+    const idx = cache.checkins.findIndex((c) => c.id === id);
+    if (idx === -1) return undefined;
+    cache.checkins[idx] = { ...cache.checkins[idx], ...data };
+    persist();
+    return cache.checkins[idx];
+  },
+
+  getPhotosForCheckIn: (checkinId: number): PhotoRef[] =>
+    cache.photos.filter((p) => p.checkin_id === checkinId),
+
+  savePhoto: (data: Omit<PhotoRef, "id">): PhotoRef => {
+    const p: PhotoRef = { ...data, id: genId("photos") };
+    cache.photos.push(p);
+    persist();
+    return p;
+  },
+
+  deletePhoto: (id: number): void => {
+    cache.photos = cache.photos.filter((p) => p.id !== id);
+    persist();
+  },
+
+  deletePhotosForCheckIn: (checkinId: number): void => {
+    cache.photos = cache.photos.filter((p) => p.checkin_id !== checkinId);
+    persist();
+  },
+
+  deleteCheckIn: (id: number): void => {
+    cache.photos = cache.photos.filter((p) => p.checkin_id !== id);
+    cache.checkins = cache.checkins.filter((c) => c.id !== id);
+    persist();
+  },
+
+  getWeekPlans: (clientId: number): WeekPlan[] =>
+    cache.weekPlans.filter((w) => w.client_id === clientId).sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime()),
+
+  getWeekPlan: (id: number): WeekPlan | undefined =>
+    cache.weekPlans.find((w) => w.id === id),
+
+  saveWeekPlan: (data: Omit<WeekPlan, "id">): WeekPlan => {
+    const w: WeekPlan = { ...data, id: genId("weekPlans") };
+    cache.weekPlans.push(w);
+    persist();
+    return w;
+  },
+
+  updateWeekPlan: (id: number, data: Partial<WeekPlan>): WeekPlan | undefined => {
+    const idx = cache.weekPlans.findIndex((w) => w.id === id);
+    if (idx === -1) return undefined;
+    cache.weekPlans[idx] = { ...cache.weekPlans[idx], ...data };
+    persist();
+    return cache.weekPlans[idx];
+  },
+
+  deleteWeekPlan: (id: number): void => {
+    const plan = cache.weekPlans.find((w) => w.id === id);
+    if (plan) {
+      for (const dp of plan.day_plans) {
+        cache.mealPlans = cache.mealPlans.filter((mp) => mp.id !== dp.meal_plan_id);
+      }
+    }
+    cache.weekPlans = cache.weekPlans.filter((w) => w.id !== id);
+    persist();
+  },
+
   getStats: () => ({
     clients: cache.clients.length,
     mealPlans: cache.mealPlans.length,
     foods: cache.foods.length,
+    competitions: cache.competitions.length,
+    checkins: cache.checkins.length,
+    activeClients: new Set(cache.checkins.filter((c) => {
+      const daysSince = (Date.now() - new Date(c.date).getTime()) / 86400000;
+      return daysSince <= 14;
+    }).map((c) => c.client_id)).size,
   }),
 
   seedFoods: () => {

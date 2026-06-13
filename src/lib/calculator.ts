@@ -103,6 +103,35 @@ export function calculateMacros(
   };
 }
 
+export function adjustMacroField(
+  current: { protein: number; carbs: number; fat: number },
+  field: "protein" | "carbs" | "fat",
+  value: number,
+  targetKcal: number,
+): { protein: number; carbs: number; fat: number } {
+  let p = field === "protein" ? value : current.protein;
+  let c = field === "carbs" ? value : current.carbs;
+  let f = field === "fat" ? value : current.fat;
+
+  if (field === "protein" || field === "fat") {
+    const proteinKcal = p * 4;
+    const fatKcal = f * 9;
+    const remaining = targetKcal - proteinKcal - fatKcal;
+    c = Math.round(Math.max(0, remaining / 4));
+  } else {
+    const proteinKcal = p * 4;
+    const carbsKcal = c * 4;
+    const remaining = targetKcal - proteinKcal - carbsKcal;
+    f = Math.round(Math.max(0, remaining / 9));
+  }
+
+  return { protein: p, carbs: c, fat: f };
+}
+
+export function macroKcal(m: { protein: number; carbs: number; fat: number }): number {
+  return m.protein * 4 + m.carbs * 4 + m.fat * 9;
+}
+
 export function distributeMeals(
   macros: MacroResult,
   mealCount: number,

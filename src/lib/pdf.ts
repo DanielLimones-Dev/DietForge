@@ -1,4 +1,5 @@
-import type { Client, ClientMeasurement, MealPlan, MealPlanItem, Food } from "@/types";
+import type { Client, ClientMeasurement, MealPlan, MealPlanItem, Food, CompetitionPhase } from "@/types";
+import { getPhaseLabel } from "./phases";
 
 function escapeHTML(s: string | number): string {
   const map: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#x27;" };
@@ -10,6 +11,8 @@ interface PDFData {
   measurement: ClientMeasurement;
   plan: MealPlan;
   items: (MealPlanItem & { food: Food })[];
+  phase?: CompetitionPhase;
+  coachNotes?: string;
 }
 
 const MEAL_LABELS: Record<string, string> = {
@@ -70,37 +73,36 @@ export function generateDietPDF(data: PDFData) {
     const rows = items.map((item) => {
       const kcal = Math.round((item.food.protein * 4 + item.food.carbs * 4 + item.food.fat * 9) * item.quantity / 100);
       return `<tr>
-        <td style="padding:7px 8px;border-bottom:1px solid #e2e8f0;font-size:13px;color:#0f172a">${escapeHTML(item.food.name)}</td>
-        <td style="padding:7px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#64748b;text-align:center;white-space:nowrap">${item.quantity}${escapeHTML(item.serving_unit)}</td>
-        <td style="padding:7px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#64748b;text-align:center">${item.food.protein}g</td>
-        <td style="padding:7px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#64748b;text-align:center">${item.food.carbs}g</td>
-        <td style="padding:7px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#64748b;text-align:center">${item.food.fat}g</td>
-        <td style="padding:7px 8px;border-bottom:1px solid #e2e8f0;font-size:12px;color:#0f172a;text-align:center;font-weight:600;white-space:nowrap">${kcal} kcal</td>
+        <td style="padding:6px 10px;border-bottom:1px solid var(--c-border);font-size:13px;color:var(--c-primary);white-space:nowrap">${escapeHTML(item.food.name)}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid var(--c-border);font-size:12px;color:var(--c-secondary);text-align:center;white-space:nowrap">${item.quantity}${escapeHTML(item.serving_unit)}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid var(--c-border);font-size:12px;color:var(--c-secondary);text-align:center;white-space:nowrap">${item.food.protein}g</td>
+        <td style="padding:6px 10px;border-bottom:1px solid var(--c-border);font-size:12px;color:var(--c-secondary);text-align:center;white-space:nowrap">${item.food.carbs}g</td>
+        <td style="padding:6px 10px;border-bottom:1px solid var(--c-border);font-size:12px;color:var(--c-secondary);text-align:center;white-space:nowrap">${item.food.fat}g</td>
+        <td style="padding:6px 10px;border-bottom:1px solid var(--c-border);font-size:12px;color:var(--c-primary);text-align:center;font-weight:600;white-space:nowrap">${kcal} kcal</td>
       </tr>`;
     }).join("");
 
     mealsHTML += `
       <div style="margin-bottom:16px">
-        <div style="background:#f1f5f9;border-radius:8px;padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-          <span style="font-weight:700;font-size:14px;color:#0f172a">${escapeHTML(label)}</span>
-          <span style="font-size:12px;color:#64748b">${mKcal} kcal · P:${mP}g C:${mC}g G:${mF}g</span>
+        <div style="background:var(--c-section-bg);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:700;font-size:14px;color:var(--c-primary)">${escapeHTML(label)}</span>
+          <span style="font-size:12px;color:var(--c-secondary)">${mKcal} kcal · P:${mP}g C:${mC}g G:${mF}g</span>
         </div>
-        <div style="overflow-x:auto">
-          <table style="width:100%;border-collapse:collapse;min-width:480px">
+        <div style="max-width:580px">
+          <table style="width:100%;border-collapse:collapse">
             <thead>
               <tr style="background:#0ea5e9;color:#fff">
-                <th style="padding:7px 8px;font-size:12px;text-align:left;border-radius:6px 0 0 0">Alimento</th>
-                <th style="padding:7px 8px;font-size:12px;text-align:center">Cant.</th>
-                <th style="padding:7px 8px;font-size:12px;text-align:center">Prot</th>
-                <th style="padding:7px 8px;font-size:12px;text-align:center">CH</th>
-                <th style="padding:7px 8px;font-size:12px;text-align:center">Grasa</th>
-                <th style="padding:7px 8px;font-size:12px;text-align:center;border-radius:0 6px 0 0">Kcal</th>
+                <th style="padding:6px 10px;font-size:12px;text-align:left;border-radius:6px 0 0 0">Alimento</th>
+                <th style="padding:6px 10px;font-size:12px;text-align:center">Cant.</th>
+                <th style="padding:6px 10px;font-size:12px;text-align:center">Prot</th>
+                <th style="padding:6px 10px;font-size:12px;text-align:center">CH</th>
+                <th style="padding:6px 10px;font-size:12px;text-align:center">Grasa</th>
+                <th style="padding:6px 10px;font-size:12px;text-align:center;border-radius:0 6px 0 0">Kcal</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
           </table>
-        </div>
-      </div>`;
+        </div>`;
   }
 
   const html = `<!DOCTYPE html>
@@ -111,22 +113,23 @@ export function generateDietPDF(data: PDFData) {
 <title>${escapeHTML(data.plan.name)} - ${escapeHTML(data.client.name)}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f8fafc;color:#0f172a;padding:0 0 40px}
-  .header{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;padding:28px 16px 20px}
+  :root{--c-primary:#0f172a;--c-secondary:#64748b;--c-border:#e2e8f0;--c-bg:#fff;--c-section-bg:#f1f5f9}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f8fafc;color:var(--c-primary);padding:0 0 40px}
+  .header{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;padding:28px 16px 20px;text-align:center}
   .header h1{font-size:20px;font-weight:700;margin-bottom:4px}
   .header p{font-size:13px;opacity:.9}
-  .section{padding:16px}
+  .container{max-width:600px;margin:0 auto;padding:16px}
   .section-title{font-size:13px;font-weight:700;color:#0ea5e9;margin-bottom:10px;display:flex;align-items:center;gap:6px}
   .section-title::before{content:"";display:inline-block;width:3px;height:14px;background:#0ea5e9;border-radius:2px}
-  .card{background:#fff;border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .card{background:var(--c-bg);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
   .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
   .label{font-size:11px;color:#94a3b8;margin-bottom:2px}
   .value{font-size:15px;font-weight:600;color:#0f172a}
   .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600}
-  @media(prefers-color-scheme:dark){body{background:#0f172a;color:#f1f5f9}.card{background:#1e293b;box-shadow:0 1px 3px rgba(0,0,0,.3)}.value{color:#f8fafc}.label{color:#64748b}.section-title{color:#38bdf8}.section-title::before{background:#38bdf8}}
-  @media print{body{background:#fff;padding:0;color:#0f172a}.card{background:#fff!important;box-shadow:none;border:1px solid #e2e8f0}.value{color:#0f172a!important}.label{color:#94a3b8!important}.header{background:linear-gradient(135deg,#0ea5e9,#0284c7)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-  @media(max-width:480px){.header{padding:20px 14px 16px}.header h1{font-size:18px}.section{padding:12px}.grid-2,.grid-3{grid-template-columns:1fr 1fr}.card{padding:12px}}
+  @media(prefers-color-scheme:dark){:root{--c-primary:#f1f5f9;--c-secondary:#94a3b8;--c-border:#334155;--c-bg:#1e293b;--c-section-bg:#1e293b}body{background:#0f172a}.card{background:var(--c-bg);box-shadow:0 1px 3px rgba(0,0,0,.3)}.value{color:#f8fafc}.label{color:#64748b}.section-title{color:#38bdf8}.section-title::before{background:#38bdf8}}
+  @media print{:root{--c-primary:#0f172a;--c-secondary:#64748b;--c-border:#e2e8f0;--c-bg:#fff;--c-section-bg:#f1f5f9}body{background:#fff;padding:0;color:var(--c-primary)}.card{box-shadow:none;border:1px solid var(--c-border)}.value{color:var(--c-primary)}.label{color:var(--c-secondary)}.header{background:linear-gradient(135deg,#0ea5e9,#0284c7)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+  @media(max-width:480px){.header{padding:20px 14px 16px}.header h1{font-size:18px}.container{padding:12px}.grid-2,.grid-3{grid-template-columns:1fr 1fr}.card{padding:12px}}
 </style>
 </head>
 <body>
@@ -135,7 +138,8 @@ export function generateDietPDF(data: PDFData) {
     <p>${escapeHTML(data.client.name)} · ${new Date().toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}</p>
   </div>
 
-  <div class="section">
+  <div class="container">
+    ${data.phase ? `<div style="text-align:center;margin-bottom:12px"><span style="display:inline-block;padding:4px 14px;border-radius:999px;font-size:12px;font-weight:600;background:#dbeafe;color:#1d4ed8">${getPhaseLabel(data.phase)}</span></div>` : ""}
     <div class="section-title">Datos del Cliente</div>
     <div class="card">
       <div class="grid-2">
@@ -187,6 +191,11 @@ export function generateDietPDF(data: PDFData) {
       <div style="font-size:20px;font-weight:700">${totalKcal} kcal</div>
       <div style="font-size:12px;opacity:.85;margin-top:4px">P: ${totalP}g · C: ${totalC}g · G: ${totalF}g</div>
     </div>
+    ${data.coachNotes ? `
+    <div class="section-title" style="margin-top:12px">Notas del Coach</div>
+    <div class="card">
+      <p style="font-size:13px;color:var(--c-primary);line-height:1.6">${escapeHTML(data.coachNotes)}</p>
+    </div>` : ""}
   </div>
 </body>
 </html>`;

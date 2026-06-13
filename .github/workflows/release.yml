@@ -1,0 +1,50 @@
+name: Release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  publish-tauri:
+    permissions: { contents: write }
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin
+          - platform: macos-latest
+            args: --target x86_64-apple-darwin
+          - platform: windows-latest
+            args: ""
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: ./src-tauri -> target
+      - run: npm ci
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_FATSECRET_CONSUMER_KEY: ${{ secrets.VITE_FATSECRET_CONSUMER_KEY }}
+          VITE_FATSECRET_CONSUMER_SECRET: ${{ secrets.VITE_FATSECRET_CONSUMER_SECRET }}
+          VITE_USDA_API_KEY: ${{ secrets.VITE_USDA_API_KEY }}
+          VITE_FATSECRET_WORKER: ${{ secrets.VITE_FATSECRET_WORKER }}
+          VITE_STRIPE_PAYMENT_LINK: ${{ vars.VITE_STRIPE_PAYMENT_LINK }}
+        with:
+          tagName: v__VERSION__
+          releaseName: "DietForge v__VERSION__"
+          releaseBody: "Descargar el instalador para tu plataforma."
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

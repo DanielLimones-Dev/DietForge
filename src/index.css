@@ -58,3 +58,60 @@ input[type="range"]::-webkit-slider-thumb {
 .animate-scale-in {
   animation: scale-in 0.2s ease-out;
 }
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-macro {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@keyframes flash-bg {
+  0% { background-color: rgba(251, 191, 36, 0.15); }
+  100% { background-color: transparent; }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.25s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out;
+}
+
+.animate-pulse-macro {
+  animation: pulse-macro 0.3s ease-out;
+}
+
+.animate-flash-bg {
+  animation: flash-bg 0.6s ease-out;
+}
+
+@keyframes stagger-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.stagger-1 { animation: stagger-fade-in 0.2s ease-out both; }
+.stagger-2 { animation: stagger-fade-in 0.2s ease-out 0.05s both; }
+.stagger-3 { animation: stagger-fade-in 0.2s ease-out 0.1s both; }
+.stagger-4 { animation: stagger-fade-in 0.2s ease-out 0.15s both; }
+.stagger-5 { animation: stagger-fade-in 0.2s ease-out 0.2s both; }
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}

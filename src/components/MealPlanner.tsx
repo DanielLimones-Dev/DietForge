@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { db } from "@/lib/db";
 import { generateDietPDF } from "@/lib/pdf";
 import { searchFatSecret, classifyCarbs } from "@/lib/nutrition";
+import { adjustMacroField } from "@/lib/calculator";
 import type { Food, MealPlanItem, MealTime } from "@/types";
 import { ConfirmDialog, PromptDialog } from "./ui";
 
@@ -59,17 +60,36 @@ export function MealPlanner() {
   const [apiResults, setApiResults] = useState<Food[]>([]);
   const [removeItemId, setRemoveItemId] = useState<number | null>(null);
   const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
+  const [mealCount, setMealCount] = useState(3);
+  const [editingName, setEditingName] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [origTargets, setOrigTargets] = useState({ kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const [, setTick] = useState(0);
 
   useEffect(() => {
-    const p = db.getMealPlan(planId);
+    let p = db.getMealPlan(planId);
     if (!p) { navigate("/clients"); return; }
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPlan(p);
-    if (!p) { navigate("/clients"); return; }
+    if (!p.plan.total_kcal && !p.plan.total_protein) {
+      const m = db.getLatestMeasurement(p.plan.client_id);
+      if (m && (m.tdee > 0 || m.protein > 0)) {
+        db.updateMealPlan(planId, {
+          total_kcal: m.tdee, total_protein: m.protein, total_carbs: m.carbs,
+          total_fat: m.fat, total_fiber: m.fiber,
+        });
+        p = db.getMealPlan(planId)!;
+      }
+    }
     setPlan(p);
     setClient(db.getClient(p.plan.client_id));
     setFoods(db.getFoods());
+    setOrigTargets({
+      kcal: p.plan.total_kcal,
+      protein: p.plan.total_protein,
+      carbs: p.plan.total_carbs,
+      fat: p.plan.total_fat,
+      fiber: p.plan.total_fiber,
+    });
     setEditTargets({
       kcal: p.plan.total_kcal,
       protein: p.plan.total_protein,
@@ -78,6 +98,12 @@ export function MealPlanner() {
       fiber: p.plan.total_fiber,
     });
   }, [planId, navigate]);
+
+  useEffect(() => {
+    const onFocus = () => setTick((t) => t + 1);
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
 
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -109,7 +135,13 @@ export function MealPlanner() {
 
   if (!plan || !client) return null;
 
-  const target = plan.plan;
+  const meas = db.getLatestMeasurement(plan.plan.client_id);
+  const hasMeas = meas && meas.tdee > 0;
+  const target = hasMeas
+    ? { total_kcal: meas!.tdee, total_protein: meas!.protein, total_carbs: meas!.carbs, total_fat: meas!.fat, total_fiber: meas!.fiber }
+    : plan.plan;
+  const isLive = hasMeas;
+  const noTargets = !hasMeas && !(plan.plan.total_kcal > 0);
   const filled = allItemsTotals;
 
   const handleOpenFoodCard = (food: Food) => {
@@ -188,7 +220,7 @@ export function MealPlanner() {
     });
     const html = generateDietPDF({ client, measurement: meas, plan: plan.plan, items });
     const win = window.open("", "_blank");
-    if (win) { win.document.write(html); win.document.close(); }
+    if (win) { win.document.write(html); win.document.close(); setTimeout(() => win.print(), 300); }
   };
 
   const handleSaveTemplate = (name: string) => {
@@ -228,10 +260,26 @@ export function MealPlanner() {
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate(`/clients/${client.id}`)} className="p-2 hover:bg-gray-200 rounded-lg transition-colors">
-          <ArrowLeft className="w-5 h-5" />
+        <button onClick={() => navigate(`/clients/${client.id}`)} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
+          <ArrowLeft className="w-5 h-5 dark:text-gray-100" />
         </button>
-        <h2 className="text-2xl font-bold dark:text-white">{plan.plan.name}</h2>
+        {editingName ? (
+          <input
+            autoFocus
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onBlur={() => { db.updateMealPlan(planId, { name: editName }); setPlan(db.getMealPlan(planId)); setEditingName(false); }}
+            onKeyDown={(e) => { if (e.key === "Enter") { (e.target as HTMLInputElement).blur(); } }}
+            className="text-2xl font-bold bg-transparent border-b-2 border-brand-500 outline-none dark:text-white w-64"
+          />
+        ) : (
+          <h2
+            className="text-2xl font-bold dark:text-white cursor-pointer hover:text-brand-600 transition-colors"
+            onClick={() => { setEditName(plan.plan.name); setEditingName(true); }}
+          >
+            {plan.plan.name}
+          </h2>
+        )}
         <p className="text-sm text-gray-500 dark:text-gray-400">— {client.name}</p>
         <button onClick={handleExportPDF} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-brand-600 text-white hover:bg-brand-700 transition-all duration-200">
           <Printer className="w-4 h-4" />
@@ -244,61 +292,122 @@ export function MealPlanner() {
       </div>
 
       {/* Progress bars */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-6">
         <div className="flex items-center gap-2 mb-4">
           <Target className="w-4 h-4 text-brand-600" />
           <h3 className="font-semibold text-sm dark:text-white">Progreso contra meta</h3>
+          {isLive && <span className="text-[10px] text-emerald-500 font-medium">Tiempo real</span>}
           <button
-            onClick={() => { setEditingTargets(!editingTargets); setEditTargets({ kcal: target.total_kcal, protein: target.total_protein, carbs: target.total_carbs, fat: target.total_fat, fiber: target.total_fiber }); }}
-            className="ml-auto flex items-center gap-1 text-xs text-gray-400 hover:text-brand-600 transition-colors dark:text-gray-500"
+            onClick={() => {
+              setEditingTargets(!editingTargets);
+              if (!editingTargets) {
+                const planNow = db.getMealPlan(planId);
+                if (planNow) {
+                  setOrigTargets({ kcal: planNow.plan.total_kcal, protein: planNow.plan.total_protein, carbs: planNow.plan.total_carbs, fat: planNow.plan.total_fat, fiber: planNow.plan.total_fiber });
+                }
+                setEditTargets({ kcal: target.total_kcal, protein: target.total_protein, carbs: target.total_carbs, fat: target.total_fat, fiber: target.total_fiber });
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-all shadow-sm animate-scale-in"
           >
-            <Pencil className="w-3 h-3" />
-            Ajustar
+            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Editar macros
           </button>
         </div>
 
         {editingTargets ? (
-          <div className="mb-4 p-4 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200 dark:border-gray-700">
-            <div className="grid grid-cols-5 gap-3 mb-3">
-              <div>
-                <label className="block text-[10px] text-gray-500 dark:text-gray-400">Kcal</label>
-                <input type="number" className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded text-xs dark:bg-gray-800 dark:text-gray-100" value={editTargets.kcal} onChange={(e) => setEditTargets({ ...editTargets, kcal: Number(e.target.value) })} />
-              </div>
-              <div>
-                <label className="block text-[10px] text-gray-500 dark:text-gray-400">Proteína (g)</label>
-                <input type="number" className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded text-xs dark:bg-gray-800 dark:text-gray-100" value={editTargets.protein} onChange={(e) => setEditTargets({ ...editTargets, protein: Number(e.target.value) })} />
-              </div>
-              <div>
-                <label className="block text-[10px] text-gray-500 dark:text-gray-400">Carbs (g)</label>
-                <input type="number" className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded text-xs dark:bg-gray-800 dark:text-gray-100" value={editTargets.carbs} onChange={(e) => setEditTargets({ ...editTargets, carbs: Number(e.target.value) })} />
-              </div>
-              <div>
-                <label className="block text-[10px] text-gray-500 dark:text-gray-400">Grasas (g)</label>
-                <input type="number" className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded text-xs dark:bg-gray-800 dark:text-gray-100" value={editTargets.fat} onChange={(e) => setEditTargets({ ...editTargets, fat: Number(e.target.value) })} />
-              </div>
-              <div>
-                <label className="block text-[10px] text-gray-500 dark:text-gray-400">Fibra (g)</label>
-                <input type="number" className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded text-xs dark:bg-gray-800 dark:text-gray-100" value={editTargets.fiber} onChange={(e) => setEditTargets({ ...editTargets, fiber: Number(e.target.value) })} />
-              </div>
+          <div className="animate-scale-in">
+            <div className="grid grid-cols-3 gap-3 mb-3">
+              {(["protein","carbs","fat"] as const).map((k) => {
+                const labels = { protein: "Proteína (g)", carbs: "Carbos (g)", fat: "Grasas (g)" };
+                const colors = { protein: "text-red-500", carbs: "text-amber-500", fat: "text-blue-500" };
+                const mult = k === "fat" ? 9 : 4;
+                return (
+                  <div key={k}>
+                    <label className={`block text-[10px] font-semibold uppercase tracking-wider mb-1 ${colors[k]}`}>{labels[k]}</label>
+                    <input type="number"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all"
+                      value={editTargets[k]}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        const adj = adjustMacroField({ protein: editTargets.protein, carbs: editTargets.carbs, fat: editTargets.fat }, k, val, editTargets.kcal);
+                        setEditTargets({ ...editTargets, protein: adj.protein, carbs: adj.carbs, fat: adj.fat });
+                      }} />
+                    <p className="text-[9px] text-gray-400 mt-0.5">{editTargets[k] * mult} kcal</p>
+                  </div>
+                );
+              })}
             </div>
-            <div className="flex gap-2">
-              <button onClick={handleSaveTargets} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-brand-600 text-white hover:bg-brand-700 transition-all duration-200 text-xs px-3 py-1.5 rounded">
-                Guardar metas
+            {(["protein","carbs","fat"] as const).some((k) => editTargets[k] !== origTargets[k]) && (
+              <div className="mb-3 text-[11px] animate-slide-up">
+                <table className="w-full">
+                  <thead>
+                    <tr className="text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      <th className="text-left px-2 py-1">Macro</th>
+                      <th className="text-right px-2 py-1">Original</th>
+                      <th className="text-right px-2 py-1">Ajustado</th>
+                      <th className="text-right px-2 py-1">Diferencia</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(["protein","carbs","fat"] as const).map((k) => {
+                      const orig = origTargets[k];
+                      const adj = editTargets[k];
+                      const diff = adj - orig;
+                      const mult = k === "fat" ? 9 : 4;
+                      const accent = k === "protein" ? "text-red-500" : k === "carbs" ? "text-amber-500" : "text-blue-500";
+                      return (
+                        <tr key={k}>
+                          <td className={`px-2 py-1 font-medium ${accent}`}>{k === "protein" ? "Proteína" : k === "carbs" ? "Carbohidratos" : "Grasas"}</td>
+                          <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400">{orig}g ({orig * mult} kcal)</td>
+                          <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400">{adj}g ({adj * mult} kcal)</td>
+                          <td className={`text-right px-2 py-1 font-medium ${diff === 0 ? "text-gray-400" : diff > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                            {diff > 0 ? "+" : ""}{diff}g ({diff * mult > 0 ? "+" : ""}{diff * mult} kcal)
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    <tr className="border-t border-gray-200 dark:border-gray-700">
+                      <td className="px-2 py-1 font-medium text-gray-800 dark:text-gray-200">Total kcal</td>
+                      <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{origTargets.kcal}</td>
+                      <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{editTargets.kcal}</td>
+                      <td className="text-right px-2 py-1 font-medium text-emerald-600 dark:text-emerald-400">0</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="flex gap-2 mt-3">
+              <button onClick={handleSaveTargets}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold bg-brand-600 text-white hover:bg-brand-700 active:scale-[0.98] transition-all shadow-sm">
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Guardar macros
               </button>
-              <button onClick={() => setEditingTargets(false)} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700 transition-all duration-200 text-xs px-3 py-1.5 rounded">
+              <button onClick={() => { setEditTargets({ ...origTargets }); }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-medium bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm">
+                Restaurar
+              </button>
+              <button onClick={() => { setEditingTargets(false); setEditTargets({ ...origTargets }); }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-medium bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm">
                 Cancelar
               </button>
             </div>
           </div>
+        ) : noTargets ? (
+          <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-700 text-center">
+            <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">No hay macros configurados</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Ve a la calculadora para establecer metas, o usa "Ajustar" para definirlas manualmente.</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-4 gap-4 mb-4">
-            <MacroBar label="Calorías" current={Math.round(filled.kcal)} total={target.total_kcal} unit="kcal" color="bg-gray-900" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <MacroBar label="Calorías" current={Math.round(filled.kcal)} total={target.total_kcal} unit="kcal" color="bg-blue-500" />
             <MacroBar label="Proteína" current={Math.round(filled.protein)} total={target.total_protein} unit="g" color="bg-macro-protein" />
-            <MacroBar label="Carbohidratos" current={Math.round(filled.carbs)} total={target.total_carbs} unit="g" color="bg-macro-carbs" />
+            <MacroBar label="Carbos" current={Math.round(filled.carbs)} total={target.total_carbs} unit="g" color="bg-macro-carbs" />
             <MacroBar label="Grasas" current={Math.round(filled.fat)} total={target.total_fat} unit="g" color="bg-macro-fat" />
           </div>
         )}
 
+        {!noTargets && (
         <div className="flex items-center gap-6">
           <div className="h-20 w-20 shrink-0">
             <ResponsiveContainer width="100%" height="100%">
@@ -319,11 +428,16 @@ export function MealPlanner() {
             ))}
           </div>
         </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
-          {Object.entries(MEAL_LABELS).map(([key, label]) => {
+          {Object.entries(MEAL_LABELS).filter(([key]) => {
+            if (key === "pre_workout" || key === "intra_workout" || key === "post_workout") return true;
+            if (key.startsWith("meal") && Number(key.slice(4)) <= mealCount) return true;
+            return (groupedItems[key] || []).length > 0;
+          }).map(([key, label]) => {
             const items = groupedItems[key] || [];
             const total = items.reduce(
               (acc, i) => {
@@ -343,10 +457,10 @@ export function MealPlanner() {
             return (
               <div
                 key={key}
-                className={`p-4 ${selectedMeal === key ? "border-brand-500 ring-2 ring-brand-100 dark:ring-brand-900/30" : ""} bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700`}
+                className={`overflow-hidden transition-all duration-200 ${selectedMeal === key ? "ring-2 ring-brand-500 border-brand-500 bg-brand-50 dark:bg-brand-900/15 shadow-md" : "border-gray-200 dark:border-gray-700 shadow-sm"} bg-white dark:bg-gray-900 rounded-xl border`}
               >
                 <div
-                  className="flex items-center justify-between mb-2 cursor-pointer -mx-4 -mt-4 px-4 pt-4 pb-2 rounded-t-xl bg-gradient-to-r from-brand-50 to-white dark:from-brand-900/20 dark:to-gray-900 border-b border-gray-100 dark:border-gray-800"
+                  className="flex items-center justify-between cursor-pointer px-4 py-3 bg-gradient-to-r from-brand-50 to-white dark:from-brand-900/20 dark:to-gray-900 border-b border-gray-100 dark:border-gray-800"
                   onClick={() => setSelectedMeal(selectedMeal === key ? null : key)}
                 >
                   <div className="flex items-center gap-2">
@@ -364,19 +478,17 @@ export function MealPlanner() {
                 </div>
 
                 {items.length > 0 ? (
-                  <div className="space-y-1.5 mt-2">
+                  <div className="space-y-1.5 px-4 py-3">
                     {items.map((item) => {
                       const f = db.getFood(item.food_id);
                       if (!f) return null;
                       const ratio = item.quantity / f.serving_size;
                       return (
-                        <div key={item.id} className="flex items-center justify-between text-sm bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2 group">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="font-medium truncate dark:text-white">{f.name}</span>
-                            <span className="text-gray-400 dark:text-gray-500 text-xs shrink-0">
-                              ({(f.protein * ratio).toFixed(1)}p / {(f.carbs * ratio).toFixed(1)}c / {(f.fat * ratio).toFixed(1)}g)
-                            </span>
-                          </div>
+                        <div key={item.id} className="flex items-center gap-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2 group flex-wrap">
+                          <span className="font-medium truncate dark:text-white min-w-0 flex-1">{f.name}</span>
+                          <span className="text-gray-400 dark:text-gray-500 text-xs shrink-0">
+                            ({(f.protein * ratio).toFixed(1)}p / {(f.carbs * ratio).toFixed(1)}c / {(f.fat * ratio).toFixed(1)}g)
+                          </span>
                           <div className="flex items-center gap-2 shrink-0">
                             {editingItemId === item.id ? (
                               <div className="flex items-center gap-1">
@@ -412,19 +524,29 @@ export function MealPlanner() {
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  <p className="text-xs text-gray-400 dark:text-gray-500 px-4 py-3">
                     Vacío. {selectedMeal === key ? "Elige un alimento de la lista →" : "Selecciona esta comida."}
                   </p>
                 )}
               </div>
             );
           })}
+          {mealCount < 6 && (
+            <button
+              onClick={() => setMealCount((c) => Math.min(6, c + 1))}
+              className="w-full py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-400 hover:text-brand-600 hover:border-brand-400 dark:hover:border-brand-500 transition-all"
+            >
+              + Agregar comida {mealCount + 1}
+            </button>
+          )}
         </div>
 
         <div>
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sticky top-6">
-            <h4 className="font-semibold text-sm mb-3 dark:text-white">
-              {selectedMeal ? `Agregar a "${MEAL_LABELS[selectedMeal]}"` : "Selecciona una comida"}
+            <h4 className="font-semibold text-sm mb-3 dark:text-white flex items-center gap-2">
+              {selectedMeal ? (
+                <><span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" /> Agregar a "{MEAL_LABELS[selectedMeal]}"</>
+              ) : "Selecciona una comida"}
             </h4>
             <input
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 mb-2"

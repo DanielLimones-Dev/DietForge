@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>DietForge - Presentación del Sistema</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Inter',sans-serif;background:#f8fafc;color:#0f172a;scroll-behavior:smooth}
+  .slide{min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 40px;border-bottom:1px solid #e2e8f0}
+  .slide:nth-child(odd){background:#fff}
+  .slide-inner{max-width:960px;width:100%}
+  h1{font-size:48px;font-weight:800;background:linear-gradient(135deg,#0ea5e9,#0284c7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:8px}
+  h2{font-size:32px;font-weight:700;color:#0f172a;margin-bottom:24px}
+  h2 .badge{font-size:14px;font-weight:600;background:#0ea5e9;color:#fff;padding:4px 12px;border-radius:999px;vertical-align:middle;margin-left:12px;-webkit-text-fill-color:#fff}
+  h3{font-size:20px;font-weight:600;color:#0ea5e9;margin-bottom:12px}
+  p{font-size:16px;line-height:1.7;color:#475569;margin-bottom:16px}
+  .sub{font-size:18px;color:#64748b;margin-bottom:32px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0}
+  .card{background:#f8fafc;border-radius:16px;padding:24px;border:1px solid #e2e8f0}
+  .card h4{font-size:14px;font-weight:700;color:#0ea5e9;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+  .card p{font-size:14px;margin:0;color:#64748b}
+  .screen-placeholder{background:linear-gradient(135deg,#f1f5f9,#e2e8f0);border-radius:16px;border:2px dashed #cbd5e1;padding:80px 40px;text-align:center;color:#94a3b8;font-size:14px;font-weight:500;margin:24px 0}
+  .screen-placeholder strong{color:#64748b;display:block;font-size:16px;margin-bottom:4px}
+  .tag{display:inline-block;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;margin:2px}
+  .tag-blue{background:#dbeafe;color:#1d4ed8}
+  .tag-green{background:#dcfce7;color:#16a34a}
+  .tag-purple{background:#f3e8ff;color:#7c3aed}
+  .tag-orange{background:#ffedd5;color:#ea580c}
+  ul{list-style:none;margin:16px 0}
+  ul li{padding:8px 0 8px 24px;position:relative;font-size:15px;color:#475569;line-height:1.5}
+  ul li::before{content:"→";position:absolute;left:0;color:#0ea5e9;font-weight:700}
+  .hero{text-align:center;padding:40px 0}
+  .hero h1{font-size:64px;margin-bottom:16px}
+  .hero p{font-size:20px;color:#64748b;max-width:600px;margin:0 auto 24px}
+  .stack{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:24px}
+  .footer-links{margin-top:32px;display:flex;gap:16px;justify-content:center}
+  .footer-links a{color:#0ea5e9;text-decoration:none;font-size:14px;font-weight:600}
+  .footer-links a:hover{text-decoration:underline}
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:24px 0}
+  .stat{text-align:center;padding:20px;background:#fff;border-radius:12px;border:1px solid #e2e8f0}
+  .stat-num{font-size:28px;font-weight:800;color:#0ea5e9}
+  .stat-label{font-size:12px;color:#64748b;margin-top:4px}
+  pre{background:#0f172a;color:#e2e8f0;padding:16px;border-radius:12px;font-size:13px;overflow-x:auto;margin:16px 0}
+  img.screenshot{width:100%;border-radius:12px;border:1px solid #e2e8f0;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+  @media(max-width:768px){
+    .slide{padding:40px 20px}
+    h1{font-size:32px}
+    h2{font-size:24px}
+    .grid-2,.stat-grid{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+
+<div class="slide" style="background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff">
+  <div class="slide-inner hero">
+    <h1 style="background:linear-gradient(135deg,#38bdf8,#0ea5e9);-webkit-background-clip:text">DietForge</h1>
+    <p style="color:#94a3b8;font-size:22px">Planificador de Dietas Profesional</p>
+    <p style="color:#64748b;font-size:15px;max-width:500px;margin:0 auto">Gestión de clientes · Planes alimenticios · Base de datos de alimentos · Cálculo de macronutrientes</p>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="slide-inner">
+    <h2>Dashboard</h2>
+    <p class="sub">Resumen general del sistema con estadísticas clave</p>
+    <img src="screenshots/01-dashboard.png" class="screenshot" alt="Dashboard">
+  </div>
+</div>
+
+<div class="slide">
+  <div class="slide-inner">
+    <h2>Gestión de Clientes</h2>
+    <p class="sub">Registro, edición y seguimiento de clientes</p>
+    <div class="grid-2">
+      <div>
+        <h3>Lista de Clientes</h3>
+        <p>Vista general con búsqueda, eliminación y acceso a detalle de cada cliente.</p>
+        <img src="screenshots/02-clientes-lista.png" class="screenshot" alt="Lista de clientes">
+      </div>
+      <div>
+        <h3>Detalle del Cliente</h3>
+        <p>Mediciones corporales, historial de planes, generación de PDF y plantillas.</p>
+        <img src="screenshots/09-cliente-detalle.png" class="screenshot" alt="Detalle del cliente">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="slide-inner">
+    <h2>Formulario de Cliente</h2>
+    <p class="sub">Captura de datos antropométricos y cálculo automático de macronutrientes</p>
+    <div class="grid-2">
+      <div class="card">
+        <h4>Datos del cliente</h4>
+        <p>Nombre, email, teléfono y notas personales.</p>
+      </div>
+      <div class="card">
+        <h4>Mediciones</h4>
+        <p>Peso, altura, edad, sexo, % grasa corporal, pliegues cutáneos.</p>
+      </div>
+      <div class="card">
+        <h4>Actividad y Objetivo</h4>
+        <p>5 niveles de actividad — Objetivo: pérdida de grasa, mantenimiento, ganancia muscular o aumento de peso.</p>
+      </div>
+      <div class="card">
+        <h4>Macros automáticos</h4>
+        <p>Cálculo de TMB, TDEE, proteína, carbohidratos, grasas y fibra según objetivo.</p>
+      </div>
+    </div>
+    <img src="screenshots/11-cliente-formulario.png" class="screenshot" alt="Formulario de cliente">
+  </div>
+</div>
+
+<div class="slide">
+  <div class="slide-inner">
+    <h2>Planificador de Comidas</h2>
+    <p class="sub">Crea planes alimenticios con distribución por comidas y alimentos</p>
+    <div class="grid-2">
+      <div>
+        <ul>
+          <li>Asigna alimentos a cada tiempo de comida</li>
+          <li>Cálculo automático de macros por comida y total</li>
+          <li>Edición de cantidades en tiempo real</li>
+          <li>Exportación a PDF profesional con gráficos</li>
+          <li>Guardar como plantilla reutilizable</li>
+        </ul>
+      </div>
+      <div>
+        <img src="screenshots/10-planificador.png" class="screenshot" alt="Planificador">
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="slide-inner">
+    <h2>Base de Alimentos</h2>
+    <p class="sub">Catálogo de alimentos con búsqueda e importación desde APIs</p>
+    <div class="grid-2">
+      <div>
+        <h3>Alimentos locales</h3>
+        <p>Más de 80 alimentos mexicanos precargados. Agrega, edita y elimina alimentos manualmente.</p>
+        <ul>
+          <li>Proteínas, verduras, frutas, granos, lácteos, legumbres, etc.</li>
+          <li>Clasificación automática de carbohidratos (lentos/rápidos)</li>
+          <li>Vista detallada con tabla nutrimental</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Importación desde API</h3>
+        <p>Busca alimentos desde:</p>
+        <ul>
+          <li><strong>USDA</strong> — Base de datos del gobierno de EE.UU.</li>
+          <li><strong>OpenFoodFacts</strong> — Base de datos abierta y colaborativa</li>
+          <li><strong>FatSecret</strong> — A través de Cloudflare Worker proxy</li>
+        </ul>
+      </div>
+    </div>
+    <img src="screenshots/03-base-alimentos.png" class="screenshot" alt="Base de alimentos">
+    <p style="text-align:center;font-size:13px;color:#94a3b8;margin-top:8px">Click en un alimento → tarjeta nutricional:</p>
+    <img src="screenshots/06-food-card.png" class="screenshot" alt="Tarjeta nutricional" style="max-width:400px;margin:0 auto;display:block">
+  </div>
+</div>
+
+<div class="slide">
+  <div class="slide-inner">
+    <h2>PDF de Dieta</h2>
+    <p class="sub">Generación automática de dieta profesional en formato listo para imprimir/PDF</p>
+    <p>Desde el detalle del cliente o el planificador, haz click en <strong>"Exportar PDF"</strong> → se abre el cuadro de impresión → selecciona <strong>"Guardar como PDF"</strong>.</p>
+    <div class="grid-2">
+      <img src="screenshots/10-planificador.png" class="screenshot" alt="Planificador con botón exportar">
+      <img src="screenshots/06-food-card.png" class="screenshot" alt="Ejemplo de tabla nutricional">
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="slide-inner">
+    <h2>Calculadora de Macros</h2>
+    <p class="sub">Cálculo rápido de macronutrientes sin necesidad de registrar cliente</p>
+    <div class="grid-2">
+      <div class="card"><h4>Fórmulas</h4><p>Mifflin-St Jeor para TMB + multiplicador de actividad para TDEE</p></div>
+      <div class="card"><h4>Objetivos</h4><p>Distribución automática de macros según objetivo seleccionado</p></div>
+    </div>
+    <img src="screenshots/04-calculadora.png" class="screenshot" alt="Calculadora">
+  </div>
+</div>
+
+<div class="slide">
+  <div class="slide-inner">
+    <h2>Reportes</h2>
+    <p class="sub">Visualización de datos y estadísticas por cliente</p>
+    <ul>
+      <li>Evolución de peso con gráfica interactiva (Recharts)</li>
+      <li>Distribución de macronutrientes por plan</li>
+      <li>Comparativas entre clientes y periodos</li>
+    </ul>
+    <img src="screenshots/05-reportes.png" class="screenshot" alt="Reportes">
+  </div>
+</div>
+
+<div class="slide">
+  <div class="slide-inner" style="text-align:center">
+    <h2>DietForge</h2>
+    <p class="sub">Sistema completo de planificación de dietas</p>
+    <p style="max-width:550px;margin:0 auto;color:#475569;font-size:15px;line-height:1.8">
+      <strong style="color:#0ea5e9">Características:</strong><br>
+      Gestión de clientes · Cálculo automático de macros · Planificador de comidas<br>
+      Base de datos de alimentos con 80+ alimentos mexicanos · Importación desde APIs<br>
+      Exportación a PDF · Reportes con gráficas · Dark mode · Multiplataforma
+    </p>
+  </div>
+</div>
+
+</body>
+</html>

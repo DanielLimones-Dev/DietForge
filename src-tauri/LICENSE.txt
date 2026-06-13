@@ -1,0 +1,38 @@
+TÉRMINOS Y CONDICIONES DE USO - DIETFORGE
+
+1. ACEPTACIÓN DE TÉRMINOS
+Al descargar e instalar DietForge ("la Aplicación"), usted acepta
+los presentes términos y condiciones.
+
+2. LICENCIA DE USO
+Se concede una licencia limitada, no exclusiva e intransferible
+para uso personal y profesional en la gestión de planes de
+nutrición deportiva.
+
+3. SUSCRIPCIÓN
+El uso de la Aplicación requiere una suscripción activa o un
+período de prueba gratuito de 15 días. El pago se procesa
+a través de Stripe.
+
+4. PRIVACIDAD DE DATOS
+Los datos del usuario se almacenan localmente en el dispositivo
+y en servicios en la nube (Supabase) exclusivamente para el
+funcionamiento de la Aplicación.
+
+5. RESPONSABILIDAD
+DietForge es una herramienta de apoyo. El usuario es responsable
+de las decisiones nutricionales implementadas. La Aplicación no
+sustituye el consejo médico profesional.
+
+6. PROPIEDAD INTELECTUAL
+El código, diseño y contenido de la Aplicación son propiedad
+de DietForge. No está permitida su redistribución sin
+autorización expresa.
+
+7. CANCELACIÓN
+El usuario puede cancelar su suscripción en cualquier momento
+a través de Stripe. El acceso se mantendrá hasta el final del
+período pagado.
+
+8. CONTACTO
+Para soporte: daniel@live.com
