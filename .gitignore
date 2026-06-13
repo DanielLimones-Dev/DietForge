@@ -17,6 +17,15 @@ dist-ssr
 .env.*
 !.env.example
 
+# Rust/Tauri
+src-tauri/target/
+
+# Build artifacts
+*.tsbuildinfo
+
+# Supabase temp
+supabase/.temp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
