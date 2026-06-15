@@ -173,7 +173,7 @@ export function distributeMeals(
   }
 
   const remainingMeals = mealCount - mealIndex;
-  const perMeal = remaining / remainingMeals;
+  const perMeal = remainingMeals > 0 ? remaining / remainingMeals : 0;
 
   for (let i = 0; i < remainingMeals; i++) {
     const isLast = i === remainingMeals - 1;

@@ -90,8 +90,24 @@ export function CheckInForm({ clientId, existing, onSave, onCancel }: Props) {
       if (!file) { setCapturing(null); return; }
       const reader = new FileReader();
       reader.onload = () => {
-        setPhotos((prev) => [...prev, { angle, data: reader.result as string }]);
-        setCapturing(null);
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width, h = img.height;
+          const max = 800;
+          if (w > max || h > max) {
+            const ratio = Math.min(max / w, max / h);
+            w = Math.round(w * ratio);
+            h = Math.round(h * ratio);
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext("2d")!;
+          ctx.drawImage(img, 0, 0, w, h);
+          setPhotos((prev) => [...prev, { angle, data: canvas.toDataURL("image/jpeg", 0.7) }]);
+          setCapturing(null);
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     };
@@ -143,7 +159,9 @@ export function CheckInForm({ clientId, existing, onSave, onCancel }: Props) {
     if (!saved) return;
 
     for (const p of photos) {
-      db.savePhoto({ checkin_id: saved.id, angle: p.angle, data: p.data, date: saved.date });
+      try {
+        db.savePhoto({ checkin_id: saved.id, angle: p.angle, data: p.data, date: saved.date });
+      } catch { console.warn("Error al guardar foto"); }
     }
 
     db.updateNextCheckIn(clientId);

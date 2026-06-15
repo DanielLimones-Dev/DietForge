@@ -40,6 +40,20 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     refresh();
+    const recheck = () => {
+      setTrialActive(isTrialActive());
+      setTrialDaysLeft(getTrialDaysLeft());
+      setTrialEndDate(getTrialEndDate());
+      refresh();
+    };
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) recheck(); });
+    window.addEventListener("focus", recheck);
+    const interval = setInterval(recheck, 60000);
+    return () => {
+      document.removeEventListener("visibilitychange", recheck);
+      window.removeEventListener("focus", recheck);
+      clearInterval(interval);
+    };
   }, [refresh]);
 
   const setEmail = useCallback((newEmail: string) => {

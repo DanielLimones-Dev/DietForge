@@ -133,7 +133,15 @@ export function MealPlanner() {
     );
   }, [plan]);
 
-  if (!plan || !client) return null;
+  if (!plan || !client) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-xl font-bold dark:text-white">Plan no encontrado</h2>
+        <p className="text-gray-400 mt-2">El plan de comidas no existe o fue eliminado.</p>
+        <button onClick={() => navigate(-1)} className="inline-block mt-4 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-medium">Volver</button>
+      </div>
+    </div>
+  );
 
   const meas = db.getLatestMeasurement(plan.plan.client_id);
   const hasMeas = meas && meas.tdee > 0;

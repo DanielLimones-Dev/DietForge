@@ -18,7 +18,8 @@ export function SubscriptionGate({ children }: { children?: ReactNode }) {
     return <SubscriptionPage />;
   }
   if (!status.active && !trialActive) {
-    return <SubscriptionPage />;
+    const offline = typeof navigator !== "undefined" && !navigator.onLine;
+    return <SubscriptionPage offline={offline} />;
   }
 
   return <>{children || <Outlet />}</>;

@@ -115,7 +115,7 @@ export function Reports() {
             {growthData.length > 1 && (
               <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2.5 py-1 rounded-full font-medium">
                 <TrendingUp className="w-3.5 h-3.5" />
-                +{Math.round((clients.length - (clients.length - newThisMonth)) / Math.max(1, clients.length - newThisMonth) * 100)}%
+                +{Math.round(newThisMonth / Math.max(1, clients.length - newThisMonth) * 100)}%
               </div>
             )}
           </div>

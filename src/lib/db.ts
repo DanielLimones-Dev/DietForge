@@ -42,6 +42,7 @@ let cache: Database = {
 
 let templatesCache: DietTemplate[] = [];
 let sqlite: Awaited<ReturnType<typeof import("@tauri-apps/plugin-sql").default["load"]>> | null = null;
+let persistQueue: Promise<void> = Promise.resolve();
 
 loadFromLocalStorage();
 
@@ -56,11 +57,20 @@ function loadFromLocalStorage() {
 }
 
 function saveToLocalStorage() {
-  localStorage.setItem(DB_KEY, JSON.stringify(cache));
-  localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templatesCache));
+  try {
+    localStorage.setItem(DB_KEY, JSON.stringify(cache));
+  } catch {
+    console.warn("localStorage lleno — datos no guardados");
+  }
+  try {
+    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templatesCache));
+  } catch {
+    console.warn("localStorage lleno — templates no guardados");
+  }
 }
 
 async function persist() {
+  persistQueue = persistQueue.then(async () => {
   if (sqlite) {
     try {
       for (const c of cache.clients) {
@@ -106,6 +116,7 @@ async function persist() {
   } else {
     saveToLocalStorage();
   }
+  });
 }
 
 function genId(table: string): number {
@@ -207,6 +218,7 @@ async function migrateFromLocalStorage() {
 }
 
 export async function init() {
+  if (sqlite) return;
   if (inTauri()) {
     try {
       const { default: Database } = await import("@tauri-apps/plugin-sql");

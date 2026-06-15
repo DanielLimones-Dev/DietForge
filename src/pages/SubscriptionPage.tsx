@@ -3,7 +3,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { STRIPE_PAYMENT_LINK, daysUntilExpiry, getTrialStart } from "@/lib/subscription";
 import { openExternal } from "@/lib/openExternal";
 
-export function SubscriptionPage() {
+export function SubscriptionPage({ offline }: { offline?: boolean }) {
   const { email, status, loading, trialActive, trialDaysLeft, trialEndDate, setEmail, refresh, logout, startTrial } = useSubscription();
   const [inputEmail, setInputEmail] = useState(email);
   const [submitting, setSubmitting] = useState(false);
@@ -12,7 +12,7 @@ export function SubscriptionPage() {
     e.preventDefault();
     if (!inputEmail.trim()) return;
     setSubmitting(true);
-    setEmail(inputEmail.trim());
+    setEmail(inputEmail.trim().toLowerCase());
     await refresh();
     setSubmitting(false);
   };
@@ -84,6 +84,11 @@ export function SubscriptionPage() {
             </div>
           ) : (
             <div className="text-center space-y-4">
+              {offline && (
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm">
+                  Sin conexión a internet. Conéctate para verificar tu suscripción.
+                </div>
+              )}
               <h2 className="text-xl font-bold text-white">Suscripción requerida</h2>
               <p className="text-gray-400 text-sm">
                 {status.expiresAt
