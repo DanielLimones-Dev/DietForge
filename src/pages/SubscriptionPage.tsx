@@ -109,14 +109,11 @@ export function SubscriptionPage() {
                 </div>
               )}
               {STRIPE_PAYMENT_LINK && (
-                <a
-                  href={STRIPE_PAYMENT_LINK + "?prefilled_email=" + encodeURIComponent(email)}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button onClick={() => window.open(STRIPE_PAYMENT_LINK + "?prefilled_email=" + encodeURIComponent(email), "_blank")}
                   className="block w-full py-3 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold shadow-lg hover:shadow-xl active:scale-[0.97] transition-all text-center"
                 >
                   Suscribirme — $500 MXN/mes
-                </a>
+                </button>
               )}
               <button
                 onClick={refresh}

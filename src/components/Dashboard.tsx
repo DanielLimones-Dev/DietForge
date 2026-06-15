@@ -94,12 +94,11 @@ export function Dashboard() {
               Prueba — {trialDaysLeft} día{trialDaysLeft !== 1 ? "s" : ""}
             </span>
           ) : (
-            <a href={STRIPE_PAYMENT_LINK + "?prefilled_email=" + encodeURIComponent(email)}
-              target="_blank" rel="noopener noreferrer"
+            <button onClick={() => window.open(STRIPE_PAYMENT_LINK + "?prefilled_email=" + encodeURIComponent(email), "_blank")}
               className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline">
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
               Suscribirse — $500/mes
-            </a>
+            </button>
           )}
           <span className="text-xs text-gray-400">{email} · <button onClick={() => { clearStoredEmail(); window.location.reload(); }} className="hover:text-red-500">salir</button></span>
         </div>
