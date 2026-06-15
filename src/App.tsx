@@ -13,13 +13,23 @@ import { WeekPlanView } from "@/components/WeekPlanView";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import { SubscriptionGate } from "@/components/SubscriptionGate";
 import { ToastProvider } from "@/components/Toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { db } from "@/lib/db";
 
 export default function App() {
+  const [ready, setReady] = useState(false);
+
   useEffect(() => {
-    db.init().then(() => db.seedFoods());
+    db.init().then(() => { db.seedFoods(); setReady(true); });
   }, []);
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter>

@@ -43,6 +43,7 @@ export function getTrialStart(): string | null {
 export function setTrialStart(): string {
   const now = new Date().toISOString();
   localStorage.setItem(TRIAL_KEY, now);
+  import("./db").then(m => m.saveTrialStart(now)).catch(() => {});
   return now;
 }
 

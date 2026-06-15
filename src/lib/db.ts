@@ -159,6 +159,17 @@ async function loadFromSQLite() {
   }
   const sv = await sqlite.select<{ value: string }[]>("SELECT value FROM meta WHERE key = 'seed_version'");
   if (sv.length > 0) cache.seed_version = Number(sv[0].value);
+  const trialRows = await sqlite.select<{ value: string }[]>("SELECT value FROM meta WHERE key = 'trial_start'");
+  if (trialRows.length > 0 && !localStorage.getItem("dietforge_trial")) {
+    localStorage.setItem("dietforge_trial", trialRows[0].value);
+  }
+}
+
+export async function saveTrialStart(date: string) {
+  if (!sqlite) return;
+  try {
+    await sqlite.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('trial_start', ?)", [date]);
+  } catch { /* persistencia best-effort */ }
 }
 
 async function migrateFromLocalStorage() {
