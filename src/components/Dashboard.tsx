@@ -4,6 +4,7 @@ import { Users, Apple, FileText, TrendingUp, ArrowRight, Sparkles, BarChart3, La
 import { db } from "@/lib/db";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { STRIPE_PAYMENT_LINK, daysUntilExpiry, clearStoredEmail } from "@/lib/subscription";
+import { openExternal } from "@/lib/openExternal";
 
 const gradients: Record<string, string> = {
   Clientes: "from-blue-500 to-cyan-500",
@@ -94,7 +95,7 @@ export function Dashboard() {
               Prueba — {trialDaysLeft} día{trialDaysLeft !== 1 ? "s" : ""}
             </span>
           ) : (
-            <button onClick={() => window.open(STRIPE_PAYMENT_LINK + "?prefilled_email=" + encodeURIComponent(email), "_blank")}
+            <button onClick={() => openExternal(STRIPE_PAYMENT_LINK + "?prefilled_email=" + encodeURIComponent(email))}
               className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-600 dark:text-brand-400 hover:underline">
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
               Suscribirse — $500/mes

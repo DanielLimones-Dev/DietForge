@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { STRIPE_PAYMENT_LINK, daysUntilExpiry, getTrialStart } from "@/lib/subscription";
+import { openExternal } from "@/lib/openExternal";
 
 export function SubscriptionPage() {
   const { email, status, loading, trialActive, trialDaysLeft, trialEndDate, setEmail, refresh, logout, startTrial } = useSubscription();
@@ -109,7 +110,7 @@ export function SubscriptionPage() {
                 </div>
               )}
               {STRIPE_PAYMENT_LINK && (
-                <button onClick={() => window.open(STRIPE_PAYMENT_LINK + "?prefilled_email=" + encodeURIComponent(email), "_blank")}
+                <button onClick={() => openExternal(STRIPE_PAYMENT_LINK + "?prefilled_email=" + encodeURIComponent(email))}
                   className="block w-full py-3 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold shadow-lg hover:shadow-xl active:scale-[0.97] transition-all text-center"
                 >
                   Suscribirme — $500 MXN/mes
