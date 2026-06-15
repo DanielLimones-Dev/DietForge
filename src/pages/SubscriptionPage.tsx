@@ -84,11 +84,6 @@ export function SubscriptionPage() {
             </div>
           ) : (
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto">
-                <svg className="w-8 h-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m0 0v2m0-2h2m-2 0H10m9.364-7.364A9 9 0 1112 3a9 9 0 017.364 4.636z" />
-                </svg>
-              </div>
               <h2 className="text-xl font-bold text-white">Suscripción requerida</h2>
               <p className="text-gray-400 text-sm">
                 {status.expiresAt
