@@ -33,7 +33,8 @@ export function daysUntilExpiry(expiresAt: string | null): number {
   return Math.max(0, Math.ceil(diff / 86400000));
 }
 
-export const STRIPE_PAYMENT_LINK = import.meta.env.VITE_STRIPE_PAYMENT_LINK || "";
+export const STRIPE_PAYMENT_LINK_MONTHLY = import.meta.env.VITE_STRIPE_PAYMENT_LINK_MONTHLY || "";
+export const STRIPE_PAYMENT_LINK_ANNUAL = import.meta.env.VITE_STRIPE_PAYMENT_LINK_ANNUAL || "";
 
 // Trial system (device-based, 15 days, non-renewable)
 export function getTrialStart(): string | null {

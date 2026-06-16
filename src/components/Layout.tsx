@@ -12,7 +12,6 @@ import {
   LogOut,
 } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { STRIPE_PAYMENT_LINK, daysUntilExpiry } from "@/lib/subscription";
 
 const links = [
   { to: "/", label: "Dashboard", icon: Home },

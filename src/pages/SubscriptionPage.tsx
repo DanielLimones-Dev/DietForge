@@ -1,12 +1,13 @@
 import { useState, type FormEvent } from "react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { STRIPE_PAYMENT_LINK, daysUntilExpiry, getTrialStart } from "@/lib/subscription";
+import { STRIPE_PAYMENT_LINK_MONTHLY, STRIPE_PAYMENT_LINK_ANNUAL, daysUntilExpiry, getTrialStart } from "@/lib/subscription";
 import { openExternal } from "@/lib/openExternal";
 
 export function SubscriptionPage({ offline }: { offline?: boolean }) {
   const { email, status, loading, trialActive, trialDaysLeft, trialEndDate, setEmail, refresh, logout, startTrial } = useSubscription();
   const [inputEmail, setInputEmail] = useState(email);
   const [submitting, setSubmitting] = useState(false);
+  const [plan, setPlan] = useState<"monthly" | "annual">("monthly");
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -108,12 +109,36 @@ export function SubscriptionPage({ offline }: { offline?: boolean }) {
                   {trialDaysLeft} día{trialDaysLeft !== 1 ? "s" : ""} restantes de prueba
                 </div>
               )}
-              {STRIPE_PAYMENT_LINK && (
-                <button onClick={() => openExternal(STRIPE_PAYMENT_LINK + "?prefilled_email=" + encodeURIComponent(email))}
-                  className="block w-full py-3 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold shadow-lg hover:shadow-xl active:scale-[0.97] transition-all text-center"
-                >
-                  Suscribirme — $500 MXN/mes
-                </button>
+
+              {(STRIPE_PAYMENT_LINK_MONTHLY || STRIPE_PAYMENT_LINK_ANNUAL) && (
+                <div className="space-y-3">
+                  <div className="flex rounded-xl overflow-hidden border border-gray-600/50">
+                    <button onClick={() => setPlan("monthly")}
+                      className={`flex-1 py-2.5 text-sm font-medium transition-all ${plan === "monthly" ? "bg-brand-600 text-white" : "bg-gray-800/60 text-gray-400 hover:text-white"}`}
+                    >
+                      Mensual
+                    </button>
+                    <button onClick={() => setPlan("annual")}
+                      className={`flex-1 py-2.5 text-sm font-medium transition-all ${plan === "annual" ? "bg-brand-600 text-white" : "bg-gray-800/60 text-gray-400 hover:text-white"}`}
+                    >
+                      Anual
+                    </button>
+                  </div>
+                  {plan === "monthly" && STRIPE_PAYMENT_LINK_MONTHLY && (
+                    <button onClick={() => openExternal(STRIPE_PAYMENT_LINK_MONTHLY + "?prefilled_email=" + encodeURIComponent(email))}
+                      className="block w-full py-3 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold shadow-lg hover:shadow-xl active:scale-[0.97] transition-all text-center"
+                    >
+                      Suscribirme — $500 MXN/mes
+                    </button>
+                  )}
+                  {plan === "annual" && STRIPE_PAYMENT_LINK_ANNUAL && (
+                    <button onClick={() => openExternal(STRIPE_PAYMENT_LINK_ANNUAL + "?prefilled_email=" + encodeURIComponent(email))}
+                      className="block w-full py-3 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-semibold shadow-lg hover:shadow-xl active:scale-[0.97] transition-all text-center"
+                    >
+                      Suscribirme anual — $5,500 MXN/año
+                    </button>
+                  )}
+                </div>
               )}
               <button
                 onClick={refresh}
