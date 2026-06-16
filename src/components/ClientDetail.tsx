@@ -127,7 +127,7 @@ export function ClientDetail() {
   interface ChartPoint { date: string; weight: number; bodyFat: number | undefined }
   const weightChart: ChartPoint[] = [
     ...measurements.map((m) => ({ date: m.date.slice(0, 10), weight: m.weight, bodyFat: m.body_fat })),
-    ...checkins.map((c) => ({ date: new Date(c.date).toISOString().slice(0, 10), weight: c.weight, bodyFat: c.body_fat })),
+    ...checkins.map((c) => ({ date: c.date.slice(0, 10), weight: c.weight, bodyFat: c.body_fat })),
   ]
     .filter((p) => p.weight > 0)
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -171,8 +171,11 @@ export function ClientDetail() {
       macros = calculatePhaseMacros(macros, w, selectedPhase);
     }
 
+    const calcDate = new Date();
+    const calcDateLocal = new Date(calcDate.getFullYear(), calcDate.getMonth(), calcDate.getDate());
+
     const measurement: ClientMeasurement = {
-      id: 0, client_id: clientId, date: new Date().toISOString(),
+      id: 0, client_id: clientId, date: calcDateLocal.toISOString(),
       weight: w, height: h, age: a, sex: calcForm.sex,
       body_fat: bf, body_fat_method: bfMethod, skinfolds,
       activity_level: calcForm.activityLevel, goal: calcForm.goal,
@@ -659,10 +662,11 @@ export function ClientDetail() {
               <div className="flex gap-2 mt-3">
                 <button onClick={() => {
                   const m = editResult;
+                  const now = new Date();
                   db.updateMeasurement(latest.id, {
                     tmb: m.tmb, tdee: m.tdee, protein: m.protein, carbs: m.carbs,
                     fat: m.fat, fiber: m.fiber, antioxidants: m.antioxidants,
-                    date: new Date().toISOString(),
+                    date: new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString(),
                   });
                   setCheckinVersion((v) => v + 1);
                   setEditResult(null);
