@@ -583,9 +583,14 @@ export function ClientDetail() {
           <div className="grid grid-cols-5 gap-3">
             <div className="text-center p-3 rounded-xl border shadow-sm stagger-1" style={{ borderColor: "#0ea5e944", background: "linear-gradient(to bottom, #0ea5e930, #0ea5e915)" }}>
               <p className="text-[9px] font-semibold mb-1 uppercase tracking-wide" style={{ color: "#0ea5e9" }}>Calorías</p>
-              <p className="text-xl font-bold" style={{ color: "#0ea5e9" }}>
-                {editResult ? editResult.tdee : latest.tdee}
-              </p>
+              {editResult ? (
+                <input type="number" value={editResult.tdee}
+                  onChange={(e) => handleEditMacro("tdee", Number(e.target.value))}
+                  className="w-20 mx-auto text-center text-lg font-bold bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:outline-none dark:text-gray-100"
+                  style={{ color: "#0ea5e9" }} />
+              ) : (
+                <p className="text-xl font-bold" style={{ color: "#0ea5e9" }}>{latest.tdee}</p>
+              )}
               <p className="text-[10px] text-gray-400 dark:text-gray-500">kcal</p>
             </div>
             {(["protein","carbs","fat","fiber"] as const).map((k, i) => {
@@ -657,7 +662,9 @@ export function ClientDetail() {
                         <td className="px-2 py-1 font-medium text-gray-800 dark:text-gray-200">Total kcal</td>
                         <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{latest.tdee}</td>
                         <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{editResult.tdee}</td>
-                        <td className="text-right px-2 py-1 font-medium text-emerald-600 dark:text-emerald-400">0</td>
+                        <td className={`text-right px-2 py-1 font-medium ${editResult.tdee === latest.tdee ? "text-gray-400" : editResult.tdee > latest.tdee ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                          {editResult.tdee > latest.tdee ? "+" : ""}{editResult.tdee - latest.tdee}
+                        </td>
                       </tr>
                     </tbody>
                   </table>
