@@ -467,31 +467,17 @@ export function ClientDetail() {
               <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Peso</p>
               <div className="flex items-center gap-1.5 mt-0.5 transition-all duration-500 ease-out">
                 {(() => {
-                  const display: { val: number; date: string }[] = [];
-                  if (checkins[1]?.weight) {
-                    display.push({ val: checkins[1].weight, date: checkins[1].date });
-                  } else if (measurements[0]?.weight) {
-                    display.push({ val: measurements[0].weight, date: measurements[0].date });
-                  }
-                  if (checkins[0]?.weight && checkins[0].weight !== display[0]?.val) {
-                    display.push({ val: checkins[0].weight, date: checkins[0].date });
-                  }
-                  // Si hay 2+ items y la medición es más nueva que el último, la medición va a la derecha
-                  // Si hay 2+ items y la medición no está en display y es más nueva que el último, reemplaza el último
-                  if (measurements[0]?.weight && display.length >= 2 && display[0]?.val !== measurements[0].weight && new Date(measurements[0].date) > new Date(display[display.length - 1].date)) {
-                    display[0] = display[display.length - 1];
-                    display[1] = { val: measurements[0].weight, date: measurements[0].date };
-                  }
-                  if (display.length === 0) return <span className="text-xl font-bold dark:text-white">{trend.currentWeight}<span className="text-sm font-medium text-gray-400 ml-0.5">kg</span></span>;
-                  if (display.length === 1) return <span className="text-xl font-bold dark:text-white">{display[0].val}<span className="text-sm font-medium text-gray-400 ml-0.5">kg</span></span>;
-                  return display.map((v, i, arr) => (
-                    <span key={i} className="inline-flex items-center gap-1 shrink-0 transition-all duration-500 ease-out">
-                      {i > 0 && <span className="text-gray-300 dark:text-gray-600 text-xs transition-all duration-500">→</span>}
-                      <span className={`transition-all duration-500 ease-out ${i === arr.length - 1 ? "text-xl font-bold dark:text-white" : "text-sm text-gray-400 dark:text-gray-500"}`}>
-                        {v.val}<span className="text-sm font-medium text-gray-400 ml-0.5">kg</span>
-                      </span>
-                    </span>
-                  ));
+                  const prev = checkins[1]?.weight;
+                  const curr = checkins[0]?.weight;
+                  if (!curr) return <span className="text-xl font-bold dark:text-white">{trend.currentWeight}<span className="text-sm font-medium text-gray-400 ml-0.5">kg</span></span>;
+                  if (!prev || prev === curr) return <span className="text-xl font-bold dark:text-white">{curr}<span className="text-sm font-medium text-gray-400 ml-0.5">kg</span></span>;
+                  return (
+                    <>
+                      <span className="text-sm text-gray-400 dark:text-gray-500">{prev}<span className="text-sm font-medium ml-0.5">kg</span></span>
+                      <span className="text-gray-300 dark:text-gray-600 text-xs">→</span>
+                      <span className="text-xl font-bold dark:text-white">{curr}<span className="text-sm font-medium text-gray-400 ml-0.5">kg</span></span>
+                    </>
+                  );
                 })()}
               </div>
               <p className="text-[11px] text-gray-400 mt-0.5">Prom 7d: {trend.rollingAverage7 ?? "—"} kg · {getRateLabel(trend.weeklyChangePercent)}</p>
@@ -506,34 +492,17 @@ export function ClientDetail() {
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Composición</p>
               {(() => {
-                const display: { val: number; date: string }[] = [];
-                if (checkins[1]?.body_fat) {
-                  display.push({ val: checkins[1].body_fat, date: checkins[1].date });
-                } else if (measurements[0]?.body_fat) {
-                  display.push({ val: measurements[0].body_fat, date: measurements[0].date });
-                }
-                if (checkins[0]?.body_fat && checkins[0].body_fat !== display[0]?.val) {
-                  display.push({ val: checkins[0].body_fat, date: checkins[0].date });
-                }
-                if (measurements[0]?.body_fat && display.length >= 2 && display[0]?.val !== measurements[0].body_fat && new Date(measurements[0].date) > new Date(display[display.length - 1].date)) {
-                  display[0] = display[display.length - 1];
-                  display[1] = { val: measurements[0].body_fat, date: measurements[0].date };
-                }
-                if (display.length > 0) {
-                  return (
-                    <div className="flex items-center gap-1.5 transition-all duration-500 ease-out">
-                      {display.map((v, i, arr) => (
-                        <span key={i} className="inline-flex items-center gap-1 shrink-0 transition-all duration-500 ease-out">
-                          {i > 0 && <span className="text-gray-300 dark:text-gray-600 text-xs transition-all duration-500">→</span>}
-                      <span className={`transition-all duration-500 ease-out ${i === arr.length - 1 ? "text-xl font-bold dark:text-white" : "text-sm text-gray-400 dark:text-gray-500"}`}>
-                            {v.val}<span className="text-sm font-medium text-gray-400 ml-0.5">% BF</span>
-                          </span>
-                        </span>
-                      ))}
-                    </div>
-                  );
-                }
-                return <p className="text-sm text-gray-400 mt-1">Sin datos</p>;
+                const prev = checkins[1]?.body_fat;
+                const curr = checkins[0]?.body_fat;
+                if (!curr) return <p className="text-sm text-gray-400 mt-1">Sin datos</p>;
+                if (!prev || prev === curr) return <span className="text-xl font-bold dark:text-white">{curr}<span className="text-sm font-medium text-gray-400 ml-0.5">% BF</span></span>;
+                return (
+                  <div className="flex items-center gap-1.5 transition-all duration-500 ease-out">
+                    <span className="text-sm text-gray-400 dark:text-gray-500">{prev}<span className="text-sm font-medium ml-0.5">% BF</span></span>
+                    <span className="text-gray-300 dark:text-gray-600 text-xs">→</span>
+                    <span className="text-xl font-bold dark:text-white">{curr}<span className="text-sm font-medium text-gray-400 ml-0.5">% BF</span></span>
+                  </div>
+                );
               })()}
               {latest?.body_fat && (
                   <p className="text-[11px] text-gray-400 mt-0.5">FFMI: {calculateFFMI(latest.weight, latest.height, latest.body_fat)} · MML: {calculateLeanBodyMass(latest.weight, latest.body_fat)} kg</p>
