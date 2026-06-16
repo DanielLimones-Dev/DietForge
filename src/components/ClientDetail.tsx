@@ -126,7 +126,6 @@ export function ClientDetail() {
   const calcMeas = measurements.find((m) => m.protein > 0 || m.tdee > 0);
   interface ChartPoint { date: string; weight: number; bodyFat: number | undefined }
   const weightChart: ChartPoint[] = [
-    ...measurements.map((m) => ({ date: m.date.slice(0, 10), weight: m.weight, bodyFat: m.body_fat })),
     ...checkins.map((c) => ({ date: c.date.slice(0, 10), weight: c.weight, bodyFat: c.body_fat })),
   ]
     .filter((p) => p.weight > 0)
