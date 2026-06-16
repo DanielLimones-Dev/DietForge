@@ -129,7 +129,8 @@ export function ClientDetail() {
     ...checkins.map((c) => ({ date: new Date(c.date).toISOString().slice(0, 10), weight: c.weight, bodyFat: c.body_fat })),
   ]
     .filter((p) => p.weight > 0)
-    .sort((a, b) => a.date.localeCompare(b.date));
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .filter((p, i, arr) => i === 0 || p.date !== arr[i - 1].date || p.weight !== arr[i - 1].weight || p.bodyFat !== arr[i - 1].bodyFat);
 
   const handleCalc = () => {
     const w = Number(calcForm.weight);
