@@ -10,12 +10,17 @@ export function CalculatorPage() {
     age: "",
     sex: "male" as "male" | "female",
     bodyFat: "",
-    bfMethod: "direct" as "direct" | "skinfold",
+    bfMethod: "direct" as "direct" | "isak1",
     chest: "",
     abdominal: "",
     thigh: "",
     triceps: "",
     suprailiac: "",
+    subscapular: "",
+    biceps: "",
+    iliacCrest: "",
+    supraspinale: "",
+    medialCalf: "",
     activityLevel: "moderate" as ActivityLevel,
     goal: "maintain" as Goal,
     mealCount: "3",
@@ -37,13 +42,18 @@ export function CalculatorPage() {
     setCalcError("");
 
     let bf = form.bodyFat ? Number(form.bodyFat) : undefined;
-    if (form.bfMethod === "skinfold") {
+    if (form.bfMethod === "isak1") {
       const sf = {
         chest: form.chest ? Number(form.chest) : undefined,
         abdominal: form.abdominal ? Number(form.abdominal) : undefined,
         thigh: form.thigh ? Number(form.thigh) : undefined,
         triceps: form.triceps ? Number(form.triceps) : undefined,
         suprailiac: form.suprailiac ? Number(form.suprailiac) : undefined,
+        subscapular: form.subscapular ? Number(form.subscapular) : undefined,
+        biceps: form.biceps ? Number(form.biceps) : undefined,
+        iliacCrest: form.iliacCrest ? Number(form.iliacCrest) : undefined,
+        supraspinale: form.supraspinale ? Number(form.supraspinale) : undefined,
+        medialCalf: form.medialCalf ? Number(form.medialCalf) : undefined,
       };
       const calculated = calculateBodyFatFromSkinfolds(sf, form.sex, a);
       if (calculated !== null) bf = calculated;
@@ -136,9 +146,9 @@ export function CalculatorPage() {
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all active:scale-[0.97] ${form.bfMethod === "direct" ? "bg-brand-600 text-white border-brand-600 shadow-sm" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-gray-400"}`}>
                 Directo
               </button>
-              <button type="button" onClick={() => setForm({ ...form, bfMethod: "skinfold" })}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all active:scale-[0.97] ${form.bfMethod === "skinfold" ? "bg-brand-600 text-white border-brand-600 shadow-sm" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-gray-400"}`}>
-                <Ruler className="w-3 h-3" /> Pliegues
+              <button type="button" onClick={() => setForm({ ...form, bfMethod: "isak1" })}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all active:scale-[0.97] ${form.bfMethod === "isak1" ? "bg-brand-600 text-white border-brand-600 shadow-sm" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-gray-400"}`}>
+                <Ruler className="w-3 h-3" /> ISAK 1
               </button>
             </div>
             {form.bfMethod === "direct" ? (
@@ -147,31 +157,43 @@ export function CalculatorPage() {
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none">%</span>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 <div>
                   <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Pectoral</label>
                   <input type="number" placeholder="mm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.chest} onChange={(e) => setForm({ ...form, chest: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Subescapular</label>
+                  <input type="number" placeholder="mm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.subscapular} onChange={(e) => setForm({ ...form, subscapular: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Bíceps</label>
+                  <input type="number" placeholder="mm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.biceps} onChange={(e) => setForm({ ...form, biceps: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Tríceps</label>
+                  <input type="number" placeholder="mm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.triceps} onChange={(e) => setForm({ ...form, triceps: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Cresta ilíaca</label>
+                  <input type="number" placeholder="mm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.suprailiac} onChange={(e) => setForm({ ...form, suprailiac: e.target.value })} />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Supraspinal</label>
+                  <input type="number" placeholder="mm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.supraspinale} onChange={(e) => setForm({ ...form, supraspinale: e.target.value })} />
                 </div>
                 <div>
                   <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Abdominal</label>
                   <input type="number" placeholder="mm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.abdominal} onChange={(e) => setForm({ ...form, abdominal: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Muslo</label>
+                  <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Muslo anterior</label>
                   <input type="number" placeholder="mm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.thigh} onChange={(e) => setForm({ ...form, thigh: e.target.value })} />
                 </div>
-                {form.sex === "female" && (
-                  <>
-                    <div>
-                      <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Tríceps</label>
-                      <input type="number" placeholder="mm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.triceps} onChange={(e) => setForm({ ...form, triceps: e.target.value })} />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Suprailíaco</label>
-                      <input type="number" placeholder="mm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.suprailiac} onChange={(e) => setForm({ ...form, suprailiac: e.target.value })} />
-                    </div>
-                  </>
-                )}
+                <div>
+                  <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Pierna medial</label>
+                  <input type="number" placeholder="mm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.medialCalf} onChange={(e) => setForm({ ...form, medialCalf: e.target.value })} />
+                </div>
               </div>
             )}
           </div>

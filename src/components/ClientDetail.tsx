@@ -50,8 +50,8 @@ export function ClientDetail() {
   const [showCalc, setShowCalc] = useState(() => !!(location.state as Record<string, unknown>)?.openCalc);
   const [calcForm, setCalcForm] = useState({
     weight: "", height: "", age: "", sex: "male" as "male" | "female",
-    bodyFat: "", bfMethod: "direct" as "direct" | "skinfold",
-    chest: "", abdominal: "", thigh: "", triceps: "", suprailiac: "",
+    bodyFat: "", bfMethod: "direct" as "direct" | "isak1",
+    chest: "", abdominal: "", thigh: "", triceps: "", suprailiac: "", subscapular: "", biceps: "", iliacCrest: "", supraspinale: "", medialCalf: "",
     activityLevel: "moderate" as ActivityLevel,
     goal: "maintain" as Goal,
     hasWorkout: true, usePhase: false,
@@ -152,18 +152,23 @@ export function ClientDetail() {
 
     let bf = calcForm.bodyFat ? Number(calcForm.bodyFat) : undefined;
     let skinfolds = undefined;
-    let bfMethod: "direct" | "skinfold" | undefined = undefined;
+    let bfMethod: "direct" | "isak1" | undefined = undefined;
 
-    if (calcForm.bfMethod === "skinfold") {
+    if (calcForm.bfMethod === "isak1") {
       const sf = {
         chest: calcForm.chest ? Number(calcForm.chest) : undefined,
         abdominal: calcForm.abdominal ? Number(calcForm.abdominal) : undefined,
         thigh: calcForm.thigh ? Number(calcForm.thigh) : undefined,
         triceps: calcForm.triceps ? Number(calcForm.triceps) : undefined,
         suprailiac: calcForm.suprailiac ? Number(calcForm.suprailiac) : undefined,
+        subscapular: calcForm.subscapular ? Number(calcForm.subscapular) : undefined,
+        biceps: calcForm.biceps ? Number(calcForm.biceps) : undefined,
+        iliacCrest: calcForm.iliacCrest ? Number(calcForm.iliacCrest) : undefined,
+        supraspinale: calcForm.supraspinale ? Number(calcForm.supraspinale) : undefined,
+        medialCalf: calcForm.medialCalf ? Number(calcForm.medialCalf) : undefined,
       };
       const calculated = calculateBodyFatFromSkinfolds(sf, calcForm.sex, a);
-      if (calculated !== null) { bf = calculated; bfMethod = "skinfold"; skinfolds = sf; }
+      if (calculated !== null) { bf = calculated; bfMethod = "isak1"; skinfolds = sf; }
     } else if (bf) { bfMethod = "direct"; }
 
     let macros = calculateMacros(w, h, a, calcForm.sex, calcForm.activityLevel, calcForm.goal, bf);
@@ -713,9 +718,9 @@ export function ClientDetail() {
                   className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${calcForm.bfMethod === "direct" ? "bg-brand-600 text-white border-brand-600 shadow-sm" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-gray-400"}`}>
                   <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" /> % Directo
                 </button>
-                <button type="button" onClick={() => setCalcForm({ ...calcForm, bfMethod: "skinfold" })}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${calcForm.bfMethod === "skinfold" ? "bg-brand-600 text-white border-brand-600 shadow-sm" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-gray-400"}`}>
-                  <Ruler className="w-3 h-3" /> Pliegues cutáneos
+                <button type="button" onClick={() => setCalcForm({ ...calcForm, bfMethod: "isak1" })}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all ${calcForm.bfMethod === "isak1" ? "bg-brand-600 text-white border-brand-600 shadow-sm" : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-gray-400"}`}>
+                  <Ruler className="w-3 h-3" /> ISAK 1
                 </button>
               </div>
               {calcForm.bfMethod === "direct" ? (
@@ -724,11 +729,46 @@ export function ClientDetail() {
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none">%</span>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-4 gap-3">
                   <div>
                     <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Pectoral</label>
                     <div className="relative">
                       <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.chest} onChange={(e) => setCalcForm({ ...calcForm, chest: e.target.value })} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Subescapular</label>
+                    <div className="relative">
+                      <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.subscapular} onChange={(e) => setCalcForm({ ...calcForm, subscapular: e.target.value })} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Bíceps</label>
+                    <div className="relative">
+                      <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.biceps} onChange={(e) => setCalcForm({ ...calcForm, biceps: e.target.value })} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Tríceps</label>
+                    <div className="relative">
+                      <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.triceps} onChange={(e) => setCalcForm({ ...calcForm, triceps: e.target.value })} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Cresta ilíaca</label>
+                    <div className="relative">
+                      <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.suprailiac} onChange={(e) => setCalcForm({ ...calcForm, suprailiac: e.target.value })} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Supraspinal</label>
+                    <div className="relative">
+                      <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.supraspinale} onChange={(e) => setCalcForm({ ...calcForm, supraspinale: e.target.value })} />
                       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
                     </div>
                   </div>
@@ -740,35 +780,19 @@ export function ClientDetail() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Muslo</label>
+                    <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Muslo anterior</label>
                     <div className="relative">
                       <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.thigh} onChange={(e) => setCalcForm({ ...calcForm, thigh: e.target.value })} />
                       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
                     </div>
                   </div>
-                  {calcForm.sex === "female" && (
-                    <>
-                      <div>
-                        <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Tríceps</label>
-                        <div className="relative">
-                          <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.triceps} onChange={(e) => setCalcForm({ ...calcForm, triceps: e.target.value })} />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Suprailíaco</label>
-                        <div className="relative">
-                          <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.suprailiac} onChange={(e) => setCalcForm({ ...calcForm, suprailiac: e.target.value })} />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  {(!calcForm.sex || calcForm.sex !== "female") && (
-                    <div className="flex items-end pb-2 text-[9px] text-gray-400 dark:text-gray-600">
-                      3 pliegues: Pectoral + Abdominal + Muslo
+                  <div>
+                    <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Pierna medial</label>
+                    <div className="relative">
+                      <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.medialCalf} onChange={(e) => setCalcForm({ ...calcForm, medialCalf: e.target.value })} />
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
             </div>

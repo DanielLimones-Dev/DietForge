@@ -32,7 +32,10 @@ export interface SkinfoldMeasurements {
   triceps?: number;
   subscapular?: number;
   suprailiac?: number;
-  midaxillary?: number;
+  biceps?: number;
+  iliacCrest?: number;
+  supraspinale?: number;
+  medialCalf?: number;
 }
 
 export interface ClientMeasurement {
@@ -44,7 +47,7 @@ export interface ClientMeasurement {
   age: number;
   sex: "male" | "female";
   body_fat?: number;
-  body_fat_method?: "direct" | "skinfold";
+  body_fat_method?: "direct" | "isak1";
   skinfolds?: SkinfoldMeasurements;
   activity_level: ActivityLevel;
   goal: Goal;

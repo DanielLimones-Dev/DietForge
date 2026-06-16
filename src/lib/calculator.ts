@@ -23,7 +23,10 @@ export function calculateBodyFatFromSkinfolds(
     triceps?: number;
     subscapular?: number;
     suprailiac?: number;
-    midaxillary?: number;
+    biceps?: number;
+    iliacCrest?: number;
+    supraspinale?: number;
+    medialCalf?: number;
   },
   sex: "male" | "female",
   age: number,
