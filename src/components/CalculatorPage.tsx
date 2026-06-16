@@ -21,6 +21,14 @@ export function CalculatorPage() {
     iliacCrest: "",
     supraspinale: "",
     medialCalf: "",
+    armRelaxed: "",
+    armFlexed: "",
+    waist: "",
+    hip: "",
+    calfMax: "",
+    humerus: "",
+    femur: "",
+    sittingHeight: "",
     activityLevel: "moderate" as ActivityLevel,
     goal: "maintain" as Goal,
     mealCount: "3",
@@ -318,9 +326,55 @@ export function CalculatorPage() {
                     <span className={totalKcal === result.tdee ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600"}>
                       {totalKcal - result.tdee > 0 ? "+" : ""}{totalKcal - result.tdee}
                     </span>
-                  </div>
                 </div>
               </div>
+              {form.bfMethod === "isak1" && (
+                <>
+                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Perímetros (cm)</p>
+                    <div className="grid grid-cols-5 gap-2">
+                      <div>
+                        <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Brazo relajado</label>
+                        <input type="number" placeholder="cm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.armRelaxed} onChange={(e) => setForm({ ...form, armRelaxed: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Brazo flexionado</label>
+                        <input type="number" placeholder="cm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.armFlexed} onChange={(e) => setForm({ ...form, armFlexed: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Cintura</label>
+                        <input type="number" placeholder="cm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.waist} onChange={(e) => setForm({ ...form, waist: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Cadera</label>
+                        <input type="number" placeholder="cm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.hip} onChange={(e) => setForm({ ...form, hip: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Pantorrilla max</label>
+                        <input type="number" placeholder="cm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.calfMax} onChange={(e) => setForm({ ...form, calfMax: e.target.value })} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Diámetros óseos (cm)</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Húmero (codo)</label>
+                        <input type="number" placeholder="cm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.humerus} onChange={(e) => setForm({ ...form, humerus: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Fémur (rodilla)</label>
+                        <input type="number" placeholder="cm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.femur} onChange={(e) => setForm({ ...form, femur: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Talla sentado</label>
+                        <input type="number" placeholder="cm" className="w-full px-2.5 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.sittingHeight} onChange={(e) => setForm({ ...form, sittingHeight: e.target.value })} />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
             )}
 
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">

@@ -38,6 +38,25 @@ export interface SkinfoldMeasurements {
   medialCalf?: number;
 }
 
+export interface Isak1Girths {
+  armRelaxed?: number;
+  armFlexed?: number;
+  waist?: number;
+  hip?: number;
+  calfMax?: number;
+}
+
+export interface Isak1Breadths {
+  humerus?: number;
+  femur?: number;
+}
+
+export interface Isak1Data {
+  girths?: Isak1Girths;
+  breadths?: Isak1Breadths;
+  sittingHeight?: number;
+}
+
 export interface ClientMeasurement {
   id: number;
   client_id: number;
@@ -49,6 +68,7 @@ export interface ClientMeasurement {
   body_fat?: number;
   body_fat_method?: "direct" | "isak1";
   skinfolds?: SkinfoldMeasurements;
+  isak_data?: Isak1Data;
   activity_level: ActivityLevel;
   goal: Goal;
   tmb: number;

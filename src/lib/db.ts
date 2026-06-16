@@ -81,8 +81,8 @@ async function persist() {
       }
       for (const m of cache.measurements) {
         await sqlite.execute(
-          "INSERT OR REPLACE INTO measurements (id, client_id, date, weight, height, age, sex, body_fat, body_fat_method, skinfolds, activity_level, goal, tmb, tdee, protein, carbs, fat, fiber, antioxidants) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-          [m.id, m.client_id, m.date, m.weight, m.height, m.age, m.sex, m.body_fat || null, m.body_fat_method || null, m.skinfolds ? JSON.stringify(m.skinfolds) : null, m.activity_level, m.goal, m.tmb, m.tdee, m.protein, m.carbs, m.fat, m.fiber, m.antioxidants]
+          "INSERT OR REPLACE INTO measurements (id, client_id, date, weight, height, age, sex, body_fat, body_fat_method, skinfolds, isak_data, activity_level, goal, tmb, tdee, protein, carbs, fat, fiber, antioxidants) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+          [m.id, m.client_id, m.date, m.weight, m.height, m.age, m.sex, m.body_fat || null, m.body_fat_method || null, m.skinfolds ? JSON.stringify(m.skinfolds) : null, m.isak_data ? JSON.stringify(m.isak_data) : null, m.activity_level, m.goal, m.tmb, m.tdee, m.protein, m.carbs, m.fat, m.fiber, m.antioxidants]
         );
       }
       for (const f of cache.foods) {
@@ -131,7 +131,7 @@ async function createTables() {
     `CREATE TABLE IF NOT EXISTS clients (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT, phone TEXT, notes TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)`
   );
   await sqlite.execute(
-    `CREATE TABLE IF NOT EXISTS measurements (id INTEGER PRIMARY KEY AUTOINCREMENT, client_id INTEGER NOT NULL, date TEXT NOT NULL, weight REAL NOT NULL, height REAL NOT NULL, age INTEGER NOT NULL, sex TEXT NOT NULL, body_fat REAL, body_fat_method TEXT, skinfolds TEXT, activity_level TEXT NOT NULL, goal TEXT NOT NULL, tmb REAL NOT NULL, tdee REAL NOT NULL, protein REAL NOT NULL, carbs REAL NOT NULL, fat REAL NOT NULL, fiber REAL NOT NULL, antioxidants REAL NOT NULL, FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE)`
+    `CREATE TABLE IF NOT EXISTS measurements (id INTEGER PRIMARY KEY AUTOINCREMENT, client_id INTEGER NOT NULL, date TEXT NOT NULL, weight REAL NOT NULL, height REAL NOT NULL, age INTEGER NOT NULL, sex TEXT NOT NULL, body_fat REAL, body_fat_method TEXT, skinfolds TEXT, isak_data TEXT, activity_level TEXT NOT NULL, goal TEXT NOT NULL, tmb REAL NOT NULL, tdee REAL NOT NULL, protein REAL NOT NULL, carbs REAL NOT NULL, fat REAL NOT NULL, fiber REAL NOT NULL, antioxidants REAL NOT NULL, FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE)`
   );
   await sqlite.execute(
     `CREATE TABLE IF NOT EXISTS foods (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, barcode TEXT, category TEXT NOT NULL, protein REAL NOT NULL, carbs REAL NOT NULL, fat REAL NOT NULL, fiber REAL NOT NULL, antioxidants REAL NOT NULL, kcal REAL NOT NULL, serving_size REAL NOT NULL, serving_unit TEXT NOT NULL, source TEXT NOT NULL, carb_type TEXT)`
@@ -151,8 +151,8 @@ async function createTables() {
 async function loadFromSQLite() {
   if (!sqlite) return;
   cache.clients = await sqlite.select<Client[]>("SELECT * FROM clients ORDER BY id");
-  const measurementsRaw = await sqlite.select<(ClientMeasurement & { skinfolds: string | null })[]>("SELECT * FROM measurements ORDER BY id");
-  cache.measurements = measurementsRaw.map((m) => ({ ...m, skinfolds: m.skinfolds ? JSON.parse(m.skinfolds) : undefined }));
+  const measurementsRaw = await sqlite.select<(ClientMeasurement & { skinfolds: string | null; isak_data: string | null })[]>("SELECT * FROM measurements ORDER BY id");
+  cache.measurements = measurementsRaw.map((m) => ({ ...m, skinfolds: m.skinfolds ? JSON.parse(m.skinfolds) : undefined, isak_data: m.isak_data ? JSON.parse(m.isak_data) : undefined }));
   cache.foods = await sqlite.select<Food[]>("SELECT * FROM foods ORDER BY id");
   cache.mealPlans = await sqlite.select<MealPlan[]>("SELECT * FROM meal_plans ORDER BY id");
   cache.mealPlanItems = await sqlite.select<MealPlanItem[]>("SELECT * FROM meal_plan_items ORDER BY id");
@@ -194,7 +194,7 @@ async function migrateFromLocalStorage() {
     await sqlite.execute("INSERT OR REPLACE INTO clients (id, name, email, phone, notes, created_at, updated_at) VALUES (?,?,?,?,?,?,?)", [c.id, c.name, c.email || null, c.phone || null, c.notes || null, c.created_at, c.updated_at]);
   }
   for (const m of oldDB.measurements) {
-    await sqlite.execute("INSERT OR REPLACE INTO measurements (id, client_id, date, weight, height, age, sex, body_fat, body_fat_method, skinfolds, activity_level, goal, tmb, tdee, protein, carbs, fat, fiber, antioxidants) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [m.id, m.client_id, m.date, m.weight, m.height, m.age, m.sex, m.body_fat || null, m.body_fat_method || null, m.skinfolds ? JSON.stringify(m.skinfolds) : null, m.activity_level, m.goal, m.tmb, m.tdee, m.protein, m.carbs, m.fat, m.fiber, m.antioxidants]);
+    await sqlite.execute("INSERT OR REPLACE INTO measurements (id, client_id, date, weight, height, age, sex, body_fat, body_fat_method, skinfolds, isak_data, activity_level, goal, tmb, tdee, protein, carbs, fat, fiber, antioxidants) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [m.id, m.client_id, m.date, m.weight, m.height, m.age, m.sex, m.body_fat || null, m.body_fat_method || null, m.skinfolds ? JSON.stringify(m.skinfolds) : null, m.isak_data ? JSON.stringify(m.isak_data) : null, m.activity_level, m.goal, m.tmb, m.tdee, m.protein, m.carbs, m.fat, m.fiber, m.antioxidants]);
   }
   for (const f of oldDB.foods) {
     await sqlite.execute("INSERT OR REPLACE INTO foods (id, name, barcode, category, protein, carbs, fat, fiber, antioxidants, kcal, serving_size, serving_unit, source, carb_type) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [f.id, f.name, f.barcode || null, f.category, f.protein, f.carbs, f.fat, f.fiber, f.antioxidants, f.kcal, f.serving_size, f.serving_unit, f.source, f.carb_type || null]);
