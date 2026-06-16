@@ -183,6 +183,8 @@ export function ClientDetail() {
     };
 
     db.saveMeasurement(measurement);
+    const checkinDate = `${calcDate.getFullYear()}-${String(calcDate.getMonth() + 1).padStart(2, '0')}-${String(calcDate.getDate()).padStart(2, '0')}`;
+    db.saveCheckIn({ client_id: clientId, date: checkinDate, weight: w, body_fat: bf });
     setResult(macros);
     setEditResult({ ...macros });
     setCheckinVersion((v) => v + 1);
