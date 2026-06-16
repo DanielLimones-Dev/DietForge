@@ -573,7 +573,7 @@ export function ClientDetail() {
               <p className="text-[9px] font-semibold mb-1 uppercase tracking-wide" style={{ color: "#0ea5e9" }}>Calorías</p>
               {editResult ? (
                 <input type="number" value={editResult.tdee}
-                  onChange={(e) => handleEditMacro("tdee", Number(e.target.value))}
+                  onChange={(e) => { const raw = e.target.value; if (raw === "") return; handleEditMacro("tdee", Number(raw)); }}
                   className="w-20 mx-auto text-center text-lg font-bold bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:outline-none dark:text-gray-100"
                   style={{ color: "#0ea5e9" }} />
               ) : (
@@ -591,7 +591,9 @@ export function ClientDetail() {
                   {editResult ? (
                     <input type="number" value={editResult[k]}
                       onChange={(e) => {
-                        const v = Number(e.target.value);
+                        const raw = e.target.value;
+                        if (raw === "") return;
+                        const v = Number(raw);
                         if (k === "fiber") {
                           setEditResult({ ...editResult, fiber: v });
                         } else {
@@ -979,7 +981,7 @@ export function ClientDetail() {
               <div className="text-center p-3 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm stagger-1">
                 <p className="text-[9px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">Calorías</p>
                 <input type="number" value={editResult.tdee}
-                  onChange={(e) => handleEditMacro("tdee", Number(e.target.value))}
+                  onChange={(e) => { const raw = e.target.value; if (raw === "") return; handleEditMacro("tdee", Number(raw)); }}
                   className="w-20 mx-auto text-center text-lg font-bold bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:outline-none dark:text-gray-100" />
                 <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">kcal</p>
               </div>
@@ -991,11 +993,13 @@ export function ClientDetail() {
                     <p className="text-[9px] font-semibold mb-1 capitalize tracking-wide" style={{ color: accent }}>{k === "protein" ? "Proteína" : k === "carbs" ? "Carbos" : k === "fat" ? "Grasas" : "Fibra"}</p>
                     <input type="number" value={editResult[k]}
                       onChange={(e) => {
-                        const val = Number(e.target.value);
+                        const raw = e.target.value;
+                        if (raw === "") return;
+                        const v = Number(raw);
                         if (k === "fiber") {
-                          setEditResult({ ...editResult, fiber: val });
+                          setEditResult({ ...editResult, fiber: v });
                         } else {
-                          handleEditMacro(k, val);
+                          handleEditMacro(k, v);
                         }
                       }}
                       className={`w-16 mx-auto text-center text-lg font-bold bg-transparent border-b-2 focus:outline-none dark:text-gray-100 transition-all duration-300 ${changed ? "ring-2 ring-offset-1" : ""}`}
