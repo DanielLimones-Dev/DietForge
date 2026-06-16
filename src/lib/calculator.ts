@@ -15,6 +15,8 @@ const GOAL_ADJUSTMENTS: Record<Goal, { kcal: number }> = {
   gain_weight: { kcal: 500 },
 };
 
+const MACRO_SPLIT = { carbs: 0.5, protein: 0.23, fat: 0.27 };
+
 export function calculateBodyFatFromSkinfolds(
   skinfolds: {
     chest?: number;
@@ -78,20 +80,27 @@ export function calculateMacros(
 ): MacroResult {
   let tmb: number;
   if (bodyFat && bodyFat > 0) {
-    tmb = calculateKatchMcArdle(weight, bodyFat);
+    const lbm = weight * (1 - bodyFat / 100);
+    const fm = weight - lbm;
+    if (sex === "male") {
+      tmb = 13.587 * lbm + 9.613 * fm + 198 - 3.351 * age + 674;
+    } else {
+      tmb = 13.587 * lbm + 9.613 * fm - 3.351 * age + 674;
+    }
   } else {
-    tmb = calculateMifflinStJeor(weight, height, age, sex);
+    if (sex === "male") {
+      tmb = 10 * weight + 6.25 * height - 5 * age + 5;
+    } else {
+      tmb = 10 * weight + 6.25 * height - 5 * age - 161;
+    }
   }
 
-  const tdee = Math.round(tmb * ACTIVITY_MULTIPLIERS[activityLevel]);
+  const tdee = Math.round(tmb * ACTIVITY_MULTIPLIERS[activityLevel] * 1.1);
   const adjustedKcal = tdee + GOAL_ADJUSTMENTS[goal].kcal;
 
-  const protein = Math.round(weight * (goal === "build_muscle" ? 2.2 : 1.8));
-  const fat = Math.round(weight * 0.8);
-  const proteinKcal = protein * 4;
-  const fatKcal = fat * 9;
-  const carbsKcal = adjustedKcal - proteinKcal - fatKcal;
-  const carbs = Math.round(Math.max(0, carbsKcal / 4));
+  const protein = Math.round(adjustedKcal * MACRO_SPLIT.protein / 4);
+  const fat = Math.round(adjustedKcal * MACRO_SPLIT.fat / 9);
+  const carbs = Math.round(adjustedKcal * MACRO_SPLIT.carbs / 4);
   const fiber = Math.round(weight * 0.3);
   const antioxidants = 1;
 
