@@ -608,6 +608,19 @@ export function ClientDetail() {
               );
             })}
           </div>
+          {editResult && (() => {
+            const actual = editResult.protein * 4 + editResult.carbs * 4 + editResult.fat * 9;
+            const diff = actual - editResult.tdee;
+            if (Math.abs(diff) <= 5) return null;
+            return (
+              <div className={`mt-2 flex items-center gap-1.5 text-[11px] font-medium ${diff > 0 ? "text-amber-600 dark:text-amber-400" : "text-blue-600 dark:text-blue-400"}`}>
+                <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>
+                {diff > 0
+                  ? `Sobran ${diff} kcal (${actual} vs ${editResult.tdee} objetivo)`
+                  : `Faltan ${Math.abs(diff)} kcal (${actual} vs ${editResult.tdee} objetivo)`}
+              </div>
+            );
+          })()}
           {!editResult && (
             <button onClick={() => { setEditResult({ ...latest }); setChangedFields(new Set()); }}
               className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-all shadow-sm animate-scale-in">
@@ -986,6 +999,19 @@ export function ClientDetail() {
                 );
               })}
             </div>
+            {(() => {
+              const actual = editResult.protein * 4 + editResult.carbs * 4 + editResult.fat * 9;
+              const diff = actual - editResult.tdee;
+              if (Math.abs(diff) <= 5) return null;
+              return (
+                <div className={`mt-2 flex items-center gap-1.5 text-[11px] font-medium ${diff > 0 ? "text-amber-600 dark:text-amber-400" : "text-blue-600 dark:text-blue-400"}`}>
+                  <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="10"/></svg>
+                  {diff > 0
+                    ? `Sobran ${diff} kcal (${actual} vs ${editResult.tdee} objetivo)`
+                    : `Faltan ${Math.abs(diff)} kcal (${actual} vs ${editResult.tdee} objetivo)`}
+                </div>
+              );
+            })()}
             {changedFields.size > 0 && result && (
               <div className="mt-3 text-[11px] animate-slide-up">
                 <table className="w-full max-w-md mx-auto">
