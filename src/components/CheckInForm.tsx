@@ -48,7 +48,7 @@ export function CheckInForm({ clientId, existing, onSave, onCancel }: Props) {
 
   useEffect(() => {
     if (!existing) return;
-    setDate(new Date(existing.date).toISOString().slice(0, 10));
+    setDate(existing.date.slice(0, 10));
     setWeight(String(existing.weight));
     setBodyFat(existing.body_fat ? String(existing.body_fat) : "");
     setMeasurements(existing.measurements ? Object.fromEntries(Object.entries(existing.measurements).map(([k, v]) => [k, String(v)])) : {});
@@ -128,7 +128,7 @@ export function CheckInForm({ clientId, existing, onSave, onCancel }: Props) {
 
     const checkinData: Omit<CheckIn, "id"> = {
       client_id: clientId,
-      date: new Date(date).toISOString(),
+      date,
       weight: w,
       body_fat: bodyFat ? Number(bodyFat) : undefined,
       measurements: Object.keys(meas).length > 0

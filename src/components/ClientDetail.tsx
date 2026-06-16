@@ -127,7 +127,7 @@ export function ClientDetail() {
   interface ChartPoint { date: string; weight: number; bodyFat: number | undefined }
   const weightChart: ChartPoint[] = [
     ...measurements.map((m) => ({ date: m.date.slice(0, 10), weight: m.weight, bodyFat: m.body_fat })),
-    ...checkins.map((c) => ({ date: new Date(c.date).toISOString().slice(0, 10), weight: c.weight, bodyFat: c.body_fat })),
+    ...checkins.map((c) => ({ date: c.date.slice(0, 10), weight: c.weight, bodyFat: c.body_fat })),
   ]
     .filter((p) => p.weight > 0)
     .sort((a, b) => a.date.localeCompare(b.date))
