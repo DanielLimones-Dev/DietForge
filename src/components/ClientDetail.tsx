@@ -68,6 +68,17 @@ export function ClientDetail() {
 
   const handleEditMacro = (field: string, value: number) => {
     if (!editResult) return;
+    if (field === "tdee") {
+      setEditResult({
+        ...editResult,
+        tdee: value,
+        protein: Math.round(value * 0.23 / 4),
+        carbs: Math.round(value * 0.50 / 4),
+        fat: Math.round(value * 0.27 / 9),
+      });
+      setChangedFields((prev) => new Set(prev).add("tdee"));
+      return;
+    }
     setEditResult({ ...editResult, [field]: value });
     setChangedFields((prev) => new Set(prev).add(field));
   };
