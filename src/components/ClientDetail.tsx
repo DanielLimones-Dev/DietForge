@@ -132,10 +132,11 @@ export function ClientDetail() {
     .sort((a, b) => a.date.localeCompare(b.date))
     .reduce<ChartPoint[]>((acc, p) => {
       const last = acc[acc.length - 1];
-      if (last && last.date === p.date && last.weight === p.weight && last.bodyFat === p.bodyFat) {
-        return acc;
+      if (last && last.date === p.date) {
+        acc[acc.length - 1] = p;
+      } else {
+        acc.push(p);
       }
-      acc.push(p);
       return acc;
     }, []);
 
