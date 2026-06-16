@@ -662,11 +662,9 @@ export function ClientDetail() {
               <div className="flex gap-2 mt-3">
                 <button onClick={() => {
                   const m = editResult;
-                  const now = new Date();
                   db.updateMeasurement(latest.id, {
                     tmb: m.tmb, tdee: m.tdee, protein: m.protein, carbs: m.carbs,
                     fat: m.fat, fiber: m.fiber, antioxidants: m.antioxidants,
-                    date: new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString(),
                   });
                   setCheckinVersion((v) => v + 1);
                   setEditResult(null);
