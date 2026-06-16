@@ -31,7 +31,9 @@ interface Props {
 
 export function CheckInForm({ clientId, existing, onSave, onCancel }: Props) {
   const { toast } = useToast();
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const [date, setDate] = useState(todayStr);
   const [weight, setWeight] = useState("");
   const [bodyFat, setBodyFat] = useState("");
   const [measurements, setMeasurements] = useState<Record<string, string>>({});
