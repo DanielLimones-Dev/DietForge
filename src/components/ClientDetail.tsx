@@ -68,24 +68,8 @@ export function ClientDetail() {
 
   const handleEditMacro = (field: string, value: number) => {
     if (!editResult) return;
-    if (field === "tdee") {
-      if (!editResult) return;
-      const newCarbs = Math.round(Math.max(0, (value - editResult.protein * 4 - editResult.fat * 9) / 4));
-      setEditResult({ ...editResult, tdee: value, carbs: newCarbs });
-      setChangedFields((prev) => new Set(prev).add("tdee"));
-      return;
-    }
-    if (!["protein", "carbs", "fat"].includes(field)) {
-      setEditResult({ ...editResult, [field]: value });
-      return;
-    }
-    const f = field as "protein" | "carbs" | "fat";
-    const adjusted = adjustMacroField(
-      { protein: editResult.protein, carbs: editResult.carbs, fat: editResult.fat },
-      f, value, editResult.tdee,
-    );
-    setEditResult({ ...editResult, ...adjusted });
-    setChangedFields((prev) => new Set(prev).add(f));
+    setEditResult({ ...editResult, [field]: value });
+    setChangedFields((prev) => new Set(prev).add(field));
   };
 
   const resetMacros = () => {
