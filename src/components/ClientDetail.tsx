@@ -124,13 +124,24 @@ export function ClientDetail() {
   };
 
   const calcMeas = measurements.find((m) => m.protein > 0 || m.tdee > 0);
-  const weightChart = [
+  interface ChartPoint { date: string; weight: number; bodyFat: number | undefined }
+  const weightChart: ChartPoint[] = [
     ...measurements.map((m) => ({ date: m.date.slice(0, 10), weight: m.weight, bodyFat: m.body_fat })),
     ...checkins.map((c) => ({ date: new Date(c.date).toISOString().slice(0, 10), weight: c.weight, bodyFat: c.body_fat })),
   ]
     .filter((p) => p.weight > 0)
     .sort((a, b) => a.date.localeCompare(b.date))
-    .filter((p, i, arr) => i === 0 || p.date !== arr[i - 1].date || p.weight !== arr[i - 1].weight || p.bodyFat !== arr[i - 1].bodyFat);
+    .reduce<ChartPoint[]>((acc, p) => {
+      const last = acc[acc.length - 1];
+      if (last && last.date === p.date) {
+        if (p.bodyFat !== undefined && last.bodyFat === undefined) {
+          acc[acc.length - 1] = p;
+        }
+      } else {
+        acc.push(p);
+      }
+      return acc;
+    }, []);
 
   const handleCalc = () => {
     const w = Number(calcForm.weight);
