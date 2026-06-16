@@ -67,8 +67,23 @@ export function ClientDetail() {
   const macroFields = ["protein", "carbs", "fat"] as const;
 
   const handleEditMacro = (field: string, value: number) => {
-    if (!editResult || !["protein", "carbs", "fat"].includes(field)) {
-      if (editResult) setEditResult({ ...editResult, [field]: value });
+    if (!editResult) return;
+    if (field === "tdee") {
+      const currentKcal = editResult.protein * 4 + editResult.carbs * 4 + editResult.fat * 9;
+      if (currentKcal <= 0) return;
+      const ratio = value / currentKcal;
+      setEditResult({
+        ...editResult,
+        tdee: value,
+        protein: Math.round(editResult.protein * ratio),
+        carbs: Math.round(editResult.carbs * ratio),
+        fat: Math.round(editResult.fat * ratio),
+      });
+      setChangedFields((prev) => new Set(prev).add("tdee"));
+      return;
+    }
+    if (!["protein", "carbs", "fat"].includes(field)) {
+      setEditResult({ ...editResult, [field]: value });
       return;
     }
     const f = field as "protein" | "carbs" | "fat";
@@ -949,8 +964,10 @@ export function ClientDetail() {
             <div className="grid grid-cols-5 gap-3">
               <div className="text-center p-3 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm stagger-1">
                 <p className="text-[9px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">Calorías</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{editResult.tdee}</p>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">kcal</p>
+                <input type="number" value={editResult.tdee}
+                  onChange={(e) => handleEditMacro("tdee", Number(e.target.value))}
+                  className="w-20 mx-auto text-center text-lg font-bold bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:outline-none dark:text-gray-100" />
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">kcal</p>
               </div>
               {(["protein","carbs","fat","fiber"] as const).map((k, i) => {
                 const accent = k === "protein" ? "#f87171" : k === "carbs" ? "#fbbf24" : k === "fat" ? "#60a5fa" : "#a78bfa";
@@ -1007,7 +1024,9 @@ export function ClientDetail() {
                       <td className="px-2 py-1 font-medium text-gray-800 dark:text-gray-200">Total kcal</td>
                       <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{result.tdee}</td>
                       <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{editResult.tdee}</td>
-                      <td className="text-right px-2 py-1 font-medium text-emerald-600 dark:text-emerald-400">0</td>
+                      <td className={`text-right px-2 py-1 font-medium ${editResult.tdee === result.tdee ? "text-gray-400" : editResult.tdee > result.tdee ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                        {editResult.tdee > result.tdee ? "+" : ""}{editResult.tdee - result.tdee}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
