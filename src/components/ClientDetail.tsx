@@ -344,12 +344,9 @@ export function ClientDetail() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <button onClick={() => { setEditingCheckin(undefined); setShowCheckin(true); }} className="flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-brand-300 dark:border-brand-700 bg-brand-50 dark:bg-brand-900/20 hover:bg-brand-100 dark:hover:bg-brand-900/40 hover:border-brand-400 dark:hover:border-brand-600 transition-all text-sm font-semibold text-brand-700 dark:text-brand-300 cursor-pointer">
           <Camera className="w-4 h-4" /> Check-in
-        </button>
-        <button onClick={() => { setEditingCompetition(undefined); setCompEditorData({ date: new Date().toISOString().slice(0, 10), name: `Peak Week ${new Date().toLocaleDateString("es-MX")}`, category: "", weight: "", placement: "", config: [] }); setShowCompetitionForm(true); }} className="flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 hover:border-purple-400 dark:hover:border-purple-600 transition-all text-sm font-semibold text-purple-700 dark:text-purple-300 cursor-pointer">
-          <Award className="w-4 h-4" /> Peak Week
         </button>
         <button onClick={handleProgressReport} className="flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-purple-300 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 hover:border-purple-400 dark:hover:border-purple-600 transition-all text-sm font-semibold text-purple-700 dark:text-purple-300 cursor-pointer">
           <BarChart3 className="w-4 h-4" /> Reporte Progreso
