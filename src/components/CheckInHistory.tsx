@@ -3,6 +3,11 @@ import { db } from "@/lib/db";
 import { calculateWeightTrend, getRateLabel } from "@/lib/trends";
 import { checkWeightRate } from "@/lib/alerts";
 import { TrendingUp, AlertTriangle, Info, Camera, X, ChevronUp, ChevronDown, Minus, ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+
+function fmtDate(d: string): string {
+  const [y, m, day] = d.slice(0, 10).split("-");
+  return `${day}/${m}/${y}`;
+}
 import type { CheckIn, CompetitionPhase, BodyMeasurements, PhotoRef } from "@/types";
 
 interface Props {
@@ -113,7 +118,7 @@ export function CheckInHistory({ clientId, phase, onEdit, onDelete }: Props) {
           return (
             <div key={c.id} className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors" onClick={() => setDetailView(c)}>
               <div className="flex items-center justify-between mb-1">
-                <p className="text-sm font-medium dark:text-white">{new Date(c.date).toLocaleDateString("es-MX")}</p>
+                <p className="text-sm font-medium dark:text-white">{fmtDate(c.date)}</p>
                 <span className="text-sm font-bold dark:text-white">{c.weight} kg</span>
               </div>
               <div className="flex items-center gap-3 text-[11px] text-gray-500 dark:text-gray-400">
@@ -149,7 +154,7 @@ export function CheckInHistory({ clientId, phase, onEdit, onDelete }: Props) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 overflow-y-auto" onClick={() => setDetailView(null)}>
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-lg mx-4 my-8 max-h-[90vh] overflow-y-auto animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h4 className="font-semibold dark:text-white">Check-in • {new Date(detailView.date).toLocaleDateString("es-MX")}</h4>
+              <h4 className="font-semibold dark:text-white">Check-in • {fmtDate(detailView.date)}</h4>
               <div className="flex items-center gap-1">
                 {onEdit && (
                   <button onClick={() => { onEdit(detailView); setDetailView(null); }} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-400 hover:text-brand-600" title="Editar check-in">
@@ -275,7 +280,7 @@ export function CheckInHistory({ clientId, phase, onEdit, onDelete }: Props) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setSelected(null)}>
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md mx-4 animate-scale-in" onClick={(e) => e.stopPropagation()}>
             <h4 className="font-semibold mb-4 dark:text-white">Feedback del Coach</h4>
-            <p className="text-xs text-gray-400 mb-2">Check-in del {new Date(selected.date).toLocaleDateString("es-MX")} — {selected.weight} kg</p>
+            <p className="text-xs text-gray-400 mb-2">Check-in del {fmtDate(selected.date)} — {selected.weight} kg</p>
             <textarea rows={4} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm dark:bg-gray-800 dark:text-gray-100 mb-4"
               value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Escribe tu feedback para el cliente..." />
             <div className="flex gap-3">

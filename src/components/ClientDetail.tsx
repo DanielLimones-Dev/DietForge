@@ -314,9 +314,9 @@ export function ClientDetail() {
         <div className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm mb-4 ${new Date(client.next_check_in_date).getTime() < Date.now() ? "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800" : "bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800"}`}>
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           {new Date(client.next_check_in_date).getTime() < Date.now() ? (
-            <><span className="font-semibold">Check-in vencido</span> — {new Date(client.next_check_in_date).toLocaleDateString("es-MX")}</>
+            <><span className="font-semibold">Check-in vencido</span> — {client.next_check_in_date.slice(0, 10)}</>
           ) : (
-            <><span className="font-semibold">Próximo check-in</span>: {new Date(client.next_check_in_date).toLocaleDateString("es-MX")}</>
+            <><span className="font-semibold">Próximo check-in</span>: {client.next_check_in_date.slice(0, 10)}</>
           )}
         </div>
       )}
@@ -573,7 +573,7 @@ export function ClientDetail() {
         <div className="mb-4 animate-slide-down">
           {!editResult && (
             <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-              Últimos macros • {new Date(latest.date).toLocaleDateString("es-MX")}
+              Últimos macros • {latest.date.slice(0, 10)}
             </p>
           )}
           <div className="grid grid-cols-5 gap-3">
@@ -1009,7 +1009,7 @@ export function ClientDetail() {
                   {isPast && <span className="text-[10px] text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">Finalizada</span>}
                 </div>
                 <p className="text-xs text-gray-400 dark:text-gray-500">
-                  <span className="inline-flex items-center gap-1"><svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> {new Date(c.date).toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span>
+                  <span className="inline-flex items-center gap-1"><svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>                   {c.date.slice(0, 10)}</span>
                   {c.placement && <span className="ml-2 inline-flex items-center gap-1"><svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg> #{c.placement}</span>}
                   {c.weight && <span className="ml-2 inline-flex items-center gap-1"><svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v18M3 12h18"/></svg> {c.weight} kg</span>}
                 </p>
