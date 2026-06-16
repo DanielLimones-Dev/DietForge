@@ -124,11 +124,13 @@ export function ClientDetail() {
   };
 
   const calcMeas = measurements.find((m) => m.protein > 0 || m.tdee > 0);
-  const lastCheckin = checkins[0];
   const weightChart = [
-    ...(calcMeas ? [{ date: calcMeas.date.slice(0, 10), weight: calcMeas.weight, bodyFat: calcMeas.body_fat }] : []),
-    ...(lastCheckin ? [{ date: new Date(lastCheckin.date).toISOString().slice(0, 10), weight: lastCheckin.weight, bodyFat: lastCheckin.body_fat }] : []),
-  ].filter((p) => p.weight > 0);
+    ...measurements.map((m) => ({ date: m.date.slice(0, 10), weight: m.weight, bodyFat: m.body_fat })),
+    ...checkins.map((c) => ({ date: new Date(c.date).toISOString().slice(0, 10), weight: c.weight, bodyFat: c.body_fat })),
+  ]
+    .filter((p) => p.weight > 0)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .filter((p, i, arr) => i === 0 || p.date !== arr[i - 1].date);
 
   const handleCalc = () => {
     const w = Number(calcForm.weight);
