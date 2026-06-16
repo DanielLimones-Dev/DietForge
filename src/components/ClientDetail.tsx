@@ -69,16 +69,9 @@ export function ClientDetail() {
   const handleEditMacro = (field: string, value: number) => {
     if (!editResult) return;
     if (field === "tdee") {
-      const currentKcal = editResult.protein * 4 + editResult.carbs * 4 + editResult.fat * 9;
-      if (currentKcal <= 0) return;
-      const ratio = value / currentKcal;
-      setEditResult({
-        ...editResult,
-        tdee: value,
-        protein: Math.round(editResult.protein * ratio),
-        carbs: Math.round(editResult.carbs * ratio),
-        fat: Math.round(editResult.fat * ratio),
-      });
+      if (!editResult) return;
+      const newCarbs = Math.round(Math.max(0, (value - editResult.protein * 4 - editResult.fat * 9) / 4));
+      setEditResult({ ...editResult, tdee: value, carbs: newCarbs });
       setChangedFields((prev) => new Set(prev).add("tdee"));
       return;
     }
