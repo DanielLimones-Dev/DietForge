@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Users, Apple, FileText, TrendingUp, ArrowRight, Sparkles, BarChart3, LayoutDashboard } from "lucide-react";
-import { db } from "@/lib/db";
+import { Users, Apple, FileText, TrendingUp, ArrowRight, Sparkles, BarChart3, LayoutDashboard, HardDrive } from "lucide-react";
+import { db, checkStorageQuota, QUOTA_WARNING_KEY } from "@/lib/db";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { STRIPE_PAYMENT_LINK_MONTHLY, daysUntilExpiry, clearStoredEmail } from "@/lib/subscription";
 import { openExternal } from "@/lib/openExternal";
@@ -35,6 +35,12 @@ export function Dashboard() {
   const { email, status, trialActive, trialDaysLeft } = useSubscription();
   const daysLeft = daysUntilExpiry(status.expiresAt);
   const isExpiring = status.active && daysLeft !== null && daysLeft <= 7;
+  const [quota, setQuota] = useState(() => checkStorageQuota());
+
+  useEffect(() => {
+    const interval = setInterval(() => setQuota(checkStorageQuota()), 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const cards = [
     { label: "Clientes", value: stats.clients, icon: Users, to: "/clients" },
@@ -78,6 +84,15 @@ export function Dashboard() {
           </Link>
         ))}
       </div>
+
+      {!quota.ok && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 p-4 flex items-center gap-3">
+          <HardDrive className="w-5 h-5 text-amber-500 shrink-0" />
+          <div className="text-sm text-amber-700 dark:text-amber-400">
+            Almacenamiento casi lleno ({quota.percent.toFixed(0)}%). Reduce el tamaño de las fotos o elimina datos antiguos para evitar pérdida de información.
+          </div>
+        </div>
+      )}
 
       {email && (
       <div className="bg-white dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between flex-wrap gap-3">

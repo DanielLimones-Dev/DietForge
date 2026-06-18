@@ -5,6 +5,26 @@ import type {
 import { classifyCarbs } from "@/lib/nutrition";
 import { checkSubscription, clearSubscriptionCache, type SubscriptionStatus } from "@/lib/supabase";
 
+export const QUOTA_WARNING_KEY = "dietforge_quota_warned";
+
+export function checkStorageQuota(): { used: number; limit: number; percent: number; ok: boolean } {
+  const limit = 4.5 * 1024 * 1024;
+  let used = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key) {
+      const val = localStorage.getItem(key);
+      if (val) used += key.length + val.length;
+    }
+  }
+  const percent = (used / limit) * 100;
+  const ok = percent < 80;
+  if (percent >= 80 && !localStorage.getItem(QUOTA_WARNING_KEY)) {
+    localStorage.setItem(QUOTA_WARNING_KEY, "1");
+  }
+  return { used, limit, percent, ok };
+}
+
 const DB_KEY = "dietforge_db";
 const TEMPLATES_KEY = "dietforge_templates";
 const SEED_VERSION = 2;
@@ -49,7 +69,24 @@ loadFromLocalStorage();
 function loadFromLocalStorage() {
   try {
     const raw = localStorage.getItem(DB_KEY);
-    if (raw) cache = JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object" && "clients" in parsed) {
+        cache = parsed;
+        return;
+      }
+    }
+  } catch { /* empty */ }
+  try {
+    const backup = localStorage.getItem(DB_KEY + "_backup");
+    if (backup) {
+      const parsed = JSON.parse(backup);
+      if (parsed && typeof parsed === "object" && "clients" in parsed && parsed.clients.length > 0) {
+        cache = parsed;
+        localStorage.setItem(DB_KEY, backup);
+        return;
+      }
+    }
   } catch { /* empty */ }
   try {
     templatesCache = JSON.parse(localStorage.getItem(TEMPLATES_KEY) || "[]");
@@ -58,7 +95,9 @@ function loadFromLocalStorage() {
 
 function saveToLocalStorage() {
   try {
-    localStorage.setItem(DB_KEY, JSON.stringify(cache));
+    const data = JSON.stringify(cache);
+    localStorage.setItem(DB_KEY, data);
+    localStorage.setItem(DB_KEY + "_backup", data);
   } catch {
     console.warn("localStorage lleno — datos no guardados");
   }
@@ -514,10 +553,10 @@ export const db = {
   }),
 
   seedFoods: () => {
-    if (cache.foods.length > 0 && (cache as Database).seed_version === SEED_VERSION) return;
+    if (cache.foods.length > 0 && "seed_version" in cache && cache.seed_version === SEED_VERSION) return;
     cache.foods = [];
     cache.nextId.foods = 1;
-    (cache as Database).seed_version = SEED_VERSION;
+    cache.seed_version = SEED_VERSION;
     const defaultFoods: Omit<Food, "id">[] = [
       { name: "Pechuga de pollo", category: "protein", protein: 31, carbs: 0, fat: 3.6, fiber: 0, antioxidants: 0, kcal: 165, serving_size: 100, serving_unit: "g", source: "manual" },
       { name: "Muslo de pollo sin piel", category: "protein", protein: 26, carbs: 0, fat: 8, fiber: 0, antioxidants: 0, kcal: 175, serving_size: 100, serving_unit: "g", source: "manual" },
