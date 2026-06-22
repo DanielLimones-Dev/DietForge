@@ -1,42 +1,75 @@
-name: Build
+name: Build DietForge
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
 jobs:
-  macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: "20" }
-      - run: npm install
-      - run: npm run tauri build
-        env:
-          VITE_FATSECRET_CONSUMER_KEY: ${{ secrets.FS_CONSUMER_KEY }}
-          VITE_FATSECRET_CONSUMER_SECRET: ${{ secrets.FS_CONSUMER_SECRET }}
-          VITE_FATSECRET_WORKER: ${{ secrets.FS_WORKER_URL }}
-          VITE_USDA_API_KEY: ${{ secrets.USDA_API_KEY }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: dietforge-macos
-          path: src-tauri/target/release/bundle/dmg/*.dmg
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
-  windows:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      VITE_FATSECRET_WORKER: ${{ secrets.VITE_FATSECRET_WORKER }}
+      VITE_FATSECRET_CONSUMER_KEY: ${{ secrets.VITE_FATSECRET_CONSUMER_KEY }}
+      VITE_FATSECRET_CONSUMER_SECRET: ${{ secrets.VITE_FATSECRET_CONSUMER_SECRET }}
+      VITE_USDA_API_KEY: ${{ secrets.VITE_USDA_API_KEY }}
+      VITE_STRIPE_PAYMENT_LINK_MONTHLY: ${{ secrets.VITE_STRIPE_PAYMENT_LINK_MONTHLY }}
+      VITE_STRIPE_PAYMENT_LINK_ANNUAL: ${{ secrets.VITE_STRIPE_PAYMENT_LINK_ANNUAL }}
+
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: "20" }
-      - run: npm install
-      - run: npm run tauri build
-        env:
-          VITE_FATSECRET_CONSUMER_KEY: ${{ secrets.FS_CONSUMER_KEY }}
-          VITE_FATSECRET_CONSUMER_SECRET: ${{ secrets.FS_CONSUMER_SECRET }}
-          VITE_FATSECRET_WORKER: ${{ secrets.FS_WORKER_URL }}
-          VITE_USDA_API_KEY: ${{ secrets.USDA_API_KEY }}
-      - uses: actions/upload-artifact@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          name: dietforge-windows
-          path: src-tauri/target/release/bundle/msi/*.msi
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Build frontend
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run build
+
+      - name: Build Tauri app
+        if: matrix.os != 'ubuntu-latest'
+        uses: tauri-apps/tauri-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: --ci
+
+      - name: Upload macOS artifacts
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: DietForge-macos
+          path: |
+            src-tauri/target/release/bundle/dmg/*.dmg
+            src-tauri/target/release/bundle/macos/*.app
+
+      - name: Upload Windows artifacts
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: DietForge-windows
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
