@@ -19,6 +19,7 @@ dist-ssr
 
 # Rust/Tauri
 src-tauri/target/
+!src-tauri/target/release/bundle/
 
 # Build artifacts
 *.tsbuildinfo
