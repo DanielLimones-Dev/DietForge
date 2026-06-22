@@ -15,7 +15,7 @@ const GOAL_BADGES: Record<Goal, { label: string; classes: string }> = {
 };
 
 function isOverdue(client: Client): boolean {
-  if (!client.next_check_in_date) return false;
+  if (!client.next_check_in_date) return true;
   return new Date(client.next_check_in_date).getTime() < Date.now();
 }
 
