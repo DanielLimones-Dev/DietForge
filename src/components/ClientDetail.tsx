@@ -15,7 +15,7 @@ import { PeakWeekSimulator } from "./PeakWeekSimulator";
 import { CompetitionPeakWeekEditor } from "./CompetitionPeakWeekEditor";
 import { ConfirmDialog } from "./ui";
 import { useToast } from "./Toast";
-import { ArrowLeft, FileText, TrendingUp, History, Ruler, Camera, Download, BarChart3, Award, Activity } from "lucide-react";
+import { ArrowLeft, FileText, TrendingUp, History, Ruler, Camera, Download, BarChart3, Award, Activity, Moon } from "lucide-react";
 import type {
   Client, ClientMeasurement, ActivityLevel, Goal, MacroResult,
   DietTemplate, MealTime, CompetitionPhase, CheckIn, Competition, PeakWeekDayConfig,
@@ -23,6 +23,8 @@ import type {
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
+
+const REST_DAY_MODIFIER = 0.75;
 
 export function ClientDetail() {
   const { id } = useParams();
@@ -36,6 +38,7 @@ export function ClientDetail() {
   const [templates, setTemplates] = useState<DietTemplate[]>([]);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showCheckin, setShowCheckin] = useState(false);
+  const [showRestDay, setShowRestDay] = useState(false);
   const [editingCheckin, setEditingCheckin] = useState<CheckIn | undefined>(undefined);
   const [checkinVersion, setCheckinVersion] = useState(0);
   const [showCompetitionForm, setShowCompetitionForm] = useState(false);
@@ -214,19 +217,37 @@ export function ClientDetail() {
     setCheckinVersion((v) => v + 1);
   };
 
-  const handleCreatePlan = () => {
+  const handleCreatePlan = (isRestDay?: boolean) => {
     let macros = editResult || result || latest;
     if (!macros) return;
     if (selectedPhase && latest) {
       macros = calculatePhaseMacros(macros, latest.weight, selectedPhase);
     }
+    const useRest = isRestDay ?? showRestDay;
+    const suffix = useRest ? " — Rest Day" : "";
+    const planMacros = useRest ? {
+      tdee: Math.round(macros.tdee * REST_DAY_MODIFIER),
+      protein: Math.round(macros.protein * REST_DAY_MODIFIER),
+      carbs: Math.round(macros.carbs * REST_DAY_MODIFIER),
+      fat: Math.round(macros.fat * REST_DAY_MODIFIER),
+      fiber: macros.fiber,
+      antioxidants: macros.antioxidants,
+      tmb: macros.tmb,
+    } : macros;
     const plan = db.saveMealPlan({
       client_id: clientId, measurement_id: latest?.id ?? 0, date: new Date().toISOString(),
-      name: `Plan ${new Date().toLocaleDateString("es-MX")}`,
-      total_kcal: macros.tdee, total_protein: macros.protein, total_carbs: macros.carbs,
-      total_fat: macros.fat, total_fiber: macros.fiber, total_antioxidants: macros.antioxidants,
+      name: `Plan ${new Date().toLocaleDateString("es-MX")}${suffix}`,
+      total_kcal: planMacros.tdee, total_protein: planMacros.protein, total_carbs: planMacros.carbs,
+      total_fat: planMacros.fat, total_fiber: planMacros.fiber, total_antioxidants: planMacros.antioxidants,
     }, []);
     setPlans(db.getMealPlans(clientId));
+
+    if (useRest) return;
+
+    // Also create rest day plan if toggle is active
+    if (showRestDay) {
+      handleCreatePlan(true);
+    }
     navigate(`/plans/${plan.id}`);
   };
 
@@ -358,9 +379,17 @@ export function ClientDetail() {
           <Award className="w-4 h-4" /> {showPhases ? "Ocultar Fases" : "Fases"}
         </button>
         {(editResult || result || latest) && (
-          <button onClick={handleCreatePlan} className="flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:border-emerald-400 dark:hover:border-emerald-600 transition-all text-sm font-semibold text-emerald-700 dark:text-emerald-300 cursor-pointer">
+          <button onClick={() => handleCreatePlan()} className="flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:border-emerald-400 dark:hover:border-emerald-600 transition-all text-sm font-semibold text-emerald-700 dark:text-emerald-300 cursor-pointer">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
             Plan de Comidas
+          </button>
+        )}
+        {(editResult || result || latest) && (
+          <button onClick={() => setShowRestDay(!showRestDay)}
+            className={`flex items-center gap-2 p-3 rounded-xl border-2 border-dashed transition-all text-sm font-semibold cursor-pointer ${showRestDay ? "bg-indigo-100 dark:bg-indigo-900/30 border-indigo-400 dark:border-indigo-600 text-indigo-700 dark:text-indigo-300" : "border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:border-indigo-300 dark:hover:border-indigo-600"}`}>
+            <Moon className="w-4 h-4" />
+            Rest Day
+            {showRestDay && <span className="ml-1 text-[10px] opacity-70">activo</span>}
           </button>
         )}
       </div>
@@ -959,7 +988,7 @@ export function ClientDetail() {
                 Calcular Macros
               </button>
               {result && (
-                <button onClick={handleCreatePlan}
+                <button onClick={() => handleCreatePlan()}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 active:scale-[0.98] transition-all shadow-sm animate-scale-in">
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
                   Crear Plan de Comidas
@@ -1194,10 +1223,15 @@ export function ClientDetail() {
           {plans.length > 0 && <button onClick={handleDeleteAllPlans} className="text-[11px] text-red-400 hover:text-red-500 transition-colors">Eliminar todos</button>}
         </div>
         <div className="divide-y divide-gray-100 dark:divide-gray-700">
-          {plans.map((p) => (
-            <div key={p.id} className="px-5 py-3.5 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+          {plans.map((p) => {
+            const isRestDay = p.name.includes("Rest Day");
+            return (
+            <div key={p.id} className={`px-5 py-3.5 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${isRestDay ? "bg-indigo-50/50 dark:bg-indigo-950/20" : ""}`}>
               <div>
-                <p className="text-sm font-medium dark:text-white">{p.name}</p>
+                <p className="text-sm font-medium dark:text-white flex items-center gap-2">
+                  {p.name}
+                  {isRestDay && <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"><Moon className="w-2.5 h-2.5" /> Rest</span>}
+                </p>
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                   <span className="font-medium text-gray-600 dark:text-gray-400">{p.total_kcal} kcal</span>
                   <span className="mx-1.5 text-gray-300 dark:text-gray-600">·</span>
@@ -1216,7 +1250,8 @@ export function ClientDetail() {
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
           {plans.length === 0 && <p className="p-6 text-sm text-gray-400 text-center">Aún no hay planes. Calcula macros y crea el primer plan.</p>}
         </div>
       </div>
