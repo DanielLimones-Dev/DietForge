@@ -50,7 +50,7 @@ jobs:
 
       - name: Build Tauri app
         if: matrix.os != 'ubuntu-latest'
-        uses: tauri-apps/tauri-action@v2
+        uses: tauri-apps/tauri-action@dev
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
