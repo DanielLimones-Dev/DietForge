@@ -1,12 +1,12 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Printer, Plus, Scale, X, Target, Pencil, Globe } from "lucide-react";
+import { ArrowLeft, Printer, Plus, Scale, X, Target, Pencil, Globe, Moon } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { db } from "@/lib/db";
 import { generateDietPDF } from "@/lib/pdf";
 import { searchFatSecret, classifyCarbs } from "@/lib/nutrition";
 import { adjustMacroField } from "@/lib/calculator";
-import type { Food, MealPlanItem, MealTime } from "@/types";
+import type { Food, MealPlan, MealPlanItem, MealTime } from "@/types";
 import { ConfirmDialog, PromptDialog } from "./ui";
 
 const MEAL_LABELS: Record<string, string> = {
@@ -45,6 +45,7 @@ export function MealPlanner() {
   const planId = Number(id);
 
   const [plan, setPlan] = useState(() => db.getMealPlan(planId));
+  const [planRight, setPlanRight] = useState<{ plan: MealPlan; items: MealPlanItem[] } | null>(null);
   const [client, setClient] = useState(() => db.getClient(plan?.plan.client_id || 0));
   const [foods, setFoods] = useState<Food[]>(() => db.getFoods());
   const [search, setSearch] = useState("");
@@ -52,6 +53,8 @@ export function MealPlanner() {
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editItemQty, setEditItemQty] = useState(0);
   const [selectedMeal, setSelectedMeal] = useState<string | null>(null);
+  const [targetColumn, setTargetColumn] = useState<"left" | "right">("left");
+  const [selectedMealRight, setSelectedMealRight] = useState<string | null>(null);
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
   const [foodQuantity, setFoodQuantity] = useState(100);
   const [foodUnit, setFoodUnit] = useState("g");
@@ -61,9 +64,11 @@ export function MealPlanner() {
   const [removeItemId, setRemoveItemId] = useState<number | null>(null);
   const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
   const [mealCount, setMealCount] = useState(3);
+  const [mealCountRight, setMealCountRight] = useState(3);
   const [editingName, setEditingName] = useState(false);
   const [editName, setEditName] = useState("");
   const [origTargets, setOrigTargets] = useState({ kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
+  const [restDay, setRestDay] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [, setTick] = useState(0);
 
@@ -151,6 +156,31 @@ export function MealPlanner() {
   const isLive = hasMeas;
   const noTargets = !hasMeas && !(plan.plan.total_kcal > 0);
   const filled = allItemsTotals;
+  const filledRight = useMemo(() => {
+    if (!planRight) return { kcal: 0, protein: 0, carbs: 0, fat: 0 };
+    return planRight.items.reduce(
+      (acc, i) => {
+        const f = db.getFood(i.food_id);
+        if (!f) return acc;
+        const ratio = i.quantity / f.serving_size;
+        return {
+          kcal: acc.kcal + f.kcal * ratio,
+          protein: acc.protein + f.protein * ratio,
+          carbs: acc.carbs + f.carbs * ratio,
+          fat: acc.fat + f.fat * ratio,
+        };
+      },
+      { kcal: 0, protein: 0, carbs: 0, fat: 0 },
+    );
+  }, [planRight]);
+  const normalTarget = target;
+  const restDayTarget = {
+    total_kcal: Math.round(target.total_kcal * 0.75),
+    total_protein: Math.round(target.total_protein * 0.75),
+    total_carbs: Math.round(target.total_carbs * 0.75),
+    total_fat: Math.round(target.total_fat * 0.75),
+    total_fiber: Math.round(target.total_fiber * 0.75),
+  };
 
   const handleOpenFoodCard = (food: Food) => {
     if (!food.id) {
@@ -180,10 +210,113 @@ export function MealPlanner() {
     setFoodUnit(food.serving_unit);
   };
 
+  const renderMealColumn = (
+    planData: { plan: MealPlan; items: MealPlanItem[] } | null,
+    mult: number,
+    showWorkout: boolean,
+    readOnly: boolean,
+    column: "left" | "right",
+    selMeal: string | null,
+    setSelMeal: (v: string | null) => void,
+    count: number,
+  ) => {
+    if (!planData) return null;
+    const columnGrouped: Record<string, MealPlanItem[]> = {};
+    for (const item of planData.items) {
+      if (!columnGrouped[item.meal_time]) columnGrouped[item.meal_time] = [];
+      columnGrouped[item.meal_time].push(item);
+    }
+    const entries = Object.entries(MEAL_LABELS).filter(([key]) => {
+      if (key === "pre_workout" || key === "intra_workout" || key === "post_workout") return showWorkout;
+      if (key.startsWith("meal") && Number(key.slice(4)) <= count) return true;
+      return (columnGrouped[key] || []).length > 0;
+    });
+    return entries.map(([key, label]) => {
+      const items = columnGrouped[key] || [];
+      const total = items.reduce(
+        (acc, i) => {
+          const f = db.getFood(i.food_id);
+          if (!f) return acc;
+          const ratio = i.quantity / f.serving_size;
+          return {
+            kcal: acc.kcal + f.kcal * ratio,
+            protein: acc.protein + f.protein * ratio,
+            carbs: acc.carbs + f.carbs * ratio,
+            fat: acc.fat + f.fat * ratio,
+          };
+        },
+        { kcal: 0, protein: 0, carbs: 0, fat: 0 },
+      );
+      const sel = selMeal === key && targetColumn === column;
+      return (
+        <div key={key} className={`overflow-hidden transition-all duration-200 ${sel ? "ring-2 ring-brand-500 border-brand-500 bg-brand-50 dark:bg-brand-900/15 shadow-md" : readOnly ? "border-indigo-200 dark:border-indigo-800" : "border-gray-200 dark:border-gray-700 shadow-sm"} bg-white dark:bg-gray-900 rounded-xl border`}>
+          <div className={`flex items-center justify-between px-4 py-3 bg-gradient-to-r ${readOnly ? "from-indigo-50 to-white dark:from-indigo-950/20 dark:to-gray-900" : "from-brand-50 to-white dark:from-brand-900/20 dark:to-gray-900"} border-b border-gray-100 dark:border-gray-800 cursor-pointer`}
+            onClick={() => { setTargetColumn(column); setSelMeal(selMeal === key && targetColumn === column ? null : key); }}>
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${items.length > 0 ? "bg-green-400" : "bg-gray-300"}`} />
+              <h4 className="font-semibold text-sm dark:text-white">{label}</h4>
+              {CARB_SUGGESTIONS[key] && !readOnly && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded border ${CARB_SUGGESTIONS[key].color}`}>
+                  {CARB_SUGGESTIONS[key].desc}
+                </span>
+              )}
+            </div>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              {Math.round(total.kcal * mult)} kcal · P:{Math.round(total.protein * mult)}g · C:{Math.round(total.carbs * mult)}g · G:{Math.round(total.fat * mult)}g
+            </span>
+          </div>
+          {items.length > 0 ? (
+            <div className="space-y-1.5 px-4 py-3">
+              {items.map((item) => {
+                const f = db.getFood(item.food_id);
+                if (!f) return null;
+                const ratio = item.quantity / f.serving_size;
+                return (
+                  <div key={item.id} className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 group flex-wrap ${readOnly ? "bg-indigo-50/50 dark:bg-indigo-950/10" : "bg-gray-50 dark:bg-gray-800"}`}>
+                    <span className="font-medium truncate dark:text-white min-w-0 flex-1">{f.name}</span>
+                    <span className="text-gray-400 dark:text-gray-500 text-xs shrink-0">
+                      ({(f.protein * ratio * mult).toFixed(1)}p / {(f.carbs * ratio * mult).toFixed(1)}c / {(f.fat * ratio * mult).toFixed(1)}g)
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {editingItemId === item.id ? (
+                        <div className="flex items-center gap-1">
+                          <input type="number" min={1} value={editItemQty}
+                            onChange={(e) => setEditItemQty(Math.max(1, Number(e.target.value) || 0))}
+                            onBlur={() => handleUpdateItemQty(item.id)}
+                            onKeyDown={(e) => e.key === "Enter" && handleUpdateItemQty(item.id)}
+                            className="w-16 text-xs text-right px-1 py-0.5 border border-brand-500 rounded outline-none focus:ring-1 focus:ring-brand-500" autoFocus />
+                          <span className="text-xs text-gray-400 dark:text-gray-500">{item.serving_unit}</span>
+                        </div>
+                      ) : (
+                        <span onClick={() => { setEditingItemId(item.id); setEditItemQty(item.quantity); }}
+                          className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer hover:text-brand-600 hover:underline">
+                          {item.quantity}{item.serving_unit}
+                        </span>
+                      )}
+                      <button onClick={(e) => { e.stopPropagation(); setRemoveItemId(item.id); }}
+                        className="p-1 text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400 dark:text-gray-500 px-4 py-3">
+              Vacío. {selectedMeal === key ? "Elige un alimento de la lista →" : "Selecciona esta comida."}
+            </p>
+          )}
+        </div>
+      );
+    });
+  };
+
   const handleAddFood = () => {
     if (!selectedFood || !selectedMeal) return;
+    const targetPlanId = targetColumn === "right" && planRight ? planRight.plan.id : planId;
     db.addMealPlanItem({
-      meal_plan_id: planId,
+      meal_plan_id: targetPlanId,
       meal_time: selectedMeal as MealTime,
       food_id: selectedFood.id,
       quantity: foodQuantity,
@@ -191,11 +324,13 @@ export function MealPlanner() {
     });
     setSelectedFood(null);
     setPlan(db.getMealPlan(planId));
+    if (planRight) setPlanRight(db.getMealPlan(planRight.plan.id) || null);
   };
 
   const handleRemoveItem = (itemId: number) => {
     db.deleteMealPlanItem(itemId);
     setPlan(db.getMealPlan(planId));
+    if (planRight) setPlanRight(db.getMealPlan(planRight.plan.id) || null);
     setRemoveItemId(null);
   };
 
@@ -207,6 +342,16 @@ export function MealPlanner() {
       total_fat: Number(editTargets.fat),
       total_fiber: Number(editTargets.fiber),
     });
+    if (planRight) {
+      db.updateMealPlan(planRight.plan.id, {
+        total_kcal: Math.round(Number(editTargets.kcal) * 0.75),
+        total_protein: Math.round(Number(editTargets.protein) * 0.75),
+        total_carbs: Math.round(Number(editTargets.carbs) * 0.75),
+        total_fat: Math.round(Number(editTargets.fat) * 0.75),
+        total_fiber: Math.round(Number(editTargets.fiber) * 0.75),
+      });
+      setPlanRight(db.getMealPlan(planRight.plan.id) || null);
+    }
     setPlan(db.getMealPlan(planId));
     setEditingTargets(false);
   };
@@ -215,6 +360,7 @@ export function MealPlanner() {
     if (editItemQty > 0) {
       db.updateMealPlanItem(itemId, { quantity: editItemQty });
       setPlan(db.getMealPlan(planId));
+      if (planRight) setPlanRight(db.getMealPlan(planRight.plan.id) || null);
     }
     setEditingItemId(null);
   };
@@ -297,33 +443,43 @@ export function MealPlanner() {
           <Plus className="w-4 h-4" />
           Plantilla
         </button>
+        <button onClick={() => {
+          if (!restDay && plan) {
+            const items = plan.items.map((i) => ({
+              meal_time: i.meal_time, food_id: i.food_id,
+              quantity: i.quantity, serving_unit: i.serving_unit,
+            }));
+            const rd = db.saveMealPlan({
+              client_id: plan.plan.client_id, measurement_id: plan.plan.measurement_id,
+              date: new Date().toISOString(), name: `${plan.plan.name} — Rest Day`,
+              total_kcal: Math.round(plan.plan.total_kcal * 0.75),
+              total_protein: Math.round(plan.plan.total_protein * 0.75),
+              total_carbs: Math.round(plan.plan.total_carbs * 0.75),
+              total_fat: Math.round(plan.plan.total_fat * 0.75),
+              total_fiber: plan.plan.total_fiber,
+              total_antioxidants: plan.plan.total_antioxidants,
+            }, items);
+            setPlanRight(db.getMealPlan(rd.id) || null);
+          } else {
+            setPlanRight(null);
+            setTargetColumn("left");
+          }
+          setRestDay(!restDay);
+        }}
+          className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${restDay ? "bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"}`}>
+          <Moon className={`w-4 h-4 ${restDay ? "fill-white" : ""}`} />
+          {restDay ? "Rest Day ON" : "Rest Day"}
+        </button>
+        {restDay && (
+          <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400">
+            <Moon className="w-3 h-3" /> -25% Rest Day
+          </span>
+        )}
       </div>
 
       {/* Progress bars */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Target className="w-4 h-4 text-brand-600" />
-          <h3 className="font-semibold text-sm dark:text-white">Progreso contra meta</h3>
-          {isLive && <span className="text-[10px] text-emerald-500 font-medium">Tiempo real</span>}
-          <button
-            onClick={() => {
-              setEditingTargets(!editingTargets);
-              if (!editingTargets) {
-                const planNow = db.getMealPlan(planId);
-                if (planNow) {
-                  setOrigTargets({ kcal: planNow.plan.total_kcal, protein: planNow.plan.total_protein, carbs: planNow.plan.total_carbs, fat: planNow.plan.total_fat, fiber: planNow.plan.total_fiber });
-                }
-                setEditTargets({ kcal: target.total_kcal, protein: target.total_protein, carbs: target.total_carbs, fat: target.total_fat, fiber: target.total_fiber });
-              }
-            }}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-all shadow-sm animate-scale-in"
-          >
-            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Editar macros
-          </button>
-        </div>
-
-        {editingTargets ? (
+      {editingTargets ? (
+        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-6">
           <div className="animate-scale-in">
             <div className="grid grid-cols-3 gap-3 mb-3">
               {(["protein","carbs","fat"] as const).map((k) => {
@@ -401,153 +557,117 @@ export function MealPlanner() {
               </button>
             </div>
           </div>
-        ) : noTargets ? (
-          <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-700 text-center">
-            <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">No hay macros configurados</p>
-            <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Ve a la calculadora para establecer metas, o usa "Ajustar" para definirlas manualmente.</p>
+        </div>
+      ) : restDay ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Target className="w-4 h-4 text-brand-600" />
+              <h3 className="font-semibold text-sm dark:text-white">Progreso — Plan Normal</h3>
+              {isLive && <span className="text-[10px] text-emerald-500 font-medium">Tiempo real</span>}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <MacroBar label="Calorías" current={Math.round(filled.kcal)} total={normalTarget.total_kcal} unit="kcal" color="bg-blue-500" />
+              <MacroBar label="Proteína" current={Math.round(filled.protein)} total={normalTarget.total_protein} unit="g" color="bg-macro-protein" />
+              <MacroBar label="Carbos" current={Math.round(filled.carbs)} total={normalTarget.total_carbs} unit="g" color="bg-macro-carbs" />
+              <MacroBar label="Grasas" current={Math.round(filled.fat)} total={normalTarget.total_fat} unit="g" color="bg-macro-fat" />
+            </div>
+          </div>
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-indigo-200 dark:border-indigo-800 p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Moon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <h3 className="font-semibold text-sm dark:text-white">Progreso — Rest Day</h3>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <MacroBar label="Calorías" current={Math.round(filledRight.kcal)} total={restDayTarget.total_kcal} unit="kcal" color="bg-blue-500" />
+              <MacroBar label="Proteína" current={Math.round(filledRight.protein)} total={restDayTarget.total_protein} unit="g" color="bg-macro-protein" />
+              <MacroBar label="Carbos" current={Math.round(filledRight.carbs)} total={restDayTarget.total_carbs} unit="g" color="bg-macro-carbs" />
+              <MacroBar label="Grasas" current={Math.round(filledRight.fat)} total={restDayTarget.total_fat} unit="g" color="bg-macro-fat" />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 justify-end col-span-full">
+            <button onClick={() => { setEditingTargets(true);
+              const planNow = db.getMealPlan(planId);
+              if (planNow) setOrigTargets({ kcal: planNow.plan.total_kcal, protein: planNow.plan.total_protein, carbs: planNow.plan.total_carbs, fat: planNow.plan.total_fat, fiber: planNow.plan.total_fiber });
+              setEditTargets({ kcal: target.total_kcal, protein: target.total_protein, carbs: target.total_carbs, fat: target.total_fat, fiber: target.total_fiber });
+            }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm">
+              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Editar macros
+            </button>
+          </div>
+        </div>
+      ) : noTargets ? (
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-6">
+            <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-700 text-center">
+              <p className="text-sm text-amber-700 dark:text-amber-300 font-medium">No hay macros configurados</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">Ve a la calculadora para establecer metas, o usa "Ajustar" para definirlas manualmente.</p>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <MacroBar label="Calorías" current={Math.round(filled.kcal)} total={target.total_kcal} unit="kcal" color="bg-blue-500" />
-            <MacroBar label="Proteína" current={Math.round(filled.protein)} total={target.total_protein} unit="g" color="bg-macro-protein" />
-            <MacroBar label="Carbos" current={Math.round(filled.carbs)} total={target.total_carbs} unit="g" color="bg-macro-carbs" />
-            <MacroBar label="Grasas" current={Math.round(filled.fat)} total={target.total_fat} unit="g" color="bg-macro-fat" />
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Target className="w-4 h-4 text-brand-600" />
+              <h3 className="font-semibold text-sm dark:text-white">Progreso contra meta</h3>
+              {isLive && <span className="text-[10px] text-emerald-500 font-medium">Tiempo real</span>}
+              <button onClick={() => { setEditingTargets(!editingTargets);
+                if (!editingTargets) {
+                  const planNow = db.getMealPlan(planId);
+                  if (planNow) setOrigTargets({ kcal: planNow.plan.total_kcal, protein: planNow.plan.total_protein, carbs: planNow.plan.total_carbs, fat: planNow.plan.total_fat, fiber: planNow.plan.total_fiber });
+                  setEditTargets({ kcal: target.total_kcal, protein: target.total_protein, carbs: target.total_carbs, fat: target.total_fat, fiber: target.total_fiber });
+                }
+              }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-all shadow-sm animate-scale-in">
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Editar macros
+              </button>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <MacroBar label="Calorías" current={Math.round(filled.kcal)} total={normalTarget.total_kcal} unit="kcal" color="bg-blue-500" />
+              <MacroBar label="Proteína" current={Math.round(filled.protein)} total={normalTarget.total_protein} unit="g" color="bg-macro-protein" />
+              <MacroBar label="Carbos" current={Math.round(filled.carbs)} total={normalTarget.total_carbs} unit="g" color="bg-macro-carbs" />
+              <MacroBar label="Grasas" current={Math.round(filled.fat)} total={normalTarget.total_fat} unit="g" color="bg-macro-fat" />
+            </div>
           </div>
         )}
-
-        {!noTargets && (
-        <div className="flex items-center gap-6">
-          <div className="h-20 w-20 shrink-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={22} outerRadius={36} dataKey="value" strokeWidth={0}>
-                  {pieData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex gap-4 text-xs">
-            {pieData.map((e) => (
-              <div key={e.name} className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: e.color }} />
-                <span className="text-gray-600 dark:text-gray-300">{e.name}: {e.value}g</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        )}
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4">
-          {Object.entries(MEAL_LABELS).filter(([key]) => {
-            if (key === "pre_workout" || key === "intra_workout" || key === "post_workout") return true;
-            if (key.startsWith("meal") && Number(key.slice(4)) <= mealCount) return true;
-            return (groupedItems[key] || []).length > 0;
-          }).map(([key, label]) => {
-            const items = groupedItems[key] || [];
-            const total = items.reduce(
-              (acc, i) => {
-                const f = db.getFood(i.food_id);
-                if (!f) return acc;
-                const ratio = i.quantity / f.serving_size;
-                return {
-                  kcal: acc.kcal + f.kcal * ratio,
-                  protein: acc.protein + f.protein * ratio,
-                  carbs: acc.carbs + f.carbs * ratio,
-                  fat: acc.fat + f.fat * ratio,
-                };
-              },
-              { kcal: 0, protein: 0, carbs: 0, fat: 0 },
-            );
-
-            return (
-              <div
-                key={key}
-                className={`overflow-hidden transition-all duration-200 ${selectedMeal === key ? "ring-2 ring-brand-500 border-brand-500 bg-brand-50 dark:bg-brand-900/15 shadow-md" : "border-gray-200 dark:border-gray-700 shadow-sm"} bg-white dark:bg-gray-900 rounded-xl border`}
-              >
-                <div
-                  className="flex items-center justify-between cursor-pointer px-4 py-3 bg-gradient-to-r from-brand-50 to-white dark:from-brand-900/20 dark:to-gray-900 border-b border-gray-100 dark:border-gray-800"
-                  onClick={() => setSelectedMeal(selectedMeal === key ? null : key)}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${items.length > 0 ? "bg-green-400" : "bg-gray-300"}`} />
-                    <h4 className="font-semibold text-sm dark:text-white">{label}</h4>
-                    {CARB_SUGGESTIONS[key] && (
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded border ${CARB_SUGGESTIONS[key].color}`}>
-                        {CARB_SUGGESTIONS[key].desc}
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {Math.round(total.kcal)} kcal · P:{Math.round(total.protein)}g · C:{Math.round(total.carbs)}g · G:{Math.round(total.fat)}g
-                  </span>
-                </div>
-
-                {items.length > 0 ? (
-                  <div className="space-y-1.5 px-4 py-3">
-                    {items.map((item) => {
-                      const f = db.getFood(item.food_id);
-                      if (!f) return null;
-                      const ratio = item.quantity / f.serving_size;
-                      return (
-                        <div key={item.id} className="flex items-center gap-2 text-sm bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2 group flex-wrap">
-                          <span className="font-medium truncate dark:text-white min-w-0 flex-1">{f.name}</span>
-                          <span className="text-gray-400 dark:text-gray-500 text-xs shrink-0">
-                            ({(f.protein * ratio).toFixed(1)}p / {(f.carbs * ratio).toFixed(1)}c / {(f.fat * ratio).toFixed(1)}g)
-                          </span>
-                          <div className="flex items-center gap-2 shrink-0">
-                            {editingItemId === item.id ? (
-                              <div className="flex items-center gap-1">
-                                <input
-                                  type="number"
-                                  min={1}
-                                  value={editItemQty}
-                                  onChange={(e) => setEditItemQty(Math.max(1, Number(e.target.value) || 0))}
-                                  onBlur={() => handleUpdateItemQty(item.id)}
-                                  onKeyDown={(e) => e.key === "Enter" && handleUpdateItemQty(item.id)}
-                                  className="w-16 text-xs text-right px-1 py-0.5 border border-brand-500 rounded outline-none focus:ring-1 focus:ring-brand-500"
-                                  autoFocus
-                                />
-                                <span className="text-xs text-gray-400 dark:text-gray-500">{item.serving_unit}</span>
-                              </div>
-                            ) : (
-                              <span
-                                onClick={() => { setEditingItemId(item.id); setEditItemQty(item.quantity); }}
-                                className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer hover:text-brand-600 hover:underline"
-                              >
-                                {item.quantity}{item.serving_unit}
-                              </span>
-                            )}
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setRemoveItemId(item.id); }}
-                              className="p-1 text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-xs text-gray-400 dark:text-gray-500 px-4 py-3">
-                    Vacío. {selectedMeal === key ? "Elige un alimento de la lista →" : "Selecciona esta comida."}
-                  </p>
-                )}
+        {restDay ? (
+          <>
+            <div className="lg:col-span-1 space-y-4">
+              {renderMealColumn(plan, 1, true, false, "left", selectedMeal, setSelectedMeal, mealCount)}
+              {mealCount < 6 && (
+                <button onClick={() => setMealCount((c) => Math.min(6, c + 1))}
+                  className="w-full py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-400 hover:text-brand-600 hover:border-brand-400 dark:hover:border-brand-500 transition-all">
+                  + Agregar comida {mealCount + 1}
+                </button>
+              )}
+            </div>
+            <div className="lg:col-span-1 space-y-4">
+              <div className="flex items-center gap-2">
+                <Moon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <h3 className="font-semibold text-sm dark:text-white">Rest Day (-25%)</h3>
               </div>
-            );
-          })}
-          {mealCount < 6 && (
-            <button
-              onClick={() => setMealCount((c) => Math.min(6, c + 1))}
-              className="w-full py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-400 hover:text-brand-600 hover:border-brand-400 dark:hover:border-brand-500 transition-all"
-            >
-              + Agregar comida {mealCount + 1}
-            </button>
-          )}
-        </div>
+              {renderMealColumn(planRight, 0.75, false, true, "right", selectedMeal, setSelectedMeal, mealCountRight)}
+              {mealCountRight < 6 && (
+                <button onClick={() => setMealCountRight((c) => Math.min(6, c + 1))}
+                  className="w-full py-3 rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-700 text-sm text-indigo-500 hover:text-indigo-600 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all">
+                  + Agregar comida {mealCountRight + 1}
+                </button>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="lg:col-span-2 space-y-4">
+            {renderMealColumn(plan, 1, true, false, "left", selectedMeal, setSelectedMeal, mealCount)}
+            {mealCount < 6 && (
+              <button onClick={() => setMealCount((c) => Math.min(6, c + 1))}
+                className="w-full py-3 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-sm text-gray-400 hover:text-brand-600 hover:border-brand-400 dark:hover:border-brand-500 transition-all">
+                + Agregar comida {mealCount + 1}
+              </button>
+            )}
+          </div>
+        )}
 
         <div>
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sticky top-6">
