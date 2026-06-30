@@ -36,7 +36,6 @@ export function MealPlanner() {
   const planId = Number(id);
 
   const [plan, setPlan] = useState(() => db.getMealPlan(planId));
-  const [planRight, setPlanRight] = useState<{ plan: MealPlan; items: MealPlanItem[] } | null>(null);
   const [client, setClient] = useState(() => db.getClient(plan?.plan.client_id || 0));
   const [foods, setFoods] = useState<Food[]>(() => db.getFoods());
   const [search, setSearch] = useState("");
@@ -55,11 +54,18 @@ export function MealPlanner() {
   const [removeItemId, setRemoveItemId] = useState<number | null>(null);
   const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
   const [mealCount, setMealCount] = useState(3);
-  const [mealCountRight, setMealCountRight] = useState(3);
+  const [mealCountRight, setMealCountRight] = useState(() => {
+    const saved = localStorage.getItem(`rd_mc_${planId}`);
+    return saved ? Number(saved) : 3;
+  });
   const [editingName, setEditingName] = useState(false);
   const [editName, setEditName] = useState("");
   const [origTargets, setOrigTargets] = useState({ kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
-  const [restDay, setRestDay] = useState(false);
+  const [restDay, setRestDay] = useState(() => localStorage.getItem(`rd_${planId}`) === "true");
+  const [planRight, setPlanRight] = useState<{ plan: MealPlan; items: MealPlanItem[] } | null>(() => {
+    const saved = localStorage.getItem(`rd_id_${planId}`);
+    return saved ? db.getMealPlan(Number(saved)) || null : null;
+  });
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [, setTick] = useState(0);
 
@@ -110,6 +116,19 @@ export function MealPlanner() {
     }, 400);
     return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
   }, [search]);
+
+  useEffect(() => {
+    localStorage.setItem(`rd_${planId}`, String(restDay));
+    if (restDay && planRight) {
+      localStorage.setItem(`rd_id_${planId}`, String(planRight.plan.id));
+    } else if (!restDay) {
+      localStorage.removeItem(`rd_id_${planId}`);
+    }
+  }, [restDay, planRight, planId]);
+
+  useEffect(() => {
+    localStorage.setItem(`rd_mc_${planId}`, String(mealCountRight));
+  }, [mealCountRight, planId]);
 
   const allItemsTotals = useMemo(() => {
     if (!plan) return { kcal: 0, protein: 0, carbs: 0, fat: 0 };
@@ -290,7 +309,7 @@ export function MealPlanner() {
             </div>
           ) : (
             <p className="text-xs text-gray-400 dark:text-gray-500 px-4 py-3">
-              Vacío. {selectedMeal === key ? "Elige un alimento de la lista →" : "Selecciona esta comida."}
+              Vacío. {selectedMeal === key && targetColumn === column ? "Elige un alimento de la lista →" : "Selecciona esta comida."}
             </p>
           )}
         </div>
