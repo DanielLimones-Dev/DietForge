@@ -21,17 +21,26 @@ const PROTEIN_MODIFIERS: Record<CarbDay, number> = {
   refeed: 1.0,
 };
 
+const REST_DAY_MODIFIER = 0.75;
+
 export function calculateDayMacros(
   base: MacroResult,
   carbDay: CarbDay,
+  restDay?: boolean,
 ): MacroResult {
   const carbMod = CARB_MODIFIERS[carbDay];
   const fatMod = FAT_MODIFIERS[carbDay];
   const proteinMod = PROTEIN_MODIFIERS[carbDay];
 
-  const protein = Math.round(base.protein * proteinMod);
-  const fat = Math.round(base.fat * fatMod);
-  const carbs = Math.round(base.carbs * carbMod);
+  let protein = Math.round(base.protein * proteinMod);
+  let fat = Math.round(base.fat * fatMod);
+  let carbs = Math.round(base.carbs * carbMod);
+
+  if (restDay) {
+    protein = Math.round(protein * REST_DAY_MODIFIER);
+    fat = Math.round(fat * REST_DAY_MODIFIER);
+    carbs = Math.round(carbs * REST_DAY_MODIFIER);
+  }
 
   const proteinKcal = protein * 4;
   const fatKcal = fat * 9;
@@ -50,6 +59,7 @@ export function calculateDayMacros(
 export function getWeeklyAverage(
   base: MacroResult,
   days: CarbDay[],
+  restDays?: boolean[],
 ): MacroResult {
   if (days.length === 0) return base;
 
@@ -58,8 +68,8 @@ export function getWeeklyAverage(
   let totalFat = 0;
   let totalKcal = 0;
 
-  for (const day of days) {
-    const d = calculateDayMacros(base, day);
+  for (let i = 0; i < days.length; i++) {
+    const d = calculateDayMacros(base, days[i], restDays?.[i]);
     totalProtein += d.protein;
     totalCarbs += d.carbs;
     totalFat += d.fat;

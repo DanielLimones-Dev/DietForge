@@ -196,6 +196,7 @@ export interface DayPlan {
   day: number;
   carb_day: CarbDay;
   meal_plan_id: number;
+  rest_day?: boolean;
 }
 
 export interface Food {
