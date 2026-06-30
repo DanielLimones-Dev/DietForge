@@ -522,7 +522,7 @@ export function MealPlanner() {
                             )}
                             <button
                               onClick={(e) => { e.stopPropagation(); setRemoveItemId(item.id); }}
-                              className="p-1 text-gray-300 dark:text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="p-1 text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
