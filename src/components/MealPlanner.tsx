@@ -54,18 +54,10 @@ export function MealPlanner() {
   const [removeItemId, setRemoveItemId] = useState<number | null>(null);
   const [showTemplatePrompt, setShowTemplatePrompt] = useState(false);
   const [mealCount, setMealCount] = useState(3);
-  const [mealCountRight, setMealCountRight] = useState(() => {
-    const saved = localStorage.getItem(`rd_mc_${planId}`);
-    return saved ? Number(saved) : 3;
-  });
   const [editingName, setEditingName] = useState(false);
   const [editName, setEditName] = useState("");
   const [origTargets, setOrigTargets] = useState({ kcal: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 });
   const [restDay, setRestDay] = useState(() => localStorage.getItem(`rd_${planId}`) === "true");
-  const [planRight, setPlanRight] = useState<{ plan: MealPlan; items: MealPlanItem[] } | null>(() => {
-    const saved = localStorage.getItem(`rd_id_${planId}`);
-    return saved ? db.getMealPlan(Number(saved)) || null : null;
-  });
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [, setTick] = useState(0);
 
@@ -119,16 +111,7 @@ export function MealPlanner() {
 
   useEffect(() => {
     localStorage.setItem(`rd_${planId}`, String(restDay));
-    if (restDay && planRight) {
-      localStorage.setItem(`rd_id_${planId}`, String(planRight.plan.id));
-    } else if (!restDay) {
-      localStorage.removeItem(`rd_id_${planId}`);
-    }
-  }, [restDay, planRight, planId]);
-
-  useEffect(() => {
-    localStorage.setItem(`rd_mc_${planId}`, String(mealCountRight));
-  }, [mealCountRight, planId]);
+  }, [restDay, planId]);
 
   const allItemsTotals = useMemo(() => {
     if (!plan) return { kcal: 0, protein: 0, carbs: 0, fat: 0 };
@@ -166,23 +149,7 @@ export function MealPlanner() {
   const isLive = hasMeas;
   const noTargets = !hasMeas && !(plan.plan.total_kcal > 0);
   const filled = allItemsTotals;
-  const filledRight = useMemo(() => {
-    if (!planRight) return { kcal: 0, protein: 0, carbs: 0, fat: 0 };
-    return planRight.items.reduce(
-      (acc, i) => {
-        const f = db.getFood(i.food_id);
-        if (!f) return acc;
-        const ratio = getRatio(i.quantity, i.serving_unit, f.serving_size);
-        return {
-          kcal: acc.kcal + f.kcal * ratio,
-          protein: acc.protein + f.protein * ratio,
-          carbs: acc.carbs + f.carbs * ratio,
-          fat: acc.fat + f.fat * ratio,
-        };
-      },
-      { kcal: 0, protein: 0, carbs: 0, fat: 0 },
-    );
-  }, [planRight]);
+  const filledRight = { kcal: Math.round(filled.kcal * 0.75), protein: Math.round(filled.protein * 0.75), carbs: Math.round(filled.carbs * 0.75), fat: Math.round(filled.fat * 0.75) };
   const normalTarget = target;
   const restDayTarget = {
     total_kcal: Math.round(target.total_kcal * 0.75),
@@ -319,9 +286,8 @@ export function MealPlanner() {
 
   const handleAddFood = () => {
     if (!selectedFood || !selectedMeal) return;
-    const targetPlanId = targetColumn === "right" && planRight ? planRight.plan.id : planId;
     db.addMealPlanItem({
-      meal_plan_id: targetPlanId,
+      meal_plan_id: planId,
       meal_time: selectedMeal as MealTime,
       food_id: selectedFood.id,
       quantity: foodQuantity,
@@ -329,13 +295,11 @@ export function MealPlanner() {
     });
     setSelectedFood(null);
     setPlan(db.getMealPlan(planId));
-    if (planRight) setPlanRight(db.getMealPlan(planRight.plan.id) || null);
   };
 
   const handleRemoveItem = (itemId: number) => {
     db.deleteMealPlanItem(itemId);
     setPlan(db.getMealPlan(planId));
-    if (planRight) setPlanRight(db.getMealPlan(planRight.plan.id) || null);
     setRemoveItemId(null);
   };
 
@@ -347,16 +311,6 @@ export function MealPlanner() {
       total_fat: Number(editTargets.fat),
       total_fiber: Number(editTargets.fiber),
     });
-    if (planRight) {
-      db.updateMealPlan(planRight.plan.id, {
-        total_kcal: Math.round(Number(editTargets.kcal) * 0.75),
-        total_protein: Math.round(Number(editTargets.protein) * 0.75),
-        total_carbs: Math.round(Number(editTargets.carbs) * 0.75),
-        total_fat: Math.round(Number(editTargets.fat) * 0.75),
-        total_fiber: Math.round(Number(editTargets.fiber) * 0.75),
-      });
-      setPlanRight(db.getMealPlan(planRight.plan.id) || null);
-    }
     setPlan(db.getMealPlan(planId));
     setEditingTargets(false);
   };
@@ -365,7 +319,6 @@ export function MealPlanner() {
     if (editItemQty > 0) {
       db.updateMealPlanItem(itemId, { quantity: editItemQty });
       setPlan(db.getMealPlan(planId));
-      if (planRight) setPlanRight(db.getMealPlan(planRight.plan.id) || null);
     }
     setEditingItemId(null);
   };
@@ -449,27 +402,8 @@ export function MealPlanner() {
           Plantilla
         </button>
         <button onClick={() => {
-          if (!restDay && plan) {
-            const items = plan.items.map((i) => ({
-              meal_time: i.meal_time, food_id: i.food_id,
-              quantity: i.quantity, serving_unit: i.serving_unit,
-            }));
-            const rd = db.saveMealPlan({
-              client_id: plan.plan.client_id, measurement_id: plan.plan.measurement_id,
-              date: new Date().toISOString(), name: `${plan.plan.name} — Rest Day`,
-              total_kcal: Math.round(plan.plan.total_kcal * 0.75),
-              total_protein: Math.round(plan.plan.total_protein * 0.75),
-              total_carbs: Math.round(plan.plan.total_carbs * 0.75),
-              total_fat: Math.round(plan.plan.total_fat * 0.75),
-              total_fiber: plan.plan.total_fiber,
-              total_antioxidants: plan.plan.total_antioxidants,
-            }, items);
-            setPlanRight(db.getMealPlan(rd.id) || null);
-          } else {
-            setPlanRight(null);
-            setTargetColumn("left");
-          }
-          setRestDay(!restDay);
+          setRestDay((r) => !r);
+          setTargetColumn("left");
         }}
           className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all duration-200 ${restDay ? "bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"}`}>
           <Moon className={`w-4 h-4 ${restDay ? "fill-white" : ""}`} />
@@ -653,11 +587,11 @@ export function MealPlanner() {
                 <Moon className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 <h3 className="font-semibold text-sm dark:text-white">Rest Day (-25%)</h3>
               </div>
-              {renderMealColumn(planRight, 0.75, false, true, "right", selectedMeal, setSelectedMeal, mealCountRight)}
-              {mealCountRight < 6 && (
-                <button onClick={() => setMealCountRight((c) => Math.min(6, c + 1))}
+              {renderMealColumn(plan, 0.75, false, true, "right", selectedMeal, setSelectedMeal, mealCount)}
+              {mealCount < 6 && (
+                <button onClick={() => setMealCount((c) => Math.min(6, c + 1))}
                   className="w-full py-3 rounded-xl border-2 border-dashed border-indigo-300 dark:border-indigo-700 text-sm text-indigo-500 hover:text-indigo-600 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all">
-                  + Agregar comida {mealCountRight + 1}
+                  + Agregar comida {mealCount + 1}
                 </button>
               )}
             </div>
