@@ -9,6 +9,9 @@ import { adjustMacroField } from "@/lib/calculator";
 import type { Food, MealPlan, MealPlanItem, MealTime } from "@/types";
 import { ConfirmDialog, PromptDialog } from "./ui";
 
+const getRatio = (quantity: number, unit: string, servingSize: number): number =>
+  unit === "unidad" ? quantity : quantity / servingSize;
+
 const MEAL_LABELS: Record<string, string> = {
   pre_workout: "Pre-Entreno",
   intra_workout: "Intra-Entreno",
@@ -19,18 +22,6 @@ const MEAL_LABELS: Record<string, string> = {
   meal4: "Comida 4",
   meal5: "Comida 5",
   meal6: "Comida 6",
-};
-
-const CARB_SUGGESTIONS: Record<string, { label: string; type: "fast" | "slow" | "mixed"; desc: string; color: string }> = {
-  pre_workout: { label: "Pre-Entreno", type: "fast", desc: "Carbos rápidos (fruta, pan, miel)", color: "text-orange-600 bg-orange-50 border-orange-200" },
-  intra_workout: { label: "Intra-Entreno", type: "fast", desc: "Carbos rápidos (jugo, deportivo)", color: "text-orange-600 bg-orange-50 border-orange-200" },
-  post_workout: { label: "Post-Entreno", type: "mixed", desc: "Carbos mixtos (arroz, papa, plátano)", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
-  meal1: { label: "Comida 1", type: "slow", desc: "Carbos lentos (avena, integrales)", color: "text-green-600 bg-green-50 border-green-200" },
-  meal2: { label: "Comida 2", type: "slow", desc: "Carbos lentos (legumbres, verduras)", color: "text-green-600 bg-green-50 border-green-200" },
-  meal3: { label: "Comida 3", type: "slow", desc: "Carbos lentos (integrales)", color: "text-green-600 bg-green-50 border-green-200" },
-  meal4: { label: "Comida 4", type: "slow", desc: "Carbos lentos", color: "text-green-600 bg-green-50 border-green-200" },
-  meal5: { label: "Comida 5", type: "slow", desc: "Carbos lentos", color: "text-green-600 bg-green-50 border-green-200" },
-  meal6: { label: "Comida 6", type: "slow", desc: "Carbos lentos", color: "text-green-600 bg-green-50 border-green-200" },
 };
 
 const CARB_TYPE_LABELS: Record<string, { label: string; color: string }> = {
@@ -126,7 +117,7 @@ export function MealPlanner() {
       (acc, i) => {
         const f = db.getFood(i.food_id);
         if (!f) return acc;
-        const ratio = i.quantity / f.serving_size;
+        const ratio = getRatio(i.quantity, i.serving_unit, f.serving_size);
         return {
           kcal: acc.kcal + f.kcal * ratio,
           protein: acc.protein + f.protein * ratio,
@@ -162,7 +153,7 @@ export function MealPlanner() {
       (acc, i) => {
         const f = db.getFood(i.food_id);
         if (!f) return acc;
-        const ratio = i.quantity / f.serving_size;
+        const ratio = getRatio(i.quantity, i.serving_unit, f.serving_size);
         return {
           kcal: acc.kcal + f.kcal * ratio,
           protein: acc.protein + f.protein * ratio,
@@ -237,7 +228,7 @@ export function MealPlanner() {
         (acc, i) => {
           const f = db.getFood(i.food_id);
           if (!f) return acc;
-          const ratio = i.quantity / f.serving_size;
+          const ratio = getRatio(i.quantity, i.serving_unit, f.serving_size);
           return {
             kcal: acc.kcal + f.kcal * ratio,
             protein: acc.protein + f.protein * ratio,
@@ -255,11 +246,6 @@ export function MealPlanner() {
             <div className="flex items-center gap-2">
               <span className={`w-2 h-2 rounded-full ${items.length > 0 ? "bg-green-400" : "bg-gray-300"}`} />
               <h4 className="font-semibold text-sm dark:text-white">{label}</h4>
-              {CARB_SUGGESTIONS[key] && !readOnly && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded border ${CARB_SUGGESTIONS[key].color}`}>
-                  {CARB_SUGGESTIONS[key].desc}
-                </span>
-              )}
             </div>
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
               {Math.round(total.kcal * mult)} kcal · P:{Math.round(total.protein * mult)}g · C:{Math.round(total.carbs * mult)}g · G:{Math.round(total.fat * mult)}g
@@ -270,7 +256,7 @@ export function MealPlanner() {
               {items.map((item) => {
                 const f = db.getFood(item.food_id);
                 if (!f) return null;
-                const ratio = item.quantity / f.serving_size;
+                const ratio = getRatio(item.quantity, item.serving_unit, f.serving_size);
                 return (
                   <div key={item.id} className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2 group flex-wrap ${readOnly ? "bg-indigo-50/50 dark:bg-indigo-950/10" : "bg-gray-50 dark:bg-gray-800"}`}>
                     <span className="font-medium truncate dark:text-white min-w-0 flex-1">{f.name}</span>
@@ -811,15 +797,15 @@ export function MealPlanner() {
 
             <div className="grid grid-cols-3 gap-2 text-xs text-center mb-4 p-3 bg-brand-50 dark:bg-brand-900/20 rounded-xl">
               <div>
-                <p className="font-bold text-macro-protein">{((selectedFood.protein * foodQuantity) / selectedFood.serving_size).toFixed(1)}g</p>
+                <p className="font-bold text-macro-protein">{(selectedFood.protein * getRatio(foodQuantity, foodUnit, selectedFood.serving_size)).toFixed(1)}g</p>
                 <p className="text-gray-500 dark:text-gray-400">Proteína</p>
               </div>
               <div>
-                <p className="font-bold text-macro-carbs">{((selectedFood.carbs * foodQuantity) / selectedFood.serving_size).toFixed(1)}g</p>
+                <p className="font-bold text-macro-carbs">{(selectedFood.carbs * getRatio(foodQuantity, foodUnit, selectedFood.serving_size)).toFixed(1)}g</p>
                 <p className="text-gray-500 dark:text-gray-400">Carbh.</p>
               </div>
               <div>
-                <p className="font-bold text-macro-fat">{((selectedFood.fat * foodQuantity) / selectedFood.serving_size).toFixed(1)}g</p>
+                <p className="font-bold text-macro-fat">{(selectedFood.fat * getRatio(foodQuantity, foodUnit, selectedFood.serving_size)).toFixed(1)}g</p>
                 <p className="text-gray-500 dark:text-gray-400">Grasas</p>
               </div>
             </div>
