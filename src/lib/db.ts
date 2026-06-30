@@ -261,7 +261,9 @@ export async function init() {
   if (inTauri()) {
     try {
       const { default: Database } = await import("@tauri-apps/plugin-sql");
-      sqlite = await Database.load("sqlite:dietforge.db");
+      const { appDataDir } = await import("@tauri-apps/api/path");
+      const dataDir = await appDataDir();
+      sqlite = await Database.load(`sqlite:${dataDir}dietforge.db`);
       await createTables();
       if (localStorage.getItem(DB_KEY)) {
         await migrateFromLocalStorage();
