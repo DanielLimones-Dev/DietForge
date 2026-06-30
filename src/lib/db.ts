@@ -61,7 +61,8 @@ let cache: Database = {
 };
 
 let templatesCache: DietTemplate[] = [];
-let sqlite: Awaited<ReturnType<typeof import("@tauri-apps/plugin-sql").default["load"]>> | null = null;
+type DbHandle = Awaited<ReturnType<typeof import("@tauri-apps/plugin-sql").default["load"]>>;
+let sqlite: DbHandle | null = null;
 let persistQueue: Promise<void> = Promise.resolve();
 
 loadFromLocalStorage();
@@ -108,53 +109,55 @@ function saveToLocalStorage() {
   }
 }
 
+async function saveToSQLite() {
+  if (!sqlite) return;
+  try {
+    for (const c of cache.clients) {
+      await sqlite.execute(
+        "INSERT OR REPLACE INTO clients (id, name, email, phone, notes, prep_type, tags, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
+        [c.id, c.name, c.email || null, c.phone || null, c.notes || null, c.prep_type || null, c.tags ? JSON.stringify(c.tags) : null, c.created_at, c.updated_at]
+      );
+    }
+    for (const m of cache.measurements) {
+      await sqlite.execute(
+        "INSERT OR REPLACE INTO measurements (id, client_id, date, weight, height, age, sex, body_fat, body_fat_method, skinfolds, isak_data, activity_level, goal, tmb, tdee, protein, carbs, fat, fiber, antioxidants) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        [m.id, m.client_id, m.date, m.weight, m.height, m.age, m.sex, m.body_fat || null, m.body_fat_method || null, m.skinfolds ? JSON.stringify(m.skinfolds) : null, m.isak_data ? JSON.stringify(m.isak_data) : null, m.activity_level, m.goal, m.tmb, m.tdee, m.protein, m.carbs, m.fat, m.fiber, m.antioxidants]
+      );
+    }
+    for (const f of cache.foods) {
+      await sqlite.execute(
+        "INSERT OR REPLACE INTO foods (id, name, barcode, category, protein, carbs, fat, fiber, antioxidants, kcal, serving_size, serving_unit, source, carb_type) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        [f.id, f.name, f.barcode || null, f.category, f.protein, f.carbs, f.fat, f.fiber, f.antioxidants, f.kcal, f.serving_size, f.serving_unit, f.source, f.carb_type || null]
+      );
+    }
+    for (const p of cache.mealPlans) {
+      await sqlite.execute(
+        "INSERT OR REPLACE INTO meal_plans (id, client_id, measurement_id, date, name, total_kcal, total_protein, total_carbs, total_fat, total_fiber, total_antioxidants) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        [p.id, p.client_id, p.measurement_id, p.date, p.name, p.total_kcal, p.total_protein, p.total_carbs, p.total_fat, p.total_fiber, p.total_antioxidants]
+      );
+    }
+    for (const i of cache.mealPlanItems) {
+      await sqlite.execute(
+        "INSERT OR REPLACE INTO meal_plan_items (id, meal_plan_id, meal_time, food_id, quantity, serving_unit) VALUES (?,?,?,?,?,?)",
+        [i.id, i.meal_plan_id, i.meal_time, i.food_id, i.quantity, i.serving_unit]
+      );
+    }
+    for (const t of templatesCache) {
+      await sqlite.execute(
+        "INSERT OR REPLACE INTO templates (id, name, total_kcal, total_protein, total_carbs, total_fat, total_fiber, items, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+        [t.id, t.name, t.total_kcal, t.total_protein, t.total_carbs, t.total_fat, t.total_fiber, JSON.stringify(t.items), t.created_at]
+      );
+    }
+    await sqlite.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('seed_version', ?)", [String(SEED_VERSION)]);
+  } catch (e) {
+    console.warn("SQLite persist error", e);
+  }
+}
+
 async function persist() {
   persistQueue = persistQueue.then(async () => {
-  if (sqlite) {
-    try {
-      for (const c of cache.clients) {
-        await sqlite.execute(
-          "INSERT OR REPLACE INTO clients (id, name, email, phone, notes, prep_type, tags, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
-          [c.id, c.name, c.email || null, c.phone || null, c.notes || null, c.prep_type || null, c.tags ? JSON.stringify(c.tags) : null, c.created_at, c.updated_at]
-        );
-      }
-      for (const m of cache.measurements) {
-        await sqlite.execute(
-          "INSERT OR REPLACE INTO measurements (id, client_id, date, weight, height, age, sex, body_fat, body_fat_method, skinfolds, isak_data, activity_level, goal, tmb, tdee, protein, carbs, fat, fiber, antioxidants) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-          [m.id, m.client_id, m.date, m.weight, m.height, m.age, m.sex, m.body_fat || null, m.body_fat_method || null, m.skinfolds ? JSON.stringify(m.skinfolds) : null, m.isak_data ? JSON.stringify(m.isak_data) : null, m.activity_level, m.goal, m.tmb, m.tdee, m.protein, m.carbs, m.fat, m.fiber, m.antioxidants]
-        );
-      }
-      for (const f of cache.foods) {
-        await sqlite.execute(
-          "INSERT OR REPLACE INTO foods (id, name, barcode, category, protein, carbs, fat, fiber, antioxidants, kcal, serving_size, serving_unit, source, carb_type) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-          [f.id, f.name, f.barcode || null, f.category, f.protein, f.carbs, f.fat, f.fiber, f.antioxidants, f.kcal, f.serving_size, f.serving_unit, f.source, f.carb_type || null]
-        );
-      }
-      for (const p of cache.mealPlans) {
-        await sqlite.execute(
-          "INSERT OR REPLACE INTO meal_plans (id, client_id, measurement_id, date, name, total_kcal, total_protein, total_carbs, total_fat, total_fiber, total_antioxidants) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-          [p.id, p.client_id, p.measurement_id, p.date, p.name, p.total_kcal, p.total_protein, p.total_carbs, p.total_fat, p.total_fiber, p.total_antioxidants]
-        );
-      }
-      for (const i of cache.mealPlanItems) {
-        await sqlite.execute(
-          "INSERT OR REPLACE INTO meal_plan_items (id, meal_plan_id, meal_time, food_id, quantity, serving_unit) VALUES (?,?,?,?,?,?)",
-          [i.id, i.meal_plan_id, i.meal_time, i.food_id, i.quantity, i.serving_unit]
-        );
-      }
-      for (const t of templatesCache) {
-        await sqlite.execute(
-          "INSERT OR REPLACE INTO templates (id, name, total_kcal, total_protein, total_carbs, total_fat, total_fiber, items, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
-          [t.id, t.name, t.total_kcal, t.total_protein, t.total_carbs, t.total_fat, t.total_fiber, JSON.stringify(t.items), t.created_at]
-        );
-      }
-      await sqlite.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('seed_version', ?)", [String(SEED_VERSION)]);
-    } catch (e) {
-      console.warn("SQLite persist error", e);
-    }
-  } else {
-    saveToLocalStorage();
-  }
+  saveToLocalStorage();
+  if (sqlite) await saveToSQLite();
   });
 }
 
@@ -252,26 +255,47 @@ async function migrateFromLocalStorage() {
     }
   }
   await sqlite.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('migrated', '1')");
-  localStorage.removeItem(DB_KEY);
-  localStorage.removeItem(TEMPLATES_KEY);
 }
 
 export async function init() {
   if (sqlite) return;
   if (inTauri()) {
-    try {
-      const { default: Database } = await import("@tauri-apps/plugin-sql");
-      const { appDataDir } = await import("@tauri-apps/api/path");
-      const dataDir = await appDataDir();
-      sqlite = await Database.load(`sqlite:${dataDir}dietforge.db`);
+    const { default: Database } = await import("@tauri-apps/plugin-sql");
+    const { appDataDir } = await import("@tauri-apps/api/path");
+    const dataDir = await appDataDir();
+    const paths = [
+      "sqlite:dietforge.db",
+      `sqlite:${dataDir}/dietforge.db`,
+      `sqlite:${dataDir}dietforge.db`,
+    ];
+    let firstDb: DbHandle | null = null;
+    let bestDb: DbHandle | null = null;
+    let bestCount = -1;
+    for (const p of paths) {
+      try {
+        const db: DbHandle = await Database.load(p) as DbHandle;
+        if (!firstDb) firstDb = db;
+        await db.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)");
+        await db.execute("CREATE TABLE IF NOT EXISTS clients (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT, phone TEXT, notes TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)");
+        const [{ count }] = await db.select<{ count: number }[]>("SELECT COUNT(*) as count FROM clients");
+        if (count > bestCount) { bestDb = db; bestCount = count; }
+      } catch { /* try next */ }
+    }
+    sqlite = bestCount > 0 ? bestDb : firstDb;
+    if (sqlite) {
       await createTables();
-      if (localStorage.getItem(DB_KEY)) {
+      const [{ count }] = await sqlite.select<{ count: number }[]>("SELECT COUNT(*) as count FROM clients");
+      if (count === 0 && localStorage.getItem(DB_KEY)) {
         await migrateFromLocalStorage();
       }
       await loadFromSQLite();
-    } catch (e) {
-      console.warn("SQLite fallback to localStorage:", e);
-      loadFromLocalStorage();
+    }
+    loadFromLocalStorage();
+    if (sqlite && cache.clients.length > 0) {
+      const [{ count }] = await sqlite.select<{ count: number }[]>("SELECT COUNT(*) as count FROM clients");
+      if (count === 0) {
+        await saveToSQLite();
+      }
     }
   } else {
     loadFromLocalStorage();
