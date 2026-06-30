@@ -10,7 +10,7 @@ import type { Food, MealPlan, MealPlanItem, MealTime } from "@/types";
 import { ConfirmDialog, PromptDialog } from "./ui";
 
 const getRatio = (quantity: number, unit: string, servingSize: number): number =>
-  quantity / servingSize;
+  unit === "pieza" ? (quantity * servingSize) / 100 : quantity / servingSize;
 
 const MEAL_LABELS: Record<string, string> = {
   pre_workout: "Pre-Entreno",
@@ -735,7 +735,7 @@ export function MealPlanner() {
                 className="w-20 text-sm font-medium text-right px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-gray-100"
               />
               <div className="flex gap-0.5 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
-                {["g", "ml"].map((u) => (
+                {["g", "ml", "pieza"].map((u) => (
                   <button
                     key={u}
                     type="button"
