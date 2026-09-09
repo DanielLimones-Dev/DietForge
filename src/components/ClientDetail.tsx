@@ -10,6 +10,7 @@ import { getPreference } from "@/lib/db";
 import { generateDietPDF } from "@/lib/pdf";
 import { openProgressReport } from "@/lib/progressReport";
 import { calculateWeightTrend, getRateLabel } from "@/lib/trends";
+import { saveMacroEvaluation } from "@/lib/macro-evaluation";
 import { suggestAdjustment, getTargetRate } from "@/lib/progression";
 import { calculateFFMI, calculateLeanBodyMass } from "@/lib/metrics";
 import { getPhaseLabel, getPhaseColor, calculatePhaseMacros } from "@/lib/phases";
@@ -126,13 +127,15 @@ export function ClientDetail() {
   const measurements = db.getMeasurements(clientId);
   const latest = measurements[0];
   const checkins = db.getCheckIns(clientId);
-  const trend = calculateWeightTrend([...measurements, ...checkins]);
+  // El progreso pertenece al seguimiento del cliente. Las evaluaciones de la
+  // calculadora pueden cambiar varias veces sin crear puntos artificiales.
+  const trend = calculateWeightTrend(checkins);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _carouselKey = checkinVersion;
   const suggestion = latest && selectedPhase
     ? suggestAdjustment(
         { tmb: latest.tmb, tdee: latest.tdee, protein: latest.protein, carbs: latest.carbs, fat: latest.fat, fiber: latest.fiber, antioxidants: latest.antioxidants },
-        [...measurements, ...checkins],
+        checkins,
         selectedPhase,
         getTargetRate(selectedPhase),
       )
@@ -200,8 +203,8 @@ export function ClientDetail() {
     const calcDate = new Date();
     const calcDateLocal = new Date(calcDate.getFullYear(), calcDate.getMonth(), calcDate.getDate());
 
-    const measurement: ClientMeasurement = {
-      id: 0, client_id: clientId, date: calcDateLocal.toISOString(),
+    const measurement: Omit<ClientMeasurement, "id"> = {
+      client_id: clientId, date: calcDateLocal.toISOString(),
       weight: w, height: h, age: a, sex: calcForm.sex,
       body_fat: bf, body_fat_method: bfMethod, skinfolds,
       isak_data: calcForm.bfMethod === "isak1" ? {
@@ -222,12 +225,9 @@ export function ClientDetail() {
       ...macros,
     };
 
-    db.saveMeasurement(measurement);
-    const checkinDate = `${calcDate.getFullYear()}-${String(calcDate.getMonth() + 1).padStart(2, '0')}-${String(calcDate.getDate()).padStart(2, '0')}`;
-    db.saveCheckIn({ client_id: clientId, date: checkinDate, weight: w, body_fat: bf });
+    saveMacroEvaluation(measurement, db);
     setResult(macros);
     setEditResult({ ...macros });
-    setCheckinVersion((v) => v + 1);
   };
 
   const handleCreatePlan = () => {
@@ -547,8 +547,8 @@ export function ClientDetail() {
                   </div>
                 );
               })()}
-              {latest?.body_fat && (
-                  <p className="text-[11px] text-gray-400 mt-0.5">FFMI: {calculateFFMI(latest.weight, latest.height, latest.body_fat)} · MML: {calculateLeanBodyMass(latest.weight, latest.body_fat)} kg</p>
+              {checkins[0]?.body_fat && latest?.height && (
+                  <p className="text-[11px] text-gray-400 mt-0.5">FFMI: {calculateFFMI(checkins[0].weight, latest.height, checkins[0].body_fat)} · MML: {calculateLeanBodyMass(checkins[0].weight, checkins[0].body_fat)} kg</p>
                 )}
             </div>
           </div>
@@ -733,6 +733,10 @@ export function ClientDetail() {
         </div>
 
         {showCalc && (
+          <>
+            <div className="mx-5 mt-4 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-xs text-brand-800 dark:border-brand-800 dark:bg-brand-950/30 dark:text-brand-200">
+              Calcular o guardar macros no registra un check-in. El peso, la composición y la tendencia solo cambian desde el seguimiento del cliente.
+            </div>
           <div className="p-5 space-y-5">
             <p className="text-[10px] text-gray-400 dark:text-gray-500">Los campos con <span className="text-red-400">*</span> son obligatorios</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -985,6 +989,7 @@ export function ClientDetail() {
               </button>
             </div>
           </div>
+          </>
         )}
 
         {showCalc && editResult && (

@@ -1,5 +1,6 @@
 import type { Snapshot } from './model';
 export type SaveState = { phase: 'ready'|'saving'|'error'; message: string };
+export function isStorageAlert(state: SaveState){return state.phase==='error';}
 // One immutable in-flight operation. Retry reuses its ID and revision after an ambiguous response.
 export class SaveQueue {
   private operation: {snapshot:Snapshot; revision:number; id:string}|null=null;

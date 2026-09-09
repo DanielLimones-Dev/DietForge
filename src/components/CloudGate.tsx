@@ -5,6 +5,7 @@ import { LoginScreen } from "./LoginScreen";
 import { supabase } from "@/lib/supabase";
 import { LoadingScreen } from "./LoadingScreen";
 import { db, initializeCloud, confirmLegacyImport, disconnectCloud, getStorageState, subscribeStorage, retryCloudSave, exportCloudBackup, hasPendingCloudWrites } from "@/lib/db";
+import { isStorageAlert } from "@/lib/cloud/engine";
 
 const serverStorageState = { phase: "ready" as const, message: "Conectando…" };
 const getServerStorageState = () => serverStorageState;
@@ -63,13 +64,13 @@ function CloudAccount({ userId, children }: { userId: string; children: ReactNod
   </div>;
   if (!ready) return <LoadingScreen />;
   return <>
-    <div role="status" className={`px-4 py-2 text-sm ${storage.phase === "error" ? "bg-red-100 text-red-900" : "bg-slate-100 text-slate-700"}`}>
-      {storage.message}
-      {storage.phase === "error" && <>
+    {isStorageAlert(storage) && (
+      <div role="alert" className="px-4 py-2 text-sm bg-red-100 text-red-900">
+        {storage.message}
         <button className="ml-4 underline" onClick={() => void retryCloudSave()}>Reintentar</button>
         <button className="ml-4 underline" onClick={exportCloudBackup}>Descargar respaldo</button>
-      </>}
-    </div>
+      </div>
+    )}
     <div inert={storage.phase === "error" ? true : undefined}>{children}</div>
   </>;
 }

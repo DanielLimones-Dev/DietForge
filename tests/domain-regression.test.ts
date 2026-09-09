@@ -7,6 +7,8 @@ import {generateProgressReportHTML} from '../src/lib/progressReport';
 import {generateDietPDF} from '../src/lib/pdf';
 import {normalizeNumericInput} from '../src/lib/numeric-input';
 import {destinationForRole} from '../src/lib/auth-role';
+import {saveMacroEvaluation} from '../src/lib/macro-evaluation';
+import {isStorageAlert} from '../src/lib/cloud/engine';
 import type {ClientMeasurement,MealPlan} from '../src/types';
 
 test('numeric fields remove accidental leading zeros without changing decimals',()=>{
@@ -23,6 +25,19 @@ test('the unified login routes only from the server-backed role result',()=>{
  assert.equal(destinationForRole({data:false,error:null}),'/');
  assert.equal(destinationForRole({data:null,error:null}),'/');
  assert.throws(()=>destinationForRole({data:null,error:{message:'unavailable'}}),/verificar el rol/);
+});
+
+test('macro evaluations persist without creating a check-in',()=>{
+ const calls:ClientMeasurement[]=[];
+ const measurement={id:7,client_id:1,date:'2026-09-09',weight:78,height:171,age:26,sex:'male',activity_level:'moderate',goal:'maintain',tmb:1700,tdee:2400,protein:170,carbs:280,fat:70,fiber:25,antioxidants:1} satisfies ClientMeasurement;
+ const saved=saveMacroEvaluation(measurement,{saveMeasurement:data=>{const row={...data,id:7};calls.push(row);return row;}});
+ assert.equal(calls.length,1);assert.equal(saved.weight,78);
+});
+
+test('successful cloud saves stay quiet while synchronization errors remain visible',()=>{
+ assert.equal(isStorageAlert({phase:'ready',message:'Guardado en Supabase'}),false);
+ assert.equal(isStorageAlert({phase:'saving',message:'Guardando en Supabase…'}),false);
+ assert.equal(isStorageAlert({phase:'error',message:'No se pudo guardar'}),true);
 });
 
 test('meal distribution preserves 100 percent on rest and workout days',()=>{
@@ -51,6 +66,13 @@ test('progress export treats names as text and accepts empty history',()=>{
  const html=generateProgressReportHTML({id:1,name:'<img src=x onerror=alert(1)> & coach',created_at:'2026-09-01',updated_at:'2026-09-01'},[],[]);
  assert.doesNotMatch(html,/<img/);assert.match(html,/&lt;img/);assert.doesNotMatch(html,/NaN|Infinity/);
  assert.match(html,/@page\{size:A4/);assert.match(html,/#177356/,'progress PDF uses the DietForge clinical palette');
+});
+test('progress export uses check-ins for weight history and ignores calculator evaluations',()=>{
+ const measurement={id:1,client_id:1,date:'2026-09-09',weight:99,height:180,age:30,sex:'male',activity_level:'moderate',goal:'maintain',tmb:1800,tdee:2400,protein:140,carbs:300,fat:70,fiber:25,antioxidants:1} satisfies ClientMeasurement;
+ const html=generateProgressReportHTML({id:1,name:'Coach',created_at:'',updated_at:''},[measurement],[{id:1,client_id:1,date:'2026-09-08',weight:78,body_fat:12}]);
+ assert.match(html,/Peso Actual<\/div><div class="stat-value">78 kg/);
+ assert.doesNotMatch(html,/>99 kg<\/td>/);
+ assert.match(html,/Historial de Check-ins/);
 });
 test('empty diet PDF never contains NaN percentages',()=>{
  const measurement={id:1,client_id:1,date:'2026-09-01',weight:80,height:180,age:30,sex:'male',activity_level:'moderate',goal:'maintain',tmb:1800,tdee:2400,protein:140,carbs:300,fat:70,fiber:25,antioxidants:1} satisfies ClientMeasurement;

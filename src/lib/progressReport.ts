@@ -11,13 +11,14 @@ export function generateProgressReportHTML(
   competition?: Competition,
   phase?: CompetitionPhase,
 ): string {
-  const sorted = [...measurements].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const first = sorted[0];
-  const last = sorted[sorted.length - 1];
-  const trend = calculateWeightTrend([...measurements, ...checkins]);
+  const sortedCheckIns = [...checkins].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const first = sortedCheckIns[0];
+  const last = sortedCheckIns[sortedCheckIns.length - 1];
+  const latestMeasurement = [...measurements].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+  const trend = calculateWeightTrend(checkins);
 
   const weightDiff = last && first ? (last.weight - first.weight).toFixed(1) : "—";
-  const allData = [...measurements, ...checkins].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const allData = [...checkins].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const rows = allData.map((d) => {
     const bf = "body_fat" in d ? d.body_fat : d.body_fat;
@@ -71,7 +72,7 @@ export function generateProgressReportHTML(
   <div class="stat"><div class="stat-label">Calorías Promedio</div><div class="stat-value">${avgKcal} kcal</div></div>
 </div>
 
-<h2>Historial de Mediciones</h2>
+<h2>Historial de Check-ins</h2>
 <table>
   <thead><tr><th>Fecha</th><th style="text-align:center">Peso</th><th style="text-align:center">% Grasa</th></tr></thead>
   <tbody>${rows}</tbody>
@@ -88,12 +89,12 @@ ${competition ? `
 ` : ""}
 
 <h2>Métricas</h2>
-${last ? `
+${last && latestMeasurement ? `
 <div class="grid-2">
-  <div class="stat"><div class="stat-label">IMC</div><div class="stat-value">${calculateBmi(last.weight, last.height)}</div></div>
+  <div class="stat"><div class="stat-label">IMC</div><div class="stat-value">${calculateBmi(last.weight, latestMeasurement.height)}</div></div>
   <div class="stat"><div class="stat-label">MML</div><div class="stat-value">${last.body_fat ? calculateLeanBodyMass(last.weight, last.body_fat) + " kg" : "—"}</div></div>
   <div class="stat"><div class="stat-label">Masa Grasa</div><div class="stat-value">${last.body_fat ? calculateFatMass(last.weight, last.body_fat) + " kg" : "—"}</div></div>
-  <div class="stat"><div class="stat-label">FFMI</div><div class="stat-value">${last.body_fat ? calculateFFMI(last.weight, last.height, last.body_fat) : "—"}</div></div>
+  <div class="stat"><div class="stat-label">FFMI</div><div class="stat-value">${last.body_fat ? calculateFFMI(last.weight, latestMeasurement.height, last.body_fat) : "—"}</div></div>
 </div>
 ` : ""}
 

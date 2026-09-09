@@ -89,6 +89,8 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `src/lib/pdf.ts` | documento A4 imprimible del plan, totales, tablas y escape de contenido |
 | `src/lib/progressReport.ts` | documento A4 del progreso y apertura aislada de la ventana de impresión |
 | `src/lib/csv.ts` | CSV de mediciones y descarga |
+| `src/lib/macro-evaluation.ts` | guarda una evaluación de macros sin crear ni modificar check-ins |
+| `src/lib/cloud/engine.ts` | cola de persistencia, estado de sincronización y criterio para mostrar solo alertas de error |
 | `src/lib/openExternal.ts` | apertura de URLs desde el navegador |
 | `src/data/training-exercises.json` | 463 ejercicios incluidos sin videos; se muestran dentro de “Mis ejercicios” junto con los personalizados del coach |
 | `src/app/(workspace)/exercises/page.tsx` | Entrada privada a la base de ejercicios del coach |

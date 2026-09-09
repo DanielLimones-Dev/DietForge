@@ -36,6 +36,7 @@ DietForge es una aplicación web para coaches de nutrición y entrenamiento. Adm
 - Al apagar Rest Day, mantener temporalmente su columna montada durante la transición de unión; después desmontarla. `restDay` gobierna el modo y `restDayLayout` la presencia visual durante esos 1050 ms.
 - El título de un plan nunca puede persistirse vacío. Si la edición queda en blanco se conserva el nombre anterior; un registro histórico vacío muestra `Plan sin título` y mantiene un control accesible para editarlo.
 - El porcentaje de Rest Day modifica las metas mostradas; las cantidades y nutrientes reales de los alimentos no se reducen artificialmente.
+- Calcular o guardar una evaluación de macros nunca crea un check-in. Solo el formulario de seguimiento modifica el peso, composición, promedio, tendencia e historial mostrados en el expediente.
 - El control compacto de reducción Rest Day persiste `rd_percent_{planId}` y mantiene visible que el ajuste solo cambia las metas.
 - Las unidades admitidas en comidas son gramos, mililitros, libras y pieza. Una libra equivale a `453.59237 g`; una pieza usa `Food.serving_size` como peso declarado.
 - Una Peak Week siempre contiene los siete días terminando en la fecha de competencia. Guardar vuelve a usar el plan del mismo `competition_id` y `peak_week_date` para evitar duplicados.
@@ -52,6 +53,7 @@ DietForge es una aplicación web para coaches de nutrición y entrenamiento. Adm
 - Los campos `input[type="number"]` normalizan ceros iniciales mediante `NumericInputNormalizer`; el usuario puede vaciar el campo y escribir decimales sin quedar atrapado en valores como `050`. El mismo componente gobierna la zona derecha de 30 px para los steppers personalizados: mitad superior incrementa y mitad inferior decrementa respetando `min`, `max` y `step`. Las unidades visibles se colocan antes de esa zona y dejan espacio para el valor. No reactivar los controles nativos blancos de WebKit.
 - En impresión, no usar márgenes negativos para compensar `@page`. Las comidas pueden fragmentarse entre páginas por filas y cada fila debe permanecer íntegra.
 - Los parámetros dinámicos de rutas deben validarse antes de llegar a los componentes.
+- El estado normal de persistencia en Supabase es silencioso. La interfaz muestra la franja global únicamente cuando existe un error recuperable, con acciones para reintentar o descargar respaldo.
 
 ## Modelo de datos resumido
 
