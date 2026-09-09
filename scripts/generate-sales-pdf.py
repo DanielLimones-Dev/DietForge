@@ -91,7 +91,7 @@ def generate() -> Path:
         if description:
             paragraph(description, 42, H - 166, W - 84, 10, 14, COLORS["slate"])
 
-    def screen(path, x, y, width, height, label, accent=None):
+    def screen(path, x, y, width, height, label, accent=None, cover=False):
         accent = accent or COLORS["green"]
         rr(x + 4, y - 5, width, height, 13, HexColor("#DCE8E3"))
         rr(x, y, width, height, 13, COLORS["white"], COLORS["line"])
@@ -107,10 +107,15 @@ def generate() -> Path:
         available_w, available_h = width - 8, height - 31
         c.setFillColor(HexColor("#050914"))
         c.rect(x + 4, y + 4, available_w, available_h, fill=1, stroke=0)
-        scale = min(available_w / iw, available_h / ih)
+        scale = max(available_w / iw, available_h / ih) if cover else min(available_w / iw, available_h / ih)
         draw_w, draw_h = iw * scale, ih * scale
+        c.saveState()
+        path_clip = c.beginPath()
+        path_clip.rect(x + 4, y + 4, available_w, available_h)
+        c.clipPath(path_clip, stroke=0, fill=0)
         c.drawImage(image, x + 4 + (available_w - draw_w) / 2, y + 4 + (available_h - draw_h) / 2,
                     draw_w, draw_h, preserveAspectRatio=True, mask="auto")
+        c.restoreState()
         c.setStrokeColor(accent)
         c.setLineWidth(1.1)
         c.roundRect(x, y, width, height, 13, fill=0, stroke=1)
@@ -139,40 +144,51 @@ def generate() -> Path:
               42, H - 232, 430, 11, 16, HexColor("#C7DFD6"))
     rr(42, H - 315, 168, 34, 16, COLORS["green"])
     text("DESDE $2,000 MXN / MES", 58, H - 303, 8.5, COLORS["white"], "Helvetica-Bold")
-    screen(ASSETS / "coach.jpg", 42, 119, W - 84, 276, "Panel del coach")
-    text("Visibilidad inmediata de clientes activos, planes, check-ins y prioridades.", 54, 91, 9, COLORS["slate"])
+    screen(ASSETS / "dashboard-current.png", 42, 119, W - 84, 276, "Panel de control nutricional")
+    text("Datos recientes de clientes, adherencia, planes y distribución de macros.", 54, 91, 9, COLORS["slate"])
     footer(1)
     c.showPage()
 
-    # Product screens
+    # Diet and food catalog
     c.setFillColor(COLORS["cream"])
     c.rect(0, 0, W, H, fill=1, stroke=0)
-    page_title("LA OPERACIÓN EN UNA SOLA VISTA", "Más control. Menos tareas repetidas.",
-               "Cada pantalla conecta con el expediente del cliente para que el coach trabaje con continuidad.")
-    screen(ASSETS / "foods.jpg", 42, 431, W - 84, 205, "Base de alimentos y rueda nutricional")
-    rr(55, 390, W - 110, 30, 11, COLORS["pale"])
-    text("Busca, compara y agrega alimentos sin perder de vista su aporte nutricional.", 70, 401, 8.5, COLORS["green"], "Helvetica-Bold")
-    screen(ASSETS / "coach.jpg", 42, 139, W - 84, 205, "Clientes y seguimiento")
-    rr(55, 98, W - 110, 30, 11, COLORS["pale"])
-    text("Detecta vencimientos y clientes que requieren atención antes de que se pierda continuidad.", 70, 109, 8.3, COLORS["green"], "Helvetica-Bold")
+    page_title("NUTRICIÓN PERSONALIZADA", "Diseña dietas claras y ajustables.",
+               "Plan Normal y Rest Day viven en espacios independientes, con metas visibles y porciones reales.")
+    screen(ASSETS / "diet-current.png", 42, 332, W - 84, 306, "Dieta, Rest Day y selección de alimentos", cover=True)
+    rr(42, 278, W - 84, 40, 12, COLORS["pale"])
+    text("Metas de macros, reducción Rest Day, comidas y alimentos en una sola vista.", 60, 293, 8.6, COLORS["green"], "Helvetica-Bold")
+    screen(ASSETS / "foods-current.png", 42, 76, W - 84, 184, "Explorador de alimentos y rueda nutricional", cover=True)
     footer(2)
     c.showPage()
 
-    # Calculator and reports
+    # Training
     c.setFillColor(COLORS["cream"])
     c.rect(0, 0, W, H, fill=1, stroke=0)
-    page_title("DECISIONES CON CONTEXTO", "Calcula, revisa y da seguimiento.",
-               "DietForge separa la propuesta nutricional del seguimiento real del cliente.")
-    screen(ASSETS / "calculator.jpg", 42, 474, W - 84, 165, "Calculadora de macros")
-    rr(42, 401, W - 84, 54, 14, COLORS["pale"], COLORS["line"])
-    text("CÁLCULO", 58, 431, 7, COLORS["green"], "Helvetica-Bold")
-    paragraph("Genera y guarda una evaluación de macros. No crea un check-in ni modifica la tendencia de peso.",
-              58, 416, W - 116, 8.5, 11, COLORS["slate"])
-    screen(ASSETS / "reports.jpg", 42, 130, W - 84, 244, "Reportes y alertas")
-    rr(42, 67, W - 84, 45, 14, COLORS["forest"])
-    text("CHECK-IN", 58, 93, 7, COLORS["mint"], "Helvetica-Bold")
-    text("Actualiza peso, composición, promedio, tendencia e historial desde el seguimiento.", 58, 78, 8.3, COLORS["white"])
+    page_title("ENTRENAMIENTO CON ESTRUCTURA", "Programa cada semana con intención.",
+               "Cada semana puede tener días distintos. El volumen suma ejercicios y muestra el avance por grupo muscular.")
+    screen(ASSETS / "training-current.png", 42, 286, W - 84, 352, "Rutina, semanas y volumen muscular", cover=True)
+    feature(42, 180, "Semanas independientes", "Cambia días y ejercicios según la etapa del bloque.", "01")
+    feature(306, 180, "Volumen visible", "Metas, series directas, indirectas y efectivas.", "02")
+    rr(42, 94, W - 84, 66, 14, COLORS["forest"])
+    text("VIDEOS DEL COACH", 60, 134, 7.5, COLORS["mint"], "Helvetica-Bold")
+    paragraph("Añade YouTube o archivos privados a tus ejercicios y recursos; cada coach controla su propio contenido.",
+              60, 116, W - 120, 8.7, 12, COLORS["white"])
     footer(3)
+    c.showPage()
+
+    # Peak Week
+    c.setFillColor(COLORS["cream"])
+    c.rect(0, 0, W, H, fill=1, stroke=0)
+    page_title("PREPARACIÓN DE COMPETENCIA", "Peak Week, día por día.",
+               "Visualiza los siete días hasta el show y registra cada ajuste con contexto.")
+    screen(ASSETS / "peak-current.png", 42, 300, W - 84, 338, "Calendario Peak Week", cover=True)
+    feature(42, 190, "Macros diarios", "Proteína, carbohidratos y grasas propios por fecha.", "01")
+    feature(306, 190, "Recordatorios", "Carga, puesta a punto, agua, sodio y notas del atleta.", "02")
+    rr(42, 96, W - 84, 68, 14, COLORS["pale"], COLORS["line"])
+    text("CONTROL EXPLÍCITO", 60, 137, 7.5, COLORS["green"], "Helvetica-Bold")
+    paragraph("DietForge calcula calorías con 4/4/9 y conserva cada decisión. Agua y sodio se documentan sin aplicar recortes automáticos.",
+              60, 118, W - 120, 8.6, 12, COLORS["slate"])
+    footer(4)
     c.showPage()
 
     # Capabilities
@@ -206,7 +222,7 @@ def generate() -> Path:
         feature(42 + (index % 2) * 264, H - 438 - (index // 2) * 105, title, description, f"{index + 1:02d}")
     rr(42, 78, W - 84, 49, 14, COLORS["pale"])
     text("Una fuente de información para cada cliente, accesible desde cualquier dispositivo.", 61, 96, 9, COLORS["green"], "Helvetica-Bold")
-    footer(4)
+    footer(5)
     c.showPage()
 
     # Pricing
@@ -241,7 +257,7 @@ def generate() -> Path:
     text("ACTIVACIÓN SIMPLE", 60, 174, 8, COLORS["green"], "Helvetica-Bold")
     paragraph("Tú confirmas la transferencia y DietForge activa o renueva el periodo. La cuenta conserva su contraseña y se bloquea automáticamente al vencer.",
               60, 153, W - 120, 9, 13, COLORS["slate"])
-    footer(5)
+    footer(6)
     c.showPage()
 
     # Trust and CTA
@@ -275,7 +291,7 @@ def generate() -> Path:
     rr(64, 122, 221, 31, 14, COLORS["green"])
     text("diet-forge.vercel.app", 88, 133, 10, COLORS["white"], "Helvetica-Bold")
     text("Precios en MXN. Activación después de confirmar la transferencia.", 42, 61, 8, COLORS["slate"])
-    footer(6)
+    footer(7)
     c.save()
     return OUT
 
