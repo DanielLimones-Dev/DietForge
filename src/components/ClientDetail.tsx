@@ -740,21 +740,21 @@ export function ClientDetail() {
                 <label className="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Peso <span className="text-red-400">*</span></label>
                 <div className="relative">
                   <input type="number" className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={calcForm.weight} onChange={(e) => setCalcForm({ ...calcForm, weight: e.target.value })} />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none">kg</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">kg</span>
                 </div>
               </div>
               <div>
                 <label className="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Altura <span className="text-red-400">*</span></label>
                 <div className="relative">
                   <input type="number" className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={calcForm.height} onChange={(e) => setCalcForm({ ...calcForm, height: e.target.value })} />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none">cm</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">cm</span>
                 </div>
               </div>
               <div>
                 <label className="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Edad <span className="text-red-400">*</span></label>
                 <div className="relative">
                   <input type="number" className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={calcForm.age} onChange={(e) => setCalcForm({ ...calcForm, age: e.target.value })} />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none">años</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">años</span>
                 </div>
               </div>
               <div>
@@ -783,7 +783,7 @@ export function ClientDetail() {
               {calcForm.bfMethod === "direct" ? (
                 <div className="relative max-w-[200px]">
                   <input type="number" placeholder="Ej: 15" className="w-full px-3 py-2 pr-14 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.bodyFat} onChange={(e) => setCalcForm({ ...calcForm, bodyFat: e.target.value })} />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none">%</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">%</span>
                 </div>
               ) : (
                 <>
@@ -792,63 +792,63 @@ export function ClientDetail() {
                       <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Pectoral</label>
                       <div className="relative">
                         <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.chest} onChange={(e) => setCalcForm({ ...calcForm, chest: e.target.value })} />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">mm</span>
                       </div>
                     </div>
                     <div>
                       <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Subescapular</label>
                       <div className="relative">
                         <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.subscapular} onChange={(e) => setCalcForm({ ...calcForm, subscapular: e.target.value })} />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">mm</span>
                       </div>
                     </div>
                     <div>
                       <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Bíceps</label>
                       <div className="relative">
                         <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.biceps} onChange={(e) => setCalcForm({ ...calcForm, biceps: e.target.value })} />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">mm</span>
                       </div>
                     </div>
                     <div>
                       <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Tríceps</label>
                       <div className="relative">
                         <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.triceps} onChange={(e) => setCalcForm({ ...calcForm, triceps: e.target.value })} />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">mm</span>
                       </div>
                     </div>
                     <div>
                       <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Cresta ilíaca</label>
                       <div className="relative">
                         <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.suprailiac} onChange={(e) => setCalcForm({ ...calcForm, suprailiac: e.target.value })} />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">mm</span>
                       </div>
                     </div>
                     <div>
                       <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Supraspinal</label>
                       <div className="relative">
                         <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.supraspinale} onChange={(e) => setCalcForm({ ...calcForm, supraspinale: e.target.value })} />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">mm</span>
                       </div>
                     </div>
                     <div>
                       <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Abdominal</label>
                       <div className="relative">
                         <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.abdominal} onChange={(e) => setCalcForm({ ...calcForm, abdominal: e.target.value })} />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">mm</span>
                       </div>
                     </div>
                     <div>
                       <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Muslo anterior</label>
                       <div className="relative">
                         <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.thigh} onChange={(e) => setCalcForm({ ...calcForm, thigh: e.target.value })} />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">mm</span>
                       </div>
                     </div>
                     <div>
                       <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Pierna medial</label>
                       <div className="relative">
                         <input type="number" placeholder="mm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.medialCalf} onChange={(e) => setCalcForm({ ...calcForm, medialCalf: e.target.value })} />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">mm</span>
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">mm</span>
                       </div>
                     </div>
                   </div>
@@ -859,35 +859,35 @@ export function ClientDetail() {
                         <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Brazo relajado</label>
                         <div className="relative">
                           <input type="number" placeholder="cm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.armRelaxed} onChange={(e) => setCalcForm({ ...calcForm, armRelaxed: e.target.value })} />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">cm</span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">cm</span>
                         </div>
                       </div>
                       <div>
                         <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Brazo flexionado</label>
                         <div className="relative">
                           <input type="number" placeholder="cm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.armFlexed} onChange={(e) => setCalcForm({ ...calcForm, armFlexed: e.target.value })} />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">cm</span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">cm</span>
                         </div>
                       </div>
                       <div>
                         <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Cintura</label>
                         <div className="relative">
                           <input type="number" placeholder="cm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.waist} onChange={(e) => setCalcForm({ ...calcForm, waist: e.target.value })} />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">cm</span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">cm</span>
                         </div>
                       </div>
                       <div>
                         <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Cadera</label>
                         <div className="relative">
                           <input type="number" placeholder="cm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.hip} onChange={(e) => setCalcForm({ ...calcForm, hip: e.target.value })} />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">cm</span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">cm</span>
                         </div>
                       </div>
                       <div>
                         <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Pantorrilla max</label>
                         <div className="relative">
                           <input type="number" placeholder="cm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.calfMax} onChange={(e) => setCalcForm({ ...calcForm, calfMax: e.target.value })} />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">cm</span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">cm</span>
                         </div>
                       </div>
                     </div>
@@ -899,21 +899,21 @@ export function ClientDetail() {
                         <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Húmero (codo)</label>
                         <div className="relative">
                           <input type="number" placeholder="cm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.humerus} onChange={(e) => setCalcForm({ ...calcForm, humerus: e.target.value })} />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">cm</span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">cm</span>
                         </div>
                       </div>
                       <div>
                         <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Fémur (rodilla)</label>
                         <div className="relative">
                           <input type="number" placeholder="cm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.femur} onChange={(e) => setCalcForm({ ...calcForm, femur: e.target.value })} />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">cm</span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">cm</span>
                         </div>
                       </div>
                       <div>
                         <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-1 font-medium">Talla sentado</label>
                         <div className="relative">
                           <input type="number" placeholder="cm" className="w-full px-2.5 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-xs bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.sittingHeight} onChange={(e) => setCalcForm({ ...calcForm, sittingHeight: e.target.value })} />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none">cm</span>
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">cm</span>
                         </div>
                       </div>
                     </div>

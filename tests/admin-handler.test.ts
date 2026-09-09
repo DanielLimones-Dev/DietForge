@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createAdminHandler } from '../src/lib/server/admin-handler';
+import { createAdminDeleteHandler, createAdminHandler } from '../src/lib/server/admin-handler';
 const body={email:' Coach@Example.com ',months:3,note:'Pago',requestId:'11111111-1111-4111-8111-111111111111'};
 const request=(payload=body)=>new Request('http://localhost/api/admin/coaches',{method:'POST',headers:{Authorization:'Bearer caller','Content-Type':'application/json'},body:JSON.stringify(payload)});
 test('admin provisioning refuses non-admins before using privileged credentials',async()=>{
@@ -25,7 +25,7 @@ test('retry finds existing account, skips creation, and reuses renewal ID',async
   const path=String(input);if(path.endsWith('dietforge_is_admin'))return Response.json(true);
   if(path.endsWith('dietforge_admin_list'))return Response.json({coaches:[{email:'coach@example.com',user_id:'fixture'}]});
   assert.ok(path.endsWith('dietforge_admin_set_access'));assert.equal(JSON.parse(init!.body as string).p_request_id,body.requestId);return Response.json({});
- }});assert.equal((await handler(request())).status,200);
+ }});const response=await handler(request());assert.equal(response.status,200);const result=await response.json();assert.equal(result.emailSent,false);assert.equal(result.alreadyRegistered,true);
 });
 test('unsupported period never creates a coach',async()=>{
  let calls=0;const handler=createAdminHandler({url:'https://fixture.invalid',publicKey:'public',fetch:async()=>{calls++;return Response.json(true);}});
@@ -38,4 +38,27 @@ test('malformed admin requests fail as validation errors before creating users',
   assert.equal(response.status,400);
  }
  assert.equal(calls,3);
+});
+const deleteRequest=(payload={email:'coach@example.com',requestId:'22222222-2222-4222-8222-222222222222'})=>new Request('http://localhost/api/admin/coaches',{method:'DELETE',headers:{Authorization:'Bearer caller','Content-Type':'application/json'},body:JSON.stringify(payload)});
+test('coach deletion refuses non-admins before service operations',async()=>{
+ let calls=0;const handler=createAdminDeleteHandler({url:'https://fixture.invalid',publicKey:'public',serviceKey:'secret',fetch:async()=>{calls++;return Response.json(false);}});
+ assert.equal((await handler(deleteRequest())).status,403);assert.equal(calls,1);
+});
+test('coach deletion removes stored videos and the auth identity after database cleanup',async()=>{
+ const calls:string[]=[];
+ const handler=createAdminDeleteHandler({url:'https://fixture.invalid',publicKey:'public',serviceKey:'secret',fetch:async(input,init)=>{
+  const path=new URL(String(input)).pathname;calls.push(`${init?.method} ${path}`);
+  if(path.endsWith('dietforge_is_admin'))return Response.json(true);
+  if(path.endsWith('dietforge_admin_delete_coach')){assert.deepEqual(JSON.parse(init!.body as string),{p_email:'coach@example.com',p_request_id:'22222222-2222-4222-8222-222222222222'});return Response.json({deleted:true,user_id:'coach-id'});}
+  const headers=new Headers(init?.headers);assert.equal(headers.get('authorization'),'Bearer secret');
+  if(path.endsWith('/object/list/training-videos'))return Response.json([{name:'demo.mp4'}]);
+  if(path.endsWith('/object/training-videos')){assert.deepEqual(JSON.parse(init!.body as string),{prefixes:['coach-id/demo.mp4']});return Response.json({});}
+  if(path.endsWith('/admin/users/coach-id'))return new Response(null,{status:204});
+  return new Response(null,{status:404});
+ }});
+ const response=await handler(deleteRequest());assert.equal(response.status,200);assert.deepEqual(await response.json(),{deleted:true});assert.deepEqual(calls,['POST /rest/v1/rpc/dietforge_is_admin','POST /rest/v1/rpc/dietforge_admin_delete_coach','POST /storage/v1/object/list/training-videos','DELETE /storage/v1/object/training-videos','DELETE /auth/v1/admin/users/coach-id']);
+});
+test('coach deletion requires exact validated input',async()=>{
+ let calls=0;const handler=createAdminDeleteHandler({url:'https://fixture.invalid',publicKey:'public',serviceKey:'secret',fetch:async(input)=>{calls++;return String(input).endsWith('dietforge_is_admin')?Response.json(true):Response.json({});}});
+ assert.equal((await handler(deleteRequest({email:'bad',requestId:'not-a-uuid'}))).status,400);assert.equal(calls,1);
 });

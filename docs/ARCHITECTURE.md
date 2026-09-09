@@ -156,7 +156,9 @@ En impresión, `@page` define el margen físico y el contenido comienza en flujo
 
 ## Administración y suscripciones
 
-El panel llama `POST /api/admin/coaches`. El Route Handler valida el bearer token con `dietforge_is_admin`; solo el servidor usa `SUPABASE_SERVICE_ROLE_KEY` para invitar por correo una identidad Auth todavía inexistente. La invitación vuelve a `/auth/callback?next=password`, confirma el correo y entrega una sesión de un solo uso para que el coach defina su propia contraseña. Luego ejecuta `dietforge_admin_set_access` con un `requestId` idempotente. Una cuenta existente no recibe otra invitación al renovarse.
+El panel llama `POST /api/admin/coaches`. El Route Handler valida el bearer token con `dietforge_is_admin`; solo el servidor usa `SUPABASE_SERVICE_ROLE_KEY` para invitar por correo una identidad Auth todavía inexistente. La invitación vuelve a `/auth/callback?next=password`, confirma el correo y entrega una sesión de un solo uso para que el coach defina su propia contraseña. Luego ejecuta `dietforge_admin_set_access` con un `requestId` idempotente. Una cuenta existente no recibe otra invitación al renovarse y conserva su contraseña.
+
+`DELETE /api/admin/coaches` comprueba el mismo rol, valida correo e identificador idempotente y ejecuta `dietforge_admin_delete_coach`. La RPC impide eliminar administradores y retira workspace, actividad y acceso; el handler con service role elimina los objetos del bucket privado y finalmente la identidad Auth. La interfaz exige escribir el correo exacto antes de enviar la operación y el historial conserva el movimiento administrativo.
 
 La pantalla de acceso vive en `/` y sirve a todos los roles. No muestra un acceso administrativo separado ni compara el correo con una identidad conocida: después de validar la contraseña consulta `dietforge_is_admin()` contra la sesión Auth y dirige al administrador a `/admin`; cualquier cuenta no administradora continúa al panel de coach. `/admin/login` redirige a `/` para conservar enlaces antiguos.
 
@@ -164,7 +166,7 @@ La pantalla de acceso vive en `/` y sirve a todos los roles. No muestra un acces
 
 Next.js publica encabezados para evitar interpretación MIME, iframes, filtración amplia del referente y acceso accidental a cámara, micrófono o ubicación. La CSP limita `base-uri`, formularios, marcos y objetos sin restringir scripts internos de Next.js. Las API usan bearer tokens explícitos, validan entrada y no devuelven cuerpos de proveedores que puedan contener credenciales. Véase `docs/SECURITY_REVIEW.md` para el análisis y los riesgos operativos pendientes.
 
-Supabase combina periodos manuales y pagos Stripe. La fecha efectiva es el vencimiento más lejano permitido. Suspender bloquea el acceso sin borrar datos. Reanudar elimina la suspensión sin sumar tiempo. Todas las acciones administrativas quedan en `dietforge_access_audit`.
+Supabase combina periodos manuales y pagos Stripe. La fecha efectiva es el vencimiento más lejano permitido. La existencia de un periodo pagado prevalece sobre cualquier prueba histórica: cuando vence, `dietforge_my_access` devuelve `expired` hasta una renovación. Suspender bloquea el acceso sin borrar datos. Reanudar elimina la suspensión sin sumar tiempo. Renovaciones, suspensiones, reanudaciones y eliminaciones quedan en `dietforge_access_audit`.
 
 ## Búsqueda de alimentos
 

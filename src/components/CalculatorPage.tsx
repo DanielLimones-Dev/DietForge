@@ -131,21 +131,21 @@ export function CalculatorPage() {
             <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Peso <span className="text-red-400">*</span></label>
             <div className="relative">
               <input type="number" className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none">kg</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">kg</span>
             </div>
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Altura <span className="text-red-400">*</span></label>
             <div className="relative">
               <input type="number" className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.height} onChange={(e) => setForm({ ...form, height: e.target.value })} />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none">cm</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">cm</span>
             </div>
           </div>
           <div>
             <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Edad <span className="text-red-400">*</span></label>
             <div className="relative">
               <input type="number" className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none">años</span>
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">años</span>
             </div>
           </div>
           <div>
@@ -172,7 +172,7 @@ export function CalculatorPage() {
             {form.bfMethod === "direct" ? (
               <div className="relative max-w-[200px]">
                 <input type="number" placeholder="Ej: 15" className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all" value={form.bodyFat} onChange={(e) => setForm({ ...form, bodyFat: e.target.value })} />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none">%</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-gray-400 dark:text-gray-600 pointer-events-none numeric-unit">%</span>
               </div>
             ) : (
               <div className="grid grid-cols-4 gap-2">

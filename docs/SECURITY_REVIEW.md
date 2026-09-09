@@ -14,6 +14,7 @@ Se añadieron defensas HTTP contra clickjacking, MIME sniffing, objetos embebido
 |---|---|---|
 | Identidad y aislamiento | Correcto | `dietforge_load/save` usan `auth.uid()`; RLS limita `owner_id`; el cliente no envía un propietario confiable. |
 | Rol administrador | Correcto | `dietforge_is_admin()` consulta una identidad Auth confirmada; el handler valida el bearer antes de usar la service role. |
+| Eliminación de coaches | Correcto | Requiere rol administrador en RPC y Route Handler, confirmación exacta del correo, ID idempotente y bloquea la identidad administradora. |
 | Secretos | Correcto | `SUPABASE_SERVICE_ROLE_KEY` solo aparece en documentación y código de servidor; `.env` y `.env.local` están ignorados. |
 | Altas y renovaciones | Correcto | Periodos limitados a 1, 3 o 12 meses, `requestId` idempotente, bloqueo transaccional y registro de auditoría. |
 | API de alimentos | Correcto | Requiere sesión, valida proveedor y consulta, aplica timeout, no cachea y oculta errores del proveedor. |
@@ -42,7 +43,7 @@ La CSP actual protege marcos, objetos, formularios y `base-uri`, pero no restrin
 ## Modelo de amenaza y pruebas recomendadas antes de producción
 
 - Ejecutar pruebas reales de RLS con dos cuentas Auth y confirmar que ninguna carga o escritura cruza `owner_id`.
-- Probar que un coach autenticado recibe 403 en `/api/admin/coaches` y que ninguna service role llega al bundle del navegador.
+- Probar que un coach autenticado recibe 403 en `POST` y `DELETE /api/admin/coaches` y que ninguna service role llega al bundle del navegador.
 - Configurar alertas para renovaciones, suspensiones y errores repetidos de autenticación administrativa.
 - Aplicar rate limiting distribuido y revisar límites de tamaño de solicitud en el proxy.
 - Repetir `npm audit --omit=dev`, pruebas, typecheck, lint y build en cada entrega.

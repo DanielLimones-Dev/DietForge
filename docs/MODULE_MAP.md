@@ -23,7 +23,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `/admin/login` | `src/app/admin/login/page.tsx` | redirección compatible al login único `/` |
 | `/auth/callback` | `src/app/auth/callback/page.tsx` | validación de correo y recuperación |
 | `/auth/password` | `src/app/auth/password/page.tsx` | creación o cambio de contraseña |
-| `/api/admin/coaches` | `src/app/api/admin/coaches/route.ts` | alta y renovación administrativa |
+| `/api/admin/coaches` | `src/app/api/admin/coaches/route.ts` | alta, renovación y eliminación administrativa |
 | `/api/nutrition/[provider]` | `src/app/api/nutrition/[provider]/route.ts` | proxy USDA/FatSecret autenticado |
 
 `src/app/layout.tsx` carga fuentes, estilos y metadatos. `src/app/(workspace)/layout.tsx` aplica los proveedores compartidos. `not-found.tsx`, `loading.tsx` y `error.tsx` cubren estados de ruta.
@@ -37,7 +37,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `CloudGate.tsx` | sesión, carga de cuenta, importación heredada y estado de guardado | Supabase Auth, `db`, `SaveQueue` |
 | `LoginScreen.tsx` | login único por rol y recuperación; la primera activación solo llega por invitación | Supabase Auth, RPC `dietforge_is_admin`, `auth-role` |
 | `SubscriptionGate.tsx` / `SubscriptionPage.tsx` | bloquea o explica acceso comercial | `SubscriptionContext` |
-| `AdminPanel.tsx` | consola administrativa clínica: métricas, directorio, alta, periodos, suspensión e historial | RPC Supabase y API `/admin/coaches` |
+| `AdminPanel.tsx` | consola administrativa clínica: métricas, directorio, alta, periodos, suspensión, eliminación confirmada e historial | RPC Supabase y API `/admin/coaches` |
 | `Layout.tsx` | navegación, tema y cierre de sesión | rutas, suscripción |
 | `Dashboard.tsx` | panel clínico con métricas, clientes recientes, matriz de macros y acceso | clientes, planes, check-ins y cuenta desde `db`/suscripción |
 | `ClientList.tsx` / `ClientForm.tsx` | directorio clínico, filtros, estados, alta y edición | `db.clients` |
@@ -71,7 +71,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `src/lib/supabase.ts` | cliente browser y consulta del acceso actual |
 | `src/lib/subscription.ts` | logout seguro, utilidades de periodo y enlaces Stripe |
 | `src/lib/email-access.ts` | valida códigos y enlaces permitidos sin solicitar URLs arbitrarias |
-| `src/lib/server/admin-handler.ts` | alta Auth en servidor y renovación autorizada |
+| `src/lib/server/admin-handler.ts` | alta Auth, renovación sin reinvitación y eliminación total autorizada |
 | `src/lib/server/nutrition-handler.ts` | autenticación y proxy seguro de proveedores |
 | `src/lib/meal-day.ts` | separación Normal/Rest, unidades, totales y metas reducidas |
 | `src/lib/numeric-input.ts` | elimina ceros enteros redundantes sin romper vacío ni decimales |
@@ -101,6 +101,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 |---|---|
 | `supabase/migrations/20260906010000_dietforge_cloud.sql` | workspaces, registros, mutaciones, RLS y RPC de snapshot |
 | `supabase/migrations/20260906020000_admin_access.sql` | administradores, acceso, auditoría, periodos y protección de persistencia |
+| `supabase/migrations/20260909010000_admin_delete_and_strict_expiry.sql` | vencimiento estricto y eliminación administrativa idempotente |
 | `supabase/migrations/20260907030000_training_programs.sql` | colección `trainingPrograms` en snapshot, RPC y restricción de colecciones |
 | `supabase/schema.sql` | esquema histórico/consolidado de suscripciones y funciones |
 | `supabase/functions/check-subscription/index.ts` | función heredada de consulta de suscripción |
@@ -116,7 +117,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `meal-day.test.ts` | unidades, totales, separación y reducción |
 | `peak-week.test.ts` / `peak-calendar.test.ts` | siete fechas, macros, guardado y calendario |
 | `training.test.ts` | volumen/frecuencia, copias independientes, validación, compatibilidad cloud y PDF seguro |
-| `admin-handler.test.ts` | autorización, alta, validación e idempotencia |
+| `admin-handler.test.ts` | autorización, alta, renovación sin reinvitación, eliminación e idempotencia |
 | `nutrition-api.test.ts` | autenticación, parámetros, proveedores y errores seguros |
 | `email-access.test.ts` / `auth-errors.test.ts` | enlaces/códigos permitidos y mensajes de Auth |
 | `domain-regression.test.ts` | cálculos críticos de dominio |

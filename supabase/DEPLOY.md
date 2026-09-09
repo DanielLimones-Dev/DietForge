@@ -29,8 +29,9 @@ Las ampliaciones del snapshot se aplican por orden de archivo. Las que cambian c
 2. `migrations/20260907030000_training_programs.sql`
 3. `migrations/20260908010000_client_portal.sql`
 4. `migrations/20260908090000_exercise_catalog.sql`
+5. `migrations/20260909010000_admin_delete_and_strict_expiry.sql`
 
-La última incorpora `exercises` a la restricción y a las RPC `dietforge_load`/`dietforge_save`. En esta instalación todas las migraciones hasta `20260908090000` constan como aplicadas en el historial remoto. Verificar con `supabase migration list --linked` antes de ejecutar una migración manualmente.
+La migración del catálogo incorpora `exercises` a la restricción y a las RPC `dietforge_load`/`dietforge_save`. La última añade vencimiento estricto y eliminación administrativa. En esta instalación todas las migraciones hasta `20260909010000` constan como aplicadas en el historial remoto. Verificar con `supabase migration list --linked` antes de ejecutar una migración manualmente.
 
 ## 2. Stripe Webhook Edge Function
 ```bash
