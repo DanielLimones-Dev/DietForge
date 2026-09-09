@@ -95,6 +95,7 @@ export interface Competition {
 export type PeakWeekMarker = "inicio_competencia" | "macro_adjust" | "water_manip" | "sodium_manip" | "carb_load" | "puesta_punto" | "show_day";
 
 export interface PeakWeekDayConfig {
+  reminder?: string;
   date: string;
   phase: string;
   markers: PeakWeekMarker[];
@@ -199,6 +200,96 @@ export interface DayPlan {
   rest_day?: boolean;
 }
 
+export type TrainingGoal = "hypertrophy" | "strength" | "recomposition" | "conditioning" | "maintenance";
+export type TrainingProgramStatus = "draft" | "active" | "archived";
+
+export interface ExerciseLibraryItem {
+  id: string;
+  name: string;
+  muscle_group: string;
+  video_url?: string | null;
+  notes?: string;
+}
+
+/** Exercise created by the coach and persisted in the account catalog. */
+export interface CustomExercise {
+  id: number;
+  name: string;
+  muscle_group: string;
+  video_url?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TrainingPrescription {
+  load_kg?: number;
+  week: number;
+  sets: number;
+  reps_min: number;
+  reps_max: number;
+  rir_start: number;
+  rir_end: number;
+}
+
+export interface TrainingExercise {
+  video_custom?: boolean;
+  secondary_muscles?: string[];
+  indirect_factor?: number;
+  id: string;
+  library_id?: string;
+  name: string;
+  muscle_group: string;
+  video_url?: string;
+  notes?: string;
+  prescriptions: TrainingPrescription[];
+}
+
+export interface TrainingDay {
+  weekday_offset?: number;
+  id: string;
+  day_number: number;
+  name: string;
+  notes?: string;
+  exercises: TrainingExercise[];
+}
+
+export interface TrainingBlockReview {
+  session_fatigue: number[];
+  general_fatigue?: number;
+  volume_tolerance?: number;
+  soreness?: string;
+  hardest_session?: string;
+  uncomfortable_exercises?: string;
+  keep_exercises?: string;
+}
+
+export interface TrainingProgram {
+  /** Independent schedule for each week. `days` remains the week-one legacy view. */
+  week_days?: Record<string, TrainingDay[]>;
+  /** Coach target by week and muscle; compared with calculated exercise sets. */
+  weekly_volume_targets?: Record<string, Record<string, number>>;
+  resources?: { id: string; title: string; url: string }[];
+  volume_ranges?: Record<string, { min: number; max: number }>;
+  approval_history?: { date: string; exercise_id: string; week: number; message: string }[];
+  id: number;
+  client_id: number;
+  name: string;
+  objective: TrainingGoal;
+  start_date: string;
+  duration_weeks: number;
+  mesocycle_number: number;
+  rotation_number: number;
+  priorities: string[];
+  split: string;
+  notes?: string;
+  status: TrainingProgramStatus;
+  days: TrainingDay[];
+  review?: TrainingBlockReview;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Food {
   id: number;
   name: string;
@@ -217,6 +308,8 @@ export interface Food {
 }
 
 export interface MealPlan {
+  competition_id?: number;
+  peak_week_date?: string;
   id: number;
   client_id: number;
   measurement_id: number | null;
@@ -232,6 +325,8 @@ export interface MealPlan {
 
 export interface MealPlanItem {
   id: number;
+  /** Missing on historical items, which belong to the normal day. */
+  day_type?: "normal" | "rest";
   meal_plan_id: number;
   meal_time: MealTime;
   food_id: number;

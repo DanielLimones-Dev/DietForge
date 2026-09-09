@@ -1,9 +1,8 @@
 import { type ReactNode } from "react";
-import { Outlet } from "react-router-dom";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { SubscriptionPage } from "@/pages/SubscriptionPage";
+import { SubscriptionPage } from "@/components/SubscriptionPage";
 
-export function SubscriptionGate({ children }: { children?: ReactNode }) {
+export function SubscriptionGate({ children }: { children: ReactNode }) {
   const { email, status, loading, trialActive } = useSubscription();
 
   if (loading) {
@@ -22,5 +21,5 @@ export function SubscriptionGate({ children }: { children?: ReactNode }) {
     return <SubscriptionPage offline={offline} />;
   }
 
-  return <>{children || <Outlet />}</>;
+  return <>{children}</>;
 }

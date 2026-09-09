@@ -1,5 +1,11 @@
 import type { Client, ClientMeasurement } from "@/types";
 
+function csvCell(value: unknown): string {
+  let text = String(value ?? '');
+  if (typeof value === 'string' && /^[\s]*[=+@-]/.test(text)) text = "'" + text;
+  return /[",\r\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+}
+
 export function measurementsToCSV(client: Client, measurements: ClientMeasurement[]): string {
   const headers = ["Fecha", "Peso (kg)", "Altura (cm)", "Edad", "% Grasa", "TMB", "TDEE", "Proteína (g)", "Carbos (g)", "Grasa (g)", "Fibra (g)", "Objetivo", "Actividad"];
   const rows = measurements.map((m) => [
@@ -16,7 +22,7 @@ export function measurementsToCSV(client: Client, measurements: ClientMeasuremen
     m.fiber,
     m.goal,
     m.activity_level,
-  ].join(","));
+  ].map(csvCell).join(","));
 
   return [headers.join(","), ...rows].join("\n");
 }

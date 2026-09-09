@@ -1,308 +1,99 @@
-import type {
-  Client, ClientMeasurement, Food, MealPlan, MealPlanItem, DietTemplate,
-  Competition, CheckIn, PhotoRef, WeekPlan,
-} from "@/types";
-import { classifyCarbs } from "@/lib/nutrition";
-import { checkSubscription, clearSubscriptionCache, type SubscriptionStatus } from "@/lib/supabase";
-
-export const QUOTA_WARNING_KEY = "dietforge_quota_warned";
-
-export function checkStorageQuota(): { used: number; limit: number; percent: number; ok: boolean } {
-  const limit = 4.5 * 1024 * 1024;
-  let used = 0;
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key) {
-      const val = localStorage.getItem(key);
-      if (val) used += key.length + val.length;
-    }
-  }
-  const percent = (used / limit) * 100;
-  const ok = percent < 80;
-  if (percent >= 80 && !localStorage.getItem(QUOTA_WARNING_KEY)) {
-    localStorage.setItem(QUOTA_WARNING_KEY, "1");
-  }
-  return { used, limit, percent, ok };
+import type { Client, ClientMeasurement, Food, MealPlan, MealPlanItem, DietTemplate, Competition, CheckIn, PhotoRef, WeekPlan, TrainingProgram, CustomExercise } from '@/types';
+import { classifyCarbs } from '@/lib/nutrition';
+import { readRemote, writeRemote } from './cloud/repository';
+import { emptySnapshot, readLegacy, validateSnapshot, type Snapshot, type Database, sameSnapshot } from './cloud/model';
+import { SaveQueue, type SaveState } from './cloud/engine';
+const SEED_VERSION=2;
+export const QUOTA_WARNING_KEY='dietforge_quota_warned';
+export function checkStorageQuota(){return {used:0,limit:0,percent:0,ok:true};}
+let cache:Database=emptySnapshot().database;
+let templatesCache:DietTemplate[]=[];
+let preferences:Record<string,string>={};
+let owner='';
+let accountEpoch=0;
+let queue:SaveQueue|null=null;
+let state:SaveState={phase:'ready',message:'Conectando con Supabase…'};
+const listeners=new Set<()=>void>();
+export function subscribeStorage(fn:()=>void){listeners.add(fn);return ()=>{listeners.delete(fn);};}
+export function getStorageState(){return state;}
+function setState(s:SaveState){state=s;listeners.forEach(fn=>fn());}
+function snapshot():Snapshot{return structuredClone({database:cache,templates:templatesCache,preferences});}
+function adopt(s:Snapshot){cache=s.database;templatesCache=s.templates;preferences=s.preferences;}
+function localKey(kind:string){return `dietforge_cloud_${owner}_${kind}`;}
+export function exportCloudBackup(){
+ const blob=new Blob([JSON.stringify({format:'dietforge-v1',owner,snapshot:snapshot()},null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='dietforge-respaldo.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-
-const DB_KEY = "dietforge_db";
-const TEMPLATES_KEY = "dietforge_templates";
-const SEED_VERSION = 2;
-
-interface Database {
-  seed_version?: number;
-  clients: Client[];
-  measurements: ClientMeasurement[];
-  competitions: Competition[];
-  checkins: CheckIn[];
-  photos: PhotoRef[];
-  weekPlans: WeekPlan[];
-  foods: Food[];
-  mealPlans: MealPlan[];
-  mealPlanItems: MealPlanItem[];
-  nextId: { [key: string]: number };
+export async function retryCloudSave(){await queue?.flush();}
+export function hasPendingCloudWrites(){return !!queue?.pending;}
+export function getPreference(key:string){return preferences[key]??null;}
+export function setPreference(key:string,value:string){assertWritable();preferences[key]=value;persist();}
+export async function saveTrialStart(date:string){setPreference('dietforge_trial',date);}
+function assertWritable(){if(!queue || state.phase==='error')throw new Error('El guardado está detenido. Resuelve el aviso de sincronización antes de editar.');}
+function persist(){
+ if(!queue)return;
+ try{queue.enqueue(snapshot());}catch{setState({phase:'error',message:'No hay espacio para el respaldo de recuperación. Descárgalo antes de continuar.'});}
 }
-
-function inTauri(): boolean {
-  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+function genId(table:string){const id=cache.nextId[table]||1;cache.nextId[table]=id+1;return id;}
+export interface InitializeResult { needsImport:boolean; localCounts?:Record<string,number>; }
+let legacy:Snapshot|null=null;
+export async function initializeCloud(userId:string):Promise<InitializeResult>{
+ const epoch=++accountEpoch;
+ const assertCurrent=()=>{if(epoch!==accountEpoch)throw new Error('La cuenta cambió durante la carga.');};
+ owner=userId;queue=null;setState({phase:'ready',message:'Cargando tus datos…'});
+ const remote=await readRemote(userId);
+ assertCurrent();
+ const pending=localStorage.getItem(localKey('pending'));
+ const operation=localStorage.getItem(localKey('operation'));
+ if(operation){
+  const op=JSON.parse(operation);const committed=await writeRemote(validateSnapshot(op.snapshot),op.revision,op.id,userId);
+  assertCurrent();
+  if(pending){const saved=JSON.parse(pending);localStorage.setItem(localKey('pending'),JSON.stringify({...saved,revision:committed}));}
+  localStorage.removeItem(localKey('operation'));
+  // If that request committed, reload its new revision before offering any unsent changes.
+  return initializeCloud(userId);
+ }
+ if(pending){
+  const saved=JSON.parse(pending);const s=validateSnapshot(saved.snapshot);
+  if(remote && sameSnapshot(s,remote.snapshot)){localStorage.removeItem(localKey('pending'));}
+  else if((remote?.revision??0)===saved.revision){
+   const rev=await writeRemote(s,saved.revision,crypto.randomUUID(),userId);
+   assertCurrent();
+   localStorage.removeItem(localKey('pending'));adopt(s);startQueue(rev);return {needsImport:false};
+  }else{
+   adopt(s);throw new Error('Hay cambios locales pendientes y una versión distinta en Supabase. Descarga el respaldo antes de recargar; no se sobrescribirá ninguna versión.');
+  }
+ }
+ if(remote){adopt(remote.snapshot);startQueue(remote.revision);return {needsImport:false};}
+ legacy=readLegacy(localStorage);
+ if(legacy){adopt(legacy);return {needsImport:true,localCounts:Object.fromEntries(Object.entries(legacy.database).filter(([,v])=>Array.isArray(v)).map(([k,v])=>[k,(v as unknown[]).length]))};}
+ adopt(emptySnapshot());const rev=await writeRemote(snapshot(),0,crypto.randomUUID(),userId);assertCurrent();startQueue(rev);return {needsImport:false};
 }
-
-let cache: Database = {
-  clients: [],
-  measurements: [],
-  competitions: [],
-  checkins: [],
-  photos: [],
-  weekPlans: [],
-  foods: [],
-  mealPlans: [],
-  mealPlanItems: [],
-  nextId: { clients: 1, measurements: 1, competitions: 1, checkins: 1, photos: 1, weekPlans: 1, foods: 1, mealPlans: 1, mealPlanItems: 1 },
-};
-
-let templatesCache: DietTemplate[] = [];
-type DbHandle = Awaited<ReturnType<typeof import("@tauri-apps/plugin-sql").default["load"]>>;
-let sqlite: DbHandle | null = null;
-let persistQueue: Promise<void> = Promise.resolve();
-
-loadFromLocalStorage();
-
-function loadFromLocalStorage() {
-  try {
-    const raw = localStorage.getItem(DB_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === "object" && "clients" in parsed) {
-        cache = parsed;
-        return;
-      }
-    }
-  } catch { /* empty */ }
-  try {
-    const backup = localStorage.getItem(DB_KEY + "_backup");
-    if (backup) {
-      const parsed = JSON.parse(backup);
-      if (parsed && typeof parsed === "object" && "clients" in parsed && parsed.clients.length > 0) {
-        cache = parsed;
-        localStorage.setItem(DB_KEY, backup);
-        return;
-      }
-    }
-  } catch { /* empty */ }
-  try {
-    templatesCache = JSON.parse(localStorage.getItem(TEMPLATES_KEY) || "[]");
-  } catch { templatesCache = []; }
+export async function confirmLegacyImport(importLocal:boolean){
+ const epoch=accountEpoch;
+ const s=importLocal&&legacy?legacy:emptySnapshot();
+ // Legacy keys are never removed or rewritten.
+ const rev=await writeRemote(s,0,crypto.randomUUID(),owner);
+ if(epoch!==accountEpoch)throw new Error('La cuenta cambió durante la importación.');
+ adopt(s);startQueue(rev);legacy=null;
 }
-
-function saveToLocalStorage() {
-  try {
-    const data = JSON.stringify(cache);
-    localStorage.setItem(DB_KEY, data);
-    localStorage.setItem(DB_KEY + "_backup", data);
-  } catch {
-    console.warn("localStorage lleno — datos no guardados");
-  }
-  try {
-    localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templatesCache));
-  } catch {
-    console.warn("localStorage lleno — templates no guardados");
-  }
+function startQueue(revision:number){
+ const queueOwner=owner;const epoch=accountEpoch;
+ const key=(kind:string)=>`dietforge_cloud_${queueOwner}_${kind}`;
+ queue=new SaveQueue(revision,(s,r,id)=>{
+  if(epoch!==accountEpoch)return Promise.reject(new Error('La cuenta cambió. Los cambios pendientes se conservaron en su cuenta original.'));
+  return writeRemote(s,r,id,queueOwner);
+ },s=>{
+  if(s.phase==='ready')localStorage.removeItem(key('pending'));
+  if(epoch!==accountEpoch)return;
+  setState(s);
+ },(s,r)=>{localStorage.setItem(key('pending'),JSON.stringify({revision:r,snapshot:s}));},op=>{
+  if(op)localStorage.setItem(key('operation'),JSON.stringify(op));else localStorage.removeItem(key('operation'));
+ });setState({phase:'ready',message:'Guardado en Supabase'});
 }
-
-async function saveToSQLite() {
-  if (!sqlite) return;
-  try {
-    for (const c of cache.clients) {
-      await sqlite.execute(
-        "INSERT OR REPLACE INTO clients (id, name, email, phone, notes, prep_type, tags, created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
-        [c.id, c.name, c.email || null, c.phone || null, c.notes || null, c.prep_type || null, c.tags ? JSON.stringify(c.tags) : null, c.created_at, c.updated_at]
-      );
-    }
-    for (const m of cache.measurements) {
-      await sqlite.execute(
-        "INSERT OR REPLACE INTO measurements (id, client_id, date, weight, height, age, sex, body_fat, body_fat_method, skinfolds, isak_data, activity_level, goal, tmb, tdee, protein, carbs, fat, fiber, antioxidants) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        [m.id, m.client_id, m.date, m.weight, m.height, m.age, m.sex, m.body_fat || null, m.body_fat_method || null, m.skinfolds ? JSON.stringify(m.skinfolds) : null, m.isak_data ? JSON.stringify(m.isak_data) : null, m.activity_level, m.goal, m.tmb, m.tdee, m.protein, m.carbs, m.fat, m.fiber, m.antioxidants]
-      );
-    }
-    for (const f of cache.foods) {
-      await sqlite.execute(
-        "INSERT OR REPLACE INTO foods (id, name, barcode, category, protein, carbs, fat, fiber, antioxidants, kcal, serving_size, serving_unit, source, carb_type) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        [f.id, f.name, f.barcode || null, f.category, f.protein, f.carbs, f.fat, f.fiber, f.antioxidants, f.kcal, f.serving_size, f.serving_unit, f.source, f.carb_type || null]
-      );
-    }
-    for (const p of cache.mealPlans) {
-      await sqlite.execute(
-        "INSERT OR REPLACE INTO meal_plans (id, client_id, measurement_id, date, name, total_kcal, total_protein, total_carbs, total_fat, total_fiber, total_antioxidants) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-        [p.id, p.client_id, p.measurement_id, p.date, p.name, p.total_kcal, p.total_protein, p.total_carbs, p.total_fat, p.total_fiber, p.total_antioxidants]
-      );
-    }
-    for (const i of cache.mealPlanItems) {
-      await sqlite.execute(
-        "INSERT OR REPLACE INTO meal_plan_items (id, meal_plan_id, meal_time, food_id, quantity, serving_unit) VALUES (?,?,?,?,?,?)",
-        [i.id, i.meal_plan_id, i.meal_time, i.food_id, i.quantity, i.serving_unit]
-      );
-    }
-    for (const t of templatesCache) {
-      await sqlite.execute(
-        "INSERT OR REPLACE INTO templates (id, name, total_kcal, total_protein, total_carbs, total_fat, total_fiber, items, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
-        [t.id, t.name, t.total_kcal, t.total_protein, t.total_carbs, t.total_fat, t.total_fiber, JSON.stringify(t.items), t.created_at]
-      );
-    }
-    await sqlite.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('seed_version', ?)", [String(SEED_VERSION)]);
-  } catch (e) {
-    console.warn("SQLite persist error", e);
-  }
-}
-
-async function persist() {
-  persistQueue = persistQueue.then(async () => {
-  saveToLocalStorage();
-  if (sqlite) await saveToSQLite();
-  });
-}
-
-function genId(table: string): number {
-  const id = cache.nextId[table] || 1;
-  cache.nextId[table] = id + 1;
-  return id;
-}
-
-async function createTables() {
-  if (!sqlite) return;
-  await sqlite.execute(
-    `CREATE TABLE IF NOT EXISTS clients (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT, phone TEXT, notes TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)`
-  );
-  await sqlite.execute(
-    `CREATE TABLE IF NOT EXISTS measurements (id INTEGER PRIMARY KEY AUTOINCREMENT, client_id INTEGER NOT NULL, date TEXT NOT NULL, weight REAL NOT NULL, height REAL NOT NULL, age INTEGER NOT NULL, sex TEXT NOT NULL, body_fat REAL, body_fat_method TEXT, skinfolds TEXT, isak_data TEXT, activity_level TEXT NOT NULL, goal TEXT NOT NULL, tmb REAL NOT NULL, tdee REAL NOT NULL, protein REAL NOT NULL, carbs REAL NOT NULL, fat REAL NOT NULL, fiber REAL NOT NULL, antioxidants REAL NOT NULL, FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE)`
-  );
-  await sqlite.execute(
-    `CREATE TABLE IF NOT EXISTS foods (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, barcode TEXT, category TEXT NOT NULL, protein REAL NOT NULL, carbs REAL NOT NULL, fat REAL NOT NULL, fiber REAL NOT NULL, antioxidants REAL NOT NULL, kcal REAL NOT NULL, serving_size REAL NOT NULL, serving_unit TEXT NOT NULL, source TEXT NOT NULL, carb_type TEXT)`
-  );
-  await sqlite.execute(
-    `CREATE TABLE IF NOT EXISTS meal_plans (id INTEGER PRIMARY KEY AUTOINCREMENT, client_id INTEGER NOT NULL, measurement_id INTEGER, date TEXT NOT NULL, name TEXT NOT NULL, total_kcal REAL NOT NULL, total_protein REAL NOT NULL, total_carbs REAL NOT NULL, total_fat REAL NOT NULL, total_fiber REAL NOT NULL, total_antioxidants REAL NOT NULL, FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE)`
-  );
-  await sqlite.execute(
-    `CREATE TABLE IF NOT EXISTS meal_plan_items (id INTEGER PRIMARY KEY AUTOINCREMENT, meal_plan_id INTEGER NOT NULL, meal_time TEXT NOT NULL, food_id INTEGER NOT NULL, quantity REAL NOT NULL, serving_unit TEXT NOT NULL, FOREIGN KEY (meal_plan_id) REFERENCES meal_plans(id) ON DELETE CASCADE)`
-  );
-  await sqlite.execute(
-    `CREATE TABLE IF NOT EXISTS templates (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, total_kcal REAL NOT NULL, total_protein REAL NOT NULL, total_carbs REAL NOT NULL, total_fat REAL NOT NULL, total_fiber REAL NOT NULL, items TEXT NOT NULL, created_at TEXT NOT NULL)`
-  );
-  await sqlite.execute(`CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)`);
-}
-
-async function loadFromSQLite() {
-  if (!sqlite) return;
-  cache.clients = await sqlite.select<Client[]>("SELECT * FROM clients ORDER BY id");
-  const measurementsRaw = await sqlite.select<(ClientMeasurement & { skinfolds: string | null; isak_data: string | null })[]>("SELECT * FROM measurements ORDER BY id");
-  cache.measurements = measurementsRaw.map((m) => ({ ...m, skinfolds: m.skinfolds ? JSON.parse(m.skinfolds) : undefined, isak_data: m.isak_data ? JSON.parse(m.isak_data) : undefined }));
-  cache.foods = await sqlite.select<Food[]>("SELECT * FROM foods ORDER BY id");
-  cache.mealPlans = await sqlite.select<MealPlan[]>("SELECT * FROM meal_plans ORDER BY id");
-  cache.mealPlanItems = await sqlite.select<MealPlanItem[]>("SELECT * FROM meal_plan_items ORDER BY id");
-  const templateRows = await sqlite.select<{ id: number; name: string; total_kcal: number; total_protein: number; total_carbs: number; total_fat: number; total_fiber: number; items: string; created_at: string }[]>("SELECT * FROM templates ORDER BY id");
-  templatesCache = templateRows.map((t) => ({ ...t, items: JSON.parse(t.items) }));
-  const maxIds = await sqlite.select<{ tbl: string; max_id: number }[]>(
-    `SELECT 'clients' as tbl, COALESCE(MAX(id),0) as max_id FROM clients
-     UNION SELECT 'measurements', COALESCE(MAX(id),0) FROM measurements
-     UNION SELECT 'foods', COALESCE(MAX(id),0) FROM foods
-     UNION SELECT 'mealPlans', COALESCE(MAX(id),0) FROM meal_plans
-     UNION SELECT 'mealPlanItems', COALESCE(MAX(id),0) FROM meal_plan_items`
-  );
-  for (const row of maxIds) {
-    cache.nextId[row.tbl as keyof typeof cache.nextId] = row.max_id + 1;
-  }
-  const sv = await sqlite.select<{ value: string }[]>("SELECT value FROM meta WHERE key = 'seed_version'");
-  if (sv.length > 0) cache.seed_version = Number(sv[0].value);
-  const trialRows = await sqlite.select<{ value: string }[]>("SELECT value FROM meta WHERE key = 'trial_start'");
-  if (trialRows.length > 0 && !localStorage.getItem("dietforge_trial")) {
-    localStorage.setItem("dietforge_trial", trialRows[0].value);
-  }
-}
-
-export async function saveTrialStart(date: string) {
-  if (!sqlite) return;
-  try {
-    await sqlite.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('trial_start', ?)", [date]);
-  } catch { /* persistencia best-effort */ }
-}
-
-async function migrateFromLocalStorage() {
-  if (!sqlite) return;
-  const existing = await sqlite.select<{ count: number }[]>("SELECT COUNT(*) as count FROM meta WHERE key = 'migrated'");
-  if (existing[0]?.count > 0) return;
-  const raw = localStorage.getItem(DB_KEY);
-  if (!raw) return;
-  const oldDB: Database = JSON.parse(raw);
-  for (const c of oldDB.clients) {
-    await sqlite.execute("INSERT OR REPLACE INTO clients (id, name, email, phone, notes, created_at, updated_at) VALUES (?,?,?,?,?,?,?)", [c.id, c.name, c.email || null, c.phone || null, c.notes || null, c.created_at, c.updated_at]);
-  }
-  for (const m of oldDB.measurements) {
-    await sqlite.execute("INSERT OR REPLACE INTO measurements (id, client_id, date, weight, height, age, sex, body_fat, body_fat_method, skinfolds, isak_data, activity_level, goal, tmb, tdee, protein, carbs, fat, fiber, antioxidants) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [m.id, m.client_id, m.date, m.weight, m.height, m.age, m.sex, m.body_fat || null, m.body_fat_method || null, m.skinfolds ? JSON.stringify(m.skinfolds) : null, m.isak_data ? JSON.stringify(m.isak_data) : null, m.activity_level, m.goal, m.tmb, m.tdee, m.protein, m.carbs, m.fat, m.fiber, m.antioxidants]);
-  }
-  for (const f of oldDB.foods) {
-    await sqlite.execute("INSERT OR REPLACE INTO foods (id, name, barcode, category, protein, carbs, fat, fiber, antioxidants, kcal, serving_size, serving_unit, source, carb_type) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [f.id, f.name, f.barcode || null, f.category, f.protein, f.carbs, f.fat, f.fiber, f.antioxidants, f.kcal, f.serving_size, f.serving_unit, f.source, f.carb_type || null]);
-  }
-  for (const p of oldDB.mealPlans) {
-    await sqlite.execute("INSERT OR REPLACE INTO meal_plans (id, client_id, measurement_id, date, name, total_kcal, total_protein, total_carbs, total_fat, total_fiber, total_antioxidants) VALUES (?,?,?,?,?,?,?,?,?,?,?)", [p.id, p.client_id, p.measurement_id, p.date, p.name, p.total_kcal, p.total_protein, p.total_carbs, p.total_fat, p.total_fiber, p.total_antioxidants]);
-  }
-  for (const i of oldDB.mealPlanItems) {
-    await sqlite.execute("INSERT OR REPLACE INTO meal_plan_items (id, meal_plan_id, meal_time, food_id, quantity, serving_unit) VALUES (?,?,?,?,?,?)", [i.id, i.meal_plan_id, i.meal_time, i.food_id, i.quantity, i.serving_unit]);
-  }
-  const templatesRaw = localStorage.getItem(TEMPLATES_KEY);
-  if (templatesRaw) {
-    const templates: DietTemplate[] = JSON.parse(templatesRaw);
-    for (const t of templates) {
-      await sqlite.execute("INSERT OR REPLACE INTO templates (id, name, total_kcal, total_protein, total_carbs, total_fat, total_fiber, items, created_at) VALUES (?,?,?,?,?,?,?,?,?)", [t.id, t.name, t.total_kcal, t.total_protein, t.total_carbs, t.total_fat, t.total_fiber, JSON.stringify(t.items), t.created_at]);
-    }
-  }
-  await sqlite.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('migrated', '1')");
-}
-
-export async function init() {
-  if (sqlite) return;
-  if (inTauri()) {
-    const { default: Database } = await import("@tauri-apps/plugin-sql");
-    const { appDataDir } = await import("@tauri-apps/api/path");
-    const dataDir = await appDataDir();
-    const paths = [
-      "sqlite:dietforge.db",
-      `sqlite:${dataDir}/dietforge.db`,
-      `sqlite:${dataDir}dietforge.db`,
-    ];
-    let firstDb: DbHandle | null = null;
-    let bestDb: DbHandle | null = null;
-    let bestCount = -1;
-    for (const p of paths) {
-      try {
-        const db: DbHandle = await Database.load(p) as DbHandle;
-        if (!firstDb) firstDb = db;
-        await db.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)");
-        await db.execute("CREATE TABLE IF NOT EXISTS clients (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT, phone TEXT, notes TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)");
-        const [{ count }] = await db.select<{ count: number }[]>("SELECT COUNT(*) as count FROM clients");
-        if (count > bestCount) { bestDb = db; bestCount = count; }
-      } catch { /* try next */ }
-    }
-    sqlite = bestCount > 0 ? bestDb : firstDb;
-    if (sqlite) {
-      await createTables();
-      const [{ count }] = await sqlite.select<{ count: number }[]>("SELECT COUNT(*) as count FROM clients");
-      if (count === 0 && localStorage.getItem(DB_KEY)) {
-        await migrateFromLocalStorage();
-      }
-      await loadFromSQLite();
-    }
-    loadFromLocalStorage();
-    if (sqlite && cache.clients.length > 0) {
-      const [{ count }] = await sqlite.select<{ count: number }[]>("SELECT COUNT(*) as count FROM clients");
-      if (count === 0) {
-        await saveToSQLite();
-      }
-    }
-  } else {
-    loadFromLocalStorage();
-  }
-}
-
-export const db = {
+export function disconnectCloud(){accountEpoch++;queue=null;owner='';legacy=null;adopt(emptySnapshot());}
+export async function init(){/* The authenticated CloudGate initializes the data before mounting the app. */}
+const localDb = {
   init,
 
   getClients: (): Client[] => cache.clients,
@@ -333,13 +124,17 @@ export const db = {
   },
 
   deleteClient: (id: number): void => {
-    cache.clients = cache.clients.filter((c) => c.id !== id);
-    cache.measurements = cache.measurements.filter((m) => m.client_id !== id);
-    cache.competitions = cache.competitions.filter((c) => c.client_id !== id);
-    cache.checkins = cache.checkins.filter((c) => c.client_id !== id);
-    cache.photos = cache.photos.filter((p) => p.checkin_id !== id || !cache.checkins.find((c) => c.id === p.checkin_id));
-    cache.weekPlans = cache.weekPlans.filter((w) => w.client_id !== id);
-    cache.mealPlans = cache.mealPlans.filter((p) => p.client_id !== id);
+    const checkIds=new Set(cache.checkins.filter(c=>c.client_id===id).map(c=>c.id));
+    const planIds=new Set(cache.mealPlans.filter(p=>p.client_id===id).map(p=>p.id));
+    cache.clients=cache.clients.filter(c=>c.id!==id);
+    cache.measurements=cache.measurements.filter(c=>c.client_id!==id);
+    cache.competitions=cache.competitions.filter(c=>c.client_id!==id);
+    cache.checkins=cache.checkins.filter(c=>c.client_id!==id);
+    cache.photos=cache.photos.filter(p=>!checkIds.has(p.checkin_id));
+    cache.weekPlans=cache.weekPlans.filter(p=>p.client_id!==id);
+    cache.mealPlans=cache.mealPlans.filter(p=>p.client_id!==id);
+    cache.mealPlanItems=cache.mealPlanItems.filter(p=>!planIds.has(p.meal_plan_id));
+    cache.trainingPrograms=cache.trainingPrograms.filter(p=>p.client_id!==id);
     persist();
   },
 
@@ -386,7 +181,36 @@ export const db = {
   },
 
   deleteFood: (id: number): void => {
+    if (cache.mealPlanItems.some(item => item.food_id === id)) throw new Error('Este alimento se utiliza en un plan. Retíralo del plan antes de eliminarlo.');
     cache.foods = cache.foods.filter((f) => f.id !== id);
+    persist();
+  },
+
+  getExercises: (search?: string): CustomExercise[] => {
+    const exercises = [...cache.exercises].sort((a, b) => a.name.localeCompare(b.name, "es"));
+    if (!search) return exercises;
+    const q = search.toLocaleLowerCase("es");
+    return exercises.filter(item => `${item.name} ${item.muscle_group}`.toLocaleLowerCase("es").includes(q));
+  },
+
+  saveExercise: (data: Omit<CustomExercise, "id" | "created_at" | "updated_at">): CustomExercise => {
+    const now = new Date().toISOString();
+    const exercise: CustomExercise = { ...data, id: genId("exercises"), created_at: now, updated_at: now };
+    cache.exercises.push(exercise);
+    persist();
+    return exercise;
+  },
+
+  updateExercise: (id: number, data: Partial<Omit<CustomExercise, "id" | "created_at">>): CustomExercise | undefined => {
+    const index = cache.exercises.findIndex(item => item.id === id);
+    if (index === -1) return undefined;
+    cache.exercises[index] = { ...cache.exercises[index], ...data, updated_at: new Date().toISOString() };
+    persist();
+    return cache.exercises[index];
+  },
+
+  deleteExercise: (id: number): void => {
+    cache.exercises = cache.exercises.filter(item => item.id !== id);
     persist();
   },
 
@@ -424,6 +248,7 @@ export const db = {
   },
 
   deleteMealPlan: (id: number): void => {
+    cache.weekPlans = cache.weekPlans.map(week => ({...week, day_plans: week.day_plans.filter(day => day.meal_plan_id !== id)}));
     cache.mealPlans = cache.mealPlans.filter((p) => p.id !== id);
     cache.mealPlanItems = cache.mealPlanItems.filter((i) => i.meal_plan_id !== id);
     persist();
@@ -558,11 +383,41 @@ export const db = {
   deleteWeekPlan: (id: number): void => {
     const plan = cache.weekPlans.find((w) => w.id === id);
     if (plan) {
-      for (const dp of plan.day_plans) {
-        cache.mealPlans = cache.mealPlans.filter((mp) => mp.id !== dp.meal_plan_id);
-      }
+      const shared = new Set(cache.weekPlans.filter(w => w.id !== id).flatMap(w => w.day_plans.map(d => d.meal_plan_id)));
+      const removed = new Set(plan.day_plans.map(d => d.meal_plan_id).filter(planId => !shared.has(planId)));
+      cache.mealPlans = cache.mealPlans.filter(mp => !removed.has(mp.id));
+      cache.mealPlanItems = cache.mealPlanItems.filter(item => !removed.has(item.meal_plan_id));
     }
     cache.weekPlans = cache.weekPlans.filter((w) => w.id !== id);
+    persist();
+  },
+
+  getTrainingPrograms: (clientId?: number): TrainingProgram[] =>
+    cache.trainingPrograms
+      .filter((program) => clientId === undefined || program.client_id === clientId)
+      .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()),
+
+  getTrainingProgram: (id: number): TrainingProgram | undefined =>
+    cache.trainingPrograms.find((program) => program.id === id),
+
+  saveTrainingProgram: (data: Omit<TrainingProgram, "id" | "created_at" | "updated_at">): TrainingProgram => {
+    const now = new Date().toISOString();
+    const program: TrainingProgram = { ...data, id: genId("trainingPrograms"), created_at: now, updated_at: now };
+    cache.trainingPrograms.push(program);
+    persist();
+    return program;
+  },
+
+  updateTrainingProgram: (id: number, data: Partial<Omit<TrainingProgram, "id" | "client_id" | "created_at">>): TrainingProgram | undefined => {
+    const idx = cache.trainingPrograms.findIndex((program) => program.id === id);
+    if (idx === -1) return undefined;
+    cache.trainingPrograms[idx] = { ...cache.trainingPrograms[idx], ...data, updated_at: new Date().toISOString() };
+    persist();
+    return cache.trainingPrograms[idx];
+  },
+
+  deleteTrainingProgram: (id: number): void => {
+    cache.trainingPrograms = cache.trainingPrograms.filter((program) => program.id !== id);
     persist();
   },
 
@@ -572,6 +427,7 @@ export const db = {
     foods: cache.foods.length,
     competitions: cache.competitions.length,
     checkins: cache.checkins.length,
+    trainingPrograms: cache.trainingPrograms.length,
     activeClients: new Set(cache.checkins.filter((c) => {
       const daysSince = (Date.now() - new Date(c.date).getTime()) / 86400000;
       return daysSince <= 14;
@@ -579,10 +435,10 @@ export const db = {
   }),
 
   seedFoods: () => {
-    if (cache.foods.length > 0 && "seed_version" in cache && cache.seed_version === SEED_VERSION) return;
-    cache.foods = [];
-    cache.nextId.foods = 1;
+    if (cache.seed_version === SEED_VERSION) return;
     cache.seed_version = SEED_VERSION;
+    // Imported/custom catalogs and their IDs must survive a seed-version upgrade.
+    if (cache.foods.length > 0) { persist(); return; }
     const defaultFoods: Omit<Food, "id">[] = [
       { name: "Pechuga de pollo", category: "protein", protein: 31, carbs: 0, fat: 3.6, fiber: 0, antioxidants: 0, kcal: 165, serving_size: 100, serving_unit: "g", source: "manual" },
       { name: "Muslo de pollo sin piel", category: "protein", protein: 26, carbs: 0, fat: 8, fiber: 0, antioxidants: 0, kcal: 175, serving_size: 100, serving_unit: "g", source: "manual" },
@@ -702,3 +558,13 @@ export const db = {
     persist();
   },
 };
+
+// Preserve existing synchronous view-model APIs while every mutation is durably queued.
+export const db = new Proxy(localDb, {
+ get(target,key: keyof typeof localDb){
+  const value=target[key];
+  if(typeof value!=='function')return value;
+  if(key==='init'||String(key).startsWith('get'))return value;
+  return (...args:unknown[])=>{assertWritable();return (value as (...a:unknown[])=>unknown)(...args);};
+ }
+});

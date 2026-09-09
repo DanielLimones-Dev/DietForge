@@ -1,4 +1,6 @@
 import type { Food } from "@/types";
+import { supabase } from "@/lib/supabase";
+import {parseFatSecretDesc} from './nutrition-normalization';
 
 export function classifyCarbs(food: { name: string; category: string; fiber: number; carbs: number }): "fast" | "slow" | "mixed" | undefined {
   if (food.carbs < 2) return undefined;
@@ -22,32 +24,14 @@ export function classifyCarbs(food: { name: string; category: string; fiber: num
   return undefined;
 }
 
-const USDA_API_KEY = import.meta.env.VITE_USDA_API_KEY || "DEMO_KEY";
-const USDA_BASE = "https://api.nal.usda.gov/fdc/v1";
-
-const FS_CLIENT_ID = import.meta.env.VITE_FATSECRET_CONSUMER_KEY;
-const FS_CLIENT_SECRET = import.meta.env.VITE_FATSECRET_CONSUMER_SECRET;
-const FS_WORKER = import.meta.env.VITE_FATSECRET_WORKER || "";
-const FS_BASE = "https://platform.fatsecret.com/rest";
-const FS_TOKEN_URL = "https://oauth.fatsecret.com/connect/token";
-
-let fsToken: { access: string; expires: number } | null = null;
-
-async function getFSToken(): Promise<string> {
-  if (fsToken && Date.now() < fsToken.expires) return fsToken.access;
-  const res = await fetch(FS_TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "client_credentials",
-      client_id: FS_CLIENT_ID,
-      client_secret: FS_CLIENT_SECRET,
-    }),
+async function searchProvider(provider: "usda" | "fatsecret", query: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("Inicia sesión para buscar alimentos.");
+  return fetch(`/api/nutrition/${provider}?${new URLSearchParams({ q: query })}`, {
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    cache: "no-store",
+    signal: AbortSignal.timeout(30_000),
   });
-  if (!res.ok) throw new Error(`FatSecret auth failed: ${res.status}`);
-  const data = await res.json();
-  fsToken = { access: data.access_token, expires: Date.now() + (data.expires_in - 60) * 1000 };
-  return data.access_token;
 }
 
 interface FatSecretFood {
@@ -59,7 +43,7 @@ interface FatSecretFood {
 
 interface FatSecretResponse {
   foods?: {
-    food?: FatSecretFood[];
+    food?: FatSecretFood[] | FatSecretFood;
   };
 }
 
@@ -109,24 +93,9 @@ function mapCategory(usdaCategory?: string): Food["category"] {
   return "other";
 }
 
-function parseFatSecretDesc(desc: string): { protein: number; carbs: number; fat: number; kcal: number } {
-  const kcal = desc.match(/Calories:\s*([\d,]+)/i);
-  const fat = desc.match(/Fat:\s*([\d,.]+)g/i);
-  const carbs = desc.match(/Carbs:\s*([\d,.]+)g/i);
-  const protein = desc.match(/Protein:\s*([\d,.]+)g/i);
-  return {
-    kcal: kcal ? parseFloat(kcal[1].replace(",", "")) : 0,
-    fat: fat ? parseFloat(fat[1].replace(",", ".")) : 0,
-    carbs: carbs ? parseFloat(carbs[1].replace(",", ".")) : 0,
-    protein: protein ? parseFloat(protein[1].replace(",", ".")) : 0,
-  };
-}
-
 export async function searchUSDA(query: string): Promise<Food[]> {
   try {
-    const res = await fetch(
-      `${USDA_BASE}/foods/search?api_key=${USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=10`,
-    );
+    const res = await searchProvider("usda", query);
     if (!res.ok) return [];
     const data: USDASearchResult = await res.json();
     if (!data.foods) return [];
@@ -167,46 +136,17 @@ export async function searchUSDA(query: string): Promise<Food[]> {
 
 export async function searchFatSecret(query: string): Promise<Food[]> {
   try {
-    let data: FatSecretResponse;
-    const isTauri = typeof window !== "undefined" && "__TAURI__" in window;
-    const qs = new URLSearchParams({ q: query }).toString();
+    const res = await searchProvider("fatsecret", query);
+    if (!res.ok) return [];
+    const data: FatSecretResponse = await res.json();
 
-    if (FS_WORKER) {
-      const res = await fetch(`${FS_WORKER}?${qs}`);
-      if (!res.ok) return [];
-      data = await res.json();
-    } else if (!isTauri) {
-      const res = await fetch(`/api/fatsecret/rest/server.api?${qs}`);
-      if (!res.ok) return [];
-      data = await res.json();
-    } else {
-      const token = await getFSToken();
-      const body = new URLSearchParams({
-        method: "foods.search.v5",
-        search_expression: query,
-        format: "json",
-        max_results: "20",
-      });
-      const res = await fetch(`${FS_BASE}/server.api`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body,
-      });
-      if (!res.ok) {
-        console.warn("FatSecret API error:", res.status, await res.text().catch(() => ""));
-        return [];
-      }
-      data = await res.json();
-    }
-
-    const foods = data.foods?.food;
+    const result = data.foods?.food;
+    const foods = result ? (Array.isArray(result) ? result : [result]) : [];
     if (!foods?.length) return [];
 
-    return foods.map((f) => {
-      const n = f.food_description ? parseFatSecretDesc(f.food_description) : { protein: 0, carbs: 0, fat: 0, kcal: 0 };
+    return foods.flatMap((f) => {
+      const n = parseFatSecretDesc(f.food_description??'');
+      if(!n)return [];
       const name = f.brand_name ? `${f.food_name} (${f.brand_name})` : f.food_name;
       const base = {
         id: 0,
@@ -219,7 +159,7 @@ export async function searchFatSecret(query: string): Promise<Food[]> {
         antioxidants: 0,
         kcal: Math.round(n.kcal),
         serving_size: 100,
-        serving_unit: "g",
+        serving_unit: n.serving_unit,
         source: "api" as const,
       };
       return { ...base, carb_type: classifyCarbs(base) };

@@ -1,204 +1,38 @@
 import type { Client, ClientMeasurement, MealPlan, MealPlanItem, Food, CompetitionPhase } from "@/types";
+import { foodRatio } from "./meal-day";
 import { getPhaseLabel } from "./phases";
 
-function escapeHTML(s: string | number): string {
-  const map: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#x27;" };
-  return String(s).replace(/[&<>"']/g, (c) => map[c]);
-}
+const escapeHTML = (value: string | number) => String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#x27;" })[character]!);
+interface PDFData { client: Client; measurement: ClientMeasurement; plan: MealPlan; items: (MealPlanItem & { food: Food })[]; phase?: CompetitionPhase; coachNotes?: string }
+const MEAL_LABELS: Record<string, string> = { pre_workout: "Pre-Entreno", intra_workout: "Intra-Entreno", post_workout: "Post-Entreno", meal1: "Comida 1", meal2: "Comida 2", meal3: "Comida 3", meal4: "Comida 4", meal5: "Comida 5", meal6: "Comida 6" };
+const GOAL_LABELS: Record<string, string> = { lose_fat: "Pérdida de grasa", maintain: "Mantenimiento", build_muscle: "Ganancia muscular", gain_weight: "Aumento de peso" };
+const ACTIVITY_LABELS: Record<string, string> = { sedentary: "Sedentario", light: "Ligero", moderate: "Moderado", active: "Activo", very_active: "Muy activo" };
 
-interface PDFData {
-  client: Client;
-  measurement: ClientMeasurement;
-  plan: MealPlan;
-  items: (MealPlanItem & { food: Food })[];
-  phase?: CompetitionPhase;
-  coachNotes?: string;
-}
-
-const MEAL_LABELS: Record<string, string> = {
-  pre_workout: "Pre-Entreno",
-  intra_workout: "Intra-Entreno",
-  post_workout: "Post-Entreno",
-  meal1: "Comida 1",
-  meal2: "Comida 2",
-  meal3: "Comida 3",
-  meal4: "Comida 4",
-  meal5: "Comida 5",
-  meal6: "Comida 6",
-};
-
-const GOAL_LABELS: Record<string, string> = {
-  lose_fat: "Pérdida de grasa",
-  maintain: "Mantenimiento",
-  build_muscle: "Ganancia muscular",
-  gain_weight: "Aumento de peso",
-};
-
-const ACTIVITY_LABELS: Record<string, string> = {
-  sedentary: "Sedentario",
-  light: "Ligero",
-  moderate: "Moderado",
-  active: "Activo",
-  very_active: "Muy activo",
-};
-
-function groupBy<T>(arr: T[], key: string): Record<string, T[]> {
-  return arr.reduce((acc, item) => {
-    const k = (item as Record<string, unknown>)[key] as string;
-    if (!acc[k]) acc[k] = [];
-    acc[k].push(item);
-    return acc;
-  }, {} as Record<string, T[]>);
+function groupBy<T>(rows: T[], key: keyof T): Record<string, T[]> {
+  return rows.reduce<Record<string, T[]>>((groups, row) => { const value = String(row[key]); (groups[value] ??= []).push(row); return groups; }, {});
 }
 
 export function generateDietPDF(data: PDFData) {
   const mealGroups = groupBy(data.items, "meal_time");
+  const totals = data.items.reduce((sum, item) => { const ratio = foodRatio(item.quantity, item.serving_unit, item.food.serving_size); sum.kcal += item.food.kcal * ratio; sum.protein += item.food.protein * ratio; sum.carbs += item.food.carbs * ratio; sum.fat += item.food.fat * ratio; return sum; }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
+  const totalKcal = Math.round(totals.kcal), totalP = Math.round(totals.protein * 10) / 10, totalC = Math.round(totals.carbs * 10) / 10, totalF = Math.round(totals.fat * 10) / 10;
+  const proteinPct = totalKcal > 0 ? Math.round(totalP * 4 / totalKcal * 100) : 0;
+  const carbsPct = totalKcal > 0 ? Math.round(totalC * 4 / totalKcal * 100) : 0;
+  const fatPct = totalKcal > 0 ? Math.round(totalF * 9 / totalKcal * 100) : 0;
 
-  const totalKcal = data.items.reduce((s, i) => s + Math.round((i.food.protein * 4 + i.food.carbs * 4 + i.food.fat * 9) * i.quantity / 100), 0);
-  const totalP = data.items.reduce((s, i) => s + Math.round(i.food.protein * i.quantity / 100 * 10) / 10, 0);
-  const totalC = data.items.reduce((s, i) => s + Math.round(i.food.carbs * i.quantity / 100 * 10) / 10, 0);
-  const totalF = data.items.reduce((s, i) => s + Math.round(i.food.fat * i.quantity / 100 * 10) / 10, 0);
-  const proteinPct = Math.round((totalP * 4 / totalKcal) * 100);
-  const carbsPct = Math.round((totalC * 4 / totalKcal) * 100);
-  const fatPct = Math.round((totalF * 9 / totalKcal) * 100);
+  const mealsHTML = Object.entries(mealGroups).map(([mealTime, items], mealIndex) => {
+    const meal = items.reduce((sum, item) => { const ratio = foodRatio(item.quantity, item.serving_unit, item.food.serving_size); sum.kcal += item.food.kcal * ratio; sum.protein += item.food.protein * ratio; sum.carbs += item.food.carbs * ratio; sum.fat += item.food.fat * ratio; return sum; }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
+    const rows = items.map(item => { const ratio = foodRatio(item.quantity, item.serving_unit, item.food.serving_size); return `<tr><td><span class="food-mark"></span>${escapeHTML(item.food.name)}</td><td>${escapeHTML(item.quantity)} ${escapeHTML(item.serving_unit)}</td><td>${(item.food.protein * ratio).toFixed(1)}g</td><td>${(item.food.carbs * ratio).toFixed(1)}g</td><td>${(item.food.fat * ratio).toFixed(1)}g</td><td><strong>${Math.round(item.food.kcal * ratio)}</strong></td></tr>`; }).join("");
+    return `<section class="meal"><header><span class="meal-number">${String(mealIndex + 1).padStart(2, "0")}</span><div><h3>${escapeHTML(MEAL_LABELS[mealTime] || mealTime)}</h3><p>${Math.round(meal.kcal)} kcal · P ${meal.protein.toFixed(1)}g · C ${meal.carbs.toFixed(1)}g · G ${meal.fat.toFixed(1)}g</p></div></header><table><thead><tr><th>Alimento</th><th>Cantidad</th><th>Proteína</th><th>Carbos</th><th>Grasas</th><th>Kcal</th></tr></thead><tbody>${rows}</tbody></table></section>`;
+  }).join("");
 
-  let mealsHTML = "";
-  for (const [mealTime, items] of Object.entries(mealGroups)) {
-    const label = MEAL_LABELS[mealTime] || mealTime;
-    const mKcal = items.reduce((s, i) => s + Math.round((i.food.protein * 4 + i.food.carbs * 4 + i.food.fat * 9) * i.quantity / 100), 0);
-    const mP = items.reduce((s, i) => s + Math.round(i.food.protein * i.quantity / 100 * 10) / 10, 0);
-    const mC = items.reduce((s, i) => s + Math.round(i.food.carbs * i.quantity / 100 * 10) / 10, 0);
-    const mF = items.reduce((s, i) => s + Math.round(i.food.fat * i.quantity / 100 * 10) / 10, 0);
-
-    const rows = items.map((item) => {
-      const kcal = Math.round((item.food.protein * 4 + item.food.carbs * 4 + item.food.fat * 9) * item.quantity / 100);
-      return `<tr>
-        <td style="padding:6px 10px;border-bottom:1px solid var(--c-border);font-size:13px;color:var(--c-primary);white-space:nowrap">${escapeHTML(item.food.name)}</td>
-        <td style="padding:6px 10px;border-bottom:1px solid var(--c-border);font-size:12px;color:var(--c-secondary);text-align:center;white-space:nowrap">${item.quantity}${escapeHTML(item.serving_unit)}</td>
-        <td style="padding:6px 10px;border-bottom:1px solid var(--c-border);font-size:12px;color:var(--c-secondary);text-align:center;white-space:nowrap">${item.food.protein}g</td>
-        <td style="padding:6px 10px;border-bottom:1px solid var(--c-border);font-size:12px;color:var(--c-secondary);text-align:center;white-space:nowrap">${item.food.carbs}g</td>
-        <td style="padding:6px 10px;border-bottom:1px solid var(--c-border);font-size:12px;color:var(--c-secondary);text-align:center;white-space:nowrap">${item.food.fat}g</td>
-        <td style="padding:6px 10px;border-bottom:1px solid var(--c-border);font-size:12px;color:var(--c-primary);text-align:center;font-weight:600;white-space:nowrap">${kcal} kcal</td>
-      </tr>`;
-    }).join("");
-
-    mealsHTML += `
-      <div style="margin-bottom:16px">
-        <div style="background:var(--c-section-bg);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
-          <span style="font-weight:700;font-size:14px;color:var(--c-primary)">${escapeHTML(label)}</span>
-          <span style="font-size:12px;color:var(--c-secondary)">${mKcal} kcal · P:${mP}g C:${mC}g G:${mF}g</span>
-        </div>
-        <div style="max-width:580px">
-          <table style="width:100%;border-collapse:collapse">
-            <thead>
-              <tr style="background:#0ea5e9;color:#fff">
-                <th style="padding:6px 10px;font-size:12px;text-align:left;border-radius:6px 0 0 0">Alimento</th>
-                <th style="padding:6px 10px;font-size:12px;text-align:center">Cant.</th>
-                <th style="padding:6px 10px;font-size:12px;text-align:center">Prot</th>
-                <th style="padding:6px 10px;font-size:12px;text-align:center">CH</th>
-                <th style="padding:6px 10px;font-size:12px;text-align:center">Grasa</th>
-                <th style="padding:6px 10px;font-size:12px;text-align:center;border-radius:0 6px 0 0">Kcal</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>`;
-  }
-
-  const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
-<title>${escapeHTML(data.plan.name)} - ${escapeHTML(data.client.name)}</title>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  :root{--c-primary:#0f172a;--c-secondary:#64748b;--c-border:#e2e8f0;--c-bg:#fff;--c-section-bg:#f1f5f9}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f8fafc;color:var(--c-primary);padding:0 0 40px}
-  .header{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;padding:28px 16px 20px;text-align:center}
-  .header h1{font-size:20px;font-weight:700;margin-bottom:4px}
-  .header p{font-size:13px;opacity:.9}
-  .container{max-width:600px;margin:0 auto;padding:16px}
-  .section-title{font-size:13px;font-weight:700;color:#0ea5e9;margin-bottom:10px;display:flex;align-items:center;gap:6px}
-  .section-title::before{content:"";display:inline-block;width:3px;height:14px;background:#0ea5e9;border-radius:2px}
-  .card{background:var(--c-bg);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
-  .label{font-size:11px;color:#94a3b8;margin-bottom:2px}
-  .value{font-size:15px;font-weight:600;color:#0f172a}
-  .pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600}
-  @media(prefers-color-scheme:dark){:root{--c-primary:#f1f5f9;--c-secondary:#94a3b8;--c-border:#334155;--c-bg:#1e293b;--c-section-bg:#1e293b}body{background:#0f172a}.card{background:var(--c-bg);box-shadow:0 1px 3px rgba(0,0,0,.3)}.value{color:#f8fafc}.label{color:#64748b}.section-title{color:#38bdf8}.section-title::before{background:#38bdf8}}
-  @media print{:root{--c-primary:#0f172a;--c-secondary:#64748b;--c-border:#e2e8f0;--c-bg:#fff;--c-section-bg:#f1f5f9}body{background:#fff;padding:0;color:var(--c-primary)}.card{box-shadow:none;border:1px solid var(--c-border)}.value{color:var(--c-primary)}.label{color:var(--c-secondary)}.header{background:linear-gradient(135deg,#0ea5e9,#0284c7)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-  @media(max-width:480px){.header{padding:20px 14px 16px}.header h1{font-size:18px}.container{padding:12px}.grid-2,.grid-3{grid-template-columns:1fr 1fr}.card{padding:12px}}
-</style>
-</head>
-<body>
-  <div class="header">
-    <h1>${escapeHTML(data.plan.name)}</h1>
-    <p>${escapeHTML(data.client.name)} · ${new Date().toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}</p>
-  </div>
-
-  <div class="container">
-    ${data.phase ? `<div style="text-align:center;margin-bottom:12px"><span style="display:inline-block;padding:4px 14px;border-radius:999px;font-size:12px;font-weight:600;background:#dbeafe;color:#1d4ed8">${getPhaseLabel(data.phase)}</span></div>` : ""}
-    <div class="section-title">Datos del Cliente</div>
-    <div class="card">
-      <div class="grid-2">
-        <div><div class="label">Nombre</div><div class="value">${escapeHTML(data.client.name)}</div></div>
-        <div><div class="label">Email</div><div class="value">${escapeHTML(data.client.email || "—")}</div></div>
-        <div><div class="label">Teléfono</div><div class="value">${escapeHTML(data.client.phone || "—")}</div></div>
-        <div><div class="label">Edad</div><div class="value">${data.measurement.age} años</div></div>
-      </div>
-      <div style="height:10px"></div>
-      <div class="grid-3">
-        <div><div class="label">Peso</div><div class="value">${data.measurement.weight} kg</div></div>
-        <div><div class="label">Altura</div><div class="value">${data.measurement.height} cm</div></div>
-        <div><div class="label">% Grasa</div><div class="value">${escapeHTML(data.measurement.body_fat || "—")}</div></div>
-      </div>
-      <div style="height:10px"></div>
-      <div class="grid-2">
-        <div><div class="label">Actividad</div><div class="value">${escapeHTML(ACTIVITY_LABELS[data.measurement.activity_level] || data.measurement.activity_level)}</div></div>
-        <div><div class="label">Objetivo</div><div class="value">${escapeHTML(GOAL_LABELS[data.measurement.goal] || data.measurement.goal)}</div></div>
-      </div>
-    </div>
-
-    <div class="section-title">Macros Diarios</div>
-    <div class="card">
-      <div class="grid-2" style="margin-bottom:12px">
-        <div><div class="label">Calorías</div><div class="value" style="font-size:22px">${data.plan.total_kcal} kcal</div></div>
-        <div style="display:flex;gap:6px;align-items:end;justify-content:end">
-          <span class="pill" style="background:#fee2e2;color:#dc2626">P ${proteinPct}%</span>
-          <span class="pill" style="background:#ffedd5;color:#ea580c">C ${carbsPct}%</span>
-          <span class="pill" style="background:#fef9c3;color:#ca8a04">G ${fatPct}%</span>
-        </div>
-      </div>
-      <div style="display:flex;gap:4px;margin-bottom:10px">
-        <div style="flex:${proteinPct};height:6px;background:#ef4444;border-radius:3px 0 0 3px"></div>
-        <div style="flex:${carbsPct};height:6px;background:#f97316"></div>
-        <div style="flex:${fatPct};height:6px;background:#eab308;border-radius:0 3px 3px 0"></div>
-      </div>
-      <div class="grid-3">
-        <div><div class="label">Proteína</div><div class="value">${data.plan.total_protein}g</div></div>
-        <div><div class="label">Carbohidratos</div><div class="value">${data.plan.total_carbs}g</div></div>
-        <div><div class="label">Grasas</div><div class="value">${data.plan.total_fat}g</div></div>
-      </div>
-    </div>
-
-    <div class="section-title">Plan de Comidas</div>
-    ${mealsHTML}
-
-    <div style="background:linear-gradient(135deg,#0ea5e9,#0284c7);border-radius:12px;padding:14px;color:#fff;text-align:center;margin-top:8px">
-      <div style="font-size:13px;opacity:.9">Total del día</div>
-      <div style="font-size:20px;font-weight:700">${totalKcal} kcal</div>
-      <div style="font-size:12px;opacity:.85;margin-top:4px">P: ${totalP}g · C: ${totalC}g · G: ${totalF}g</div>
-    </div>
-    ${data.coachNotes ? `
-    <div class="section-title" style="margin-top:12px">Notas del Coach</div>
-    <div class="card">
-      <p style="font-size:13px;color:var(--c-primary);line-height:1.6">${escapeHTML(data.coachNotes)}</p>
-    </div>` : ""}
-  </div>
-</body>
-</html>`;
-
-  return html;
+  const generated = new Date().toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" });
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHTML(data.plan.name)} · ${escapeHTML(data.client.name)}</title><style>
+@page{size:A4;margin:12mm 10mm}*{box-sizing:border-box}body{margin:0;background:#edf3f0;color:#173129;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:12px}.page{width:min(100%,760px);margin:24px auto;background:#fff;box-shadow:0 24px 70px #18352a1f}.hero{position:relative;overflow:hidden;padding:27px 30px 25px;background:linear-gradient(130deg,#0e4938,#177356 72%,#21936d);color:#fff}.hero:after{content:"";position:absolute;right:-52px;top:-78px;width:230px;height:230px;border:1px solid #ffffff24;border-radius:50%;box-shadow:0 0 0 34px #ffffff0c,0 0 0 70px #ffffff08}.brand{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}.brand-mark{display:grid;place-items:center;width:27px;height:27px;border:1px solid #ffffff6b;border-radius:9px;background:#ffffff12}.hero-copy{position:relative;z-index:1;margin-top:28px}.hero-copy small{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#b8dfce}.hero h1{max-width:540px;margin:7px 0 8px;font-size:26px;line-height:1.12;letter-spacing:-.03em}.hero p{color:#d9eee5}.content{padding:23px 30px 30px}.phase{display:inline-flex;margin-bottom:17px;padding:5px 10px;border:1px solid #b8d9cc;border-radius:999px;background:#eef8f4;color:#116348;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}.section-title{display:flex;align-items:center;gap:8px;margin:20px 0 9px;color:#365e50;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.12em}.section-title:before{content:"";width:17px;height:2px;border-radius:99px;background:#1a8663}.profile{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;overflow:hidden;border:1px solid #dfe9e5;border-radius:12px;background:#dfe9e5}.profile div,.macro{padding:12px;background:#fff}.label{color:#758b83;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}.value{margin:4px 0 0;color:#173129;font-size:12px;font-weight:750}.macro-grid{display:grid;grid-template-columns:1.15fr repeat(3,1fr);gap:8px}.macro{border:1px solid #dfe9e5;border-radius:11px}.macro strong{display:block;margin-top:5px;font-size:20px}.macro.kcal{background:#143f33;color:#fff;border-color:#143f33}.macro.kcal .label{color:#b5d2c6}.macro.protein strong{color:#d44d58}.macro.carbs strong{color:#bf7a0d}.macro.fat strong{color:#3678a7}.distribution{display:flex;gap:5px;margin-top:10px}.distribution span{height:5px;min-width:2px;border-radius:99px}.distribution .p{background:#e2636c}.distribution .c{background:#d79c31}.distribution .f{background:#4d8bb4}.pills{display:flex;gap:6px;margin-top:8px}.pill{padding:3px 7px;border-radius:999px;background:#edf4f1;color:#47675c;font-size:8px;font-weight:800}.meal{overflow:hidden;margin-bottom:12px;border:1px solid #dfe9e5;border-radius:12px;break-inside:avoid;page-break-inside:avoid}.meal>header{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f3f8f6}.meal-number{display:grid;place-items:center;width:29px;height:29px;border-radius:9px;background:#dcefe7;color:#146849;font-size:9px;font-weight:800}.meal h3{margin:0;font-size:12px}.meal header p{margin:3px 0 0;color:#748980;font-size:8px}table{width:100%;border-collapse:collapse;table-layout:fixed}thead{display:table-header-group}tr{break-inside:avoid;page-break-inside:avoid}th{padding:7px 8px;background:#174f3e;color:#dff1e9;font-size:7px;text-align:center;text-transform:uppercase;letter-spacing:.06em}th:first-child,td:first-child{text-align:left;width:33%}td{padding:8px;border-bottom:1px solid #e8efec;color:#587068;font-size:9px;text-align:center}tbody tr:last-child td{border-bottom:0}tbody tr:nth-child(even){background:#fbfdfc}td:first-child{color:#1d3c31;font-weight:650}.food-mark{display:inline-block;width:5px;height:5px;margin-right:7px;border-radius:50%;background:#37a77e;vertical-align:1px}.day-total{display:grid;grid-template-columns:1fr auto;align-items:center;margin-top:16px;padding:16px 18px;border-radius:13px;background:linear-gradient(120deg,#123e31,#1c7255);color:#fff;break-inside:avoid}.day-total span{font-size:9px;color:#b9dacf;text-transform:uppercase;letter-spacing:.1em}.day-total strong{display:block;margin-top:3px;font-size:21px}.day-total p{margin:0;color:#d5e9e1;font-size:10px}.notes{padding:13px 15px;border-left:3px solid #2b9670;border-radius:2px 10px 10px 2px;background:#f2f8f5;white-space:pre-wrap;line-height:1.55}.footer{display:flex;justify-content:space-between;margin-top:22px;padding-top:10px;border-top:1px solid #dfe9e5;color:#81938c;font-size:8px}@media(max-width:600px){.page{margin:0}.content,.hero{padding-left:18px;padding-right:18px}.profile{grid-template-columns:1fr 1fr}.macro-grid{grid-template-columns:1fr 1fr}.meal{overflow-x:auto}table{min-width:520px}}@media print{body{background:#fff}.page{width:100%;margin:0;box-shadow:none}.hero,.macro.kcal,.day-total,th{-webkit-print-color-adjust:exact;print-color-adjust:exact}.hero{margin:0;padding:18px 20px}.hero-copy{margin-top:16px}.content{padding:15px 0 0}.profile,.macro-grid,.distribution,.pills,.day-total,.notes{break-inside:avoid;page-break-inside:avoid}.meal{overflow:visible;border-radius:6px;break-inside:auto;page-break-inside:auto}.meal>header{break-after:avoid;page-break-after:avoid}table{min-width:0}.footer{break-inside:avoid}}
+</style></head><body><main class="page"><header class="hero"><div class="brand"><span class="brand-mark">DF</span> DietForge</div><div class="hero-copy"><small>Plan nutricional personalizado</small><h1>${escapeHTML(data.plan.name || "Plan sin título")}</h1><p>${escapeHTML(data.client.name)} · ${generated}</p></div></header><div class="content">
+${data.phase ? `<span class="phase">${escapeHTML(getPhaseLabel(data.phase))}</span>` : ""}
+<h2 class="section-title">Perfil del cliente</h2><section class="profile"><div><span class="label">Cliente</span><p class="value">${escapeHTML(data.client.name)}</p></div><div><span class="label">Edad</span><p class="value">${escapeHTML(data.measurement.age)} años</p></div><div><span class="label">Peso / altura</span><p class="value">${escapeHTML(data.measurement.weight)} kg · ${escapeHTML(data.measurement.height)} cm</p></div><div><span class="label">Grasa corporal</span><p class="value">${escapeHTML(data.measurement.body_fat ?? "—")}${data.measurement.body_fat == null ? "" : "%"}</p></div><div><span class="label">Correo</span><p class="value">${escapeHTML(data.client.email || "—")}</p></div><div><span class="label">Teléfono</span><p class="value">${escapeHTML(data.client.phone || "—")}</p></div><div><span class="label">Actividad</span><p class="value">${escapeHTML(ACTIVITY_LABELS[data.measurement.activity_level] || data.measurement.activity_level)}</p></div><div><span class="label">Objetivo</span><p class="value">${escapeHTML(GOAL_LABELS[data.measurement.goal] || data.measurement.goal)}</p></div></section>
+<h2 class="section-title">Objetivos diarios</h2><section class="macro-grid"><div class="macro kcal"><span class="label">Calorías</span><strong>${escapeHTML(data.plan.total_kcal)}</strong><span>kcal</span></div><div class="macro protein"><span class="label">Proteína</span><strong>${escapeHTML(data.plan.total_protein)}g</strong></div><div class="macro carbs"><span class="label">Carbohidratos</span><strong>${escapeHTML(data.plan.total_carbs)}g</strong></div><div class="macro fat"><span class="label">Grasas</span><strong>${escapeHTML(data.plan.total_fat)}g</strong></div></section><div class="distribution"><span class="p" style="flex:${proteinPct}"></span><span class="c" style="flex:${carbsPct}"></span><span class="f" style="flex:${fatPct}"></span></div><div class="pills"><span class="pill">P ${proteinPct}%</span><span class="pill">C ${carbsPct}%</span><span class="pill">G ${fatPct}%</span></div>
+<h2 class="section-title">Distribución de comidas</h2>${mealsHTML || `<section class="notes">Este plan todavía no contiene alimentos.</section>`}<section class="day-total"><div><span>Total planificado</span><strong>${totalKcal} kcal</strong></div><p>P ${totalP}g · C ${totalC}g · G ${totalF}g</p></section>
+${data.coachNotes ? `<h2 class="section-title">Notas del coach</h2><section class="notes">${escapeHTML(data.coachNotes)}</section>` : ""}<footer class="footer"><span>DietForge · Precisión para tu trabajo diario</span><span>Generado ${generated}</span></footer></div></main></body></html>`;
 }

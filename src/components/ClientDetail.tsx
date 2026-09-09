@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
-import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { db } from "@/lib/db";
-import { calculateMacros, calculateBodyFatFromSkinfolds, adjustMacroField, macroKcal } from "@/lib/calculator";
+import { calculateMacros, calculateBodyFatFromSkinfolds } from "@/lib/calculator";
+import { itemsForDay, restTargets, restReduction } from "@/lib/meal-day";
+import { getPreference } from "@/lib/db";
 import { generateDietPDF } from "@/lib/pdf";
 import { openProgressReport } from "@/lib/progressReport";
 import { calculateWeightTrend, getRateLabel } from "@/lib/trends";
@@ -11,11 +16,12 @@ import { getPhaseLabel, getPhaseColor, calculatePhaseMacros } from "@/lib/phases
 import { downloadCSV, measurementsToCSV } from "@/lib/csv";
 import { CheckInForm } from "./CheckInForm";
 import { CheckInHistory } from "./CheckInHistory";
+import { peakDates, dailyMacros } from "@/lib/peak-week";
 import { PeakWeekSimulator } from "./PeakWeekSimulator";
 import { CompetitionPeakWeekEditor } from "./CompetitionPeakWeekEditor";
 import { ConfirmDialog } from "./ui";
 import { useToast } from "./Toast";
-import { ArrowLeft, FileText, TrendingUp, History, Ruler, Camera, Download, BarChart3, Award, Activity, Moon } from "lucide-react";
+import { ArrowLeft, FileText, TrendingUp, Ruler, Camera, Download, BarChart3, Award, Activity, Moon, Dumbbell } from "lucide-react";
 import type {
   Client, ClientMeasurement, ActivityLevel, Goal, MacroResult,
   DietTemplate, MealTime, CompetitionPhase, CheckIn, Competition, PeakWeekDayConfig,
@@ -25,12 +31,13 @@ import {
 } from "recharts";
 
 export function ClientDetail() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { id } = useParams<{ id?: string }>();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const clientId = Number(id);
   const [client] = useState<Client | null>(() => db.getClient(clientId) ?? null);
   const [now] = useState(() => Date.now());
+  const [peakCompetitionId,setPeakCompetitionId]=useState<number|null>(null);
   const [competitions, setCompetitions] = useState<Competition[]>(() => db.getCompetitions(clientId));
   const [plans, setPlans] = useState(() => db.getMealPlans(clientId));
   const [templates, setTemplates] = useState<DietTemplate[]>([]);
@@ -45,9 +52,11 @@ export function ClientDetail() {
   const [selectedPhase, setSelectedPhase] = useState<CompetitionPhase | undefined>(undefined);
   const [deleteConfirm, setDeleteConfirm] = useState<{ planId: number } | null>(null);
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
+  const [openingPlanId, setOpeningPlanId] = useState<number | null>(null);
+  const navigationTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const { toast } = useToast();
 
-  const [showCalc, setShowCalc] = useState(() => !!(location.state as Record<string, unknown>)?.openCalc);
+  const [showCalc, setShowCalc] = useState(() => searchParams.get("openCalc") === "1");
   const [calcForm, setCalcForm] = useState({
     weight: "", height: "", age: "", sex: "male" as "male" | "female",
     bodyFat: "", bfMethod: "direct" as "direct" | "isak1",
@@ -64,7 +73,6 @@ export function ClientDetail() {
   const [calcError, setCalcError] = useState("");
   const [compEditorData, setCompEditorData] = useState<{ name: string; date: string; category: string; weight: string; placement: string; config: PeakWeekDayConfig[] } | null>(null);
 
-  const macroFields = ["protein", "carbs", "fat"] as const;
 
   const handleEditMacro = (field: string, value: number) => {
     if (!editResult) return;
@@ -93,15 +101,24 @@ export function ClientDetail() {
 
   useEffect(() => {
     const c = db.getClient(clientId);
-    if (!c) navigate("/clients");
-  }, [clientId, navigate]);
+    if (!c) router.push("/clients");
+  }, [clientId, router]);
+
+  useEffect(() => () => {if(navigationTimer.current)clearTimeout(navigationTimer.current);}, []);
+
+  const openPlan = (planId: number) => {
+    if(openingPlanId!==null)return;
+    if(typeof window!=="undefined"&&window.matchMedia?.("(prefers-reduced-motion: reduce)").matches){router.push(`/plans/${planId}`);return;}
+    setOpeningPlanId(planId);
+    navigationTimer.current=setTimeout(()=>router.push(`/plans/${planId}`),280);
+  };
 
   if (!client) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
         <h2 className="text-xl font-bold dark:text-white">Cliente no encontrado</h2>
         <p className="text-gray-400 mt-2">El cliente que buscas no existe o fue eliminado.</p>
-        <Link to="/clients" className="inline-block mt-4 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-medium">Volver a clientes</Link>
+        <Link href="/clients" className="inline-block mt-4 px-4 py-2 rounded-xl bg-brand-500 text-white text-sm font-medium">Volver a clientes</Link>
       </div>
     </div>
   );
@@ -128,7 +145,6 @@ export function ClientDetail() {
     gain_weight: { label: "Aumento", classes: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800" },
   };
 
-  const calcMeas = measurements.find((m) => m.protein > 0 || m.tdee > 0);
   interface ChartPoint { date: string; weight: number; bodyFat: number | undefined }
   const weightChart: ChartPoint[] = [
     ...checkins.map((c) => ({ date: c.date.slice(0, 10), weight: c.weight, bodyFat: c.body_fat })),
@@ -227,7 +243,7 @@ export function ClientDetail() {
       total_fat: macros.fat, total_fiber: macros.fiber, total_antioxidants: macros.antioxidants,
     }, []);
     setPlans(db.getMealPlans(clientId));
-    navigate(`/plans/${plan.id}`);
+    router.push(`/plans/${plan.id}`);
   };
 
   const handleLoadTemplate = () => { setTemplates(db.getTemplates()); setShowTemplates(true); };
@@ -250,7 +266,7 @@ export function ClientDetail() {
       quantity: i.quantity, serving_unit: i.serving_unit,
     })));
     setPlans(db.getMealPlans(clientId));
-    navigate(`/plans/${plan.id}`);
+    router.push(`/plans/${plan.id}`);
   };
 
   const generatePrepPlan = (comp: Competition) => {
@@ -308,24 +324,25 @@ export function ClientDetail() {
     if (!data || !client) return;
     const meas = db.getLatestMeasurement(data.plan.client_id);
     if (!meas) return;
-    const items = data.items.map((i) => {
+    const restDay = getPreference(`rd_${data.plan.id}`) === "true";
+    const items = itemsForDay(data.items, restDay).map((i) => {
       const food = db.getFood(i.food_id);
       return { ...i, food: food || { id: 0, name: "Desconocido", category: "other", protein: 0, carbs: 0, fat: 0, fiber: 0, antioxidants: 0, kcal: 0, serving_size: 100, serving_unit: "g", source: "manual" as const } };
     });
-    const html = generateDietPDF({ client, measurement: meas, plan: data.plan, items });
+    const exportedPlan = restDay ? {...restTargets(data.plan,restReduction(getPreference(`rd_percent_${data.plan.id}`))), name:data.plan.name+" — Rest Day"} : data.plan;
+    const html = generateDietPDF({ client, measurement: meas, plan: exportedPlan, items });
     const win = window.open("", "_blank");
     if (win) { win.document.write(html); win.document.close(); setTimeout(() => win.print(), 300); }
   };
 
   const handleProgressReport = () => {
-    const reportMeas = measurements.filter((m) => m.protein > 0 || m.tdee > 0).slice(0, 1);
-    openProgressReport({ client, measurements: reportMeas, checkins: checkins.slice(0, 1), competition: competitions[0], phase: selectedPhase });
+    openProgressReport({ client, measurements, checkins, competition: competitions[0], phase: selectedPhase });
   };
 
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-4">
-        <button onClick={() => navigate("/clients")} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
+    <div className="client-detail-page"><Link className="care-entry" href={`/clients/${client.id}/care`}>Portal, seguimiento y acceso del cliente →</Link>
+      <div className="client-profile-hero">
+        <button onClick={() => router.push("/clients")} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5 dark:text-gray-100" />
         </button>
         <h2 className="text-2xl font-bold dark:text-white flex items-center gap-2 flex-wrap">
@@ -333,13 +350,13 @@ export function ClientDetail() {
           {latest && (() => { const b = GOAL_BADGES[latest.goal]; return <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${b.classes}`}>{b.label}</span>; })()}
           {selectedPhase && <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${getPhaseColor(selectedPhase)}`}>{getPhaseLabel(selectedPhase)}</span>}
         </h2>
-        <Link to={`/clients/${clientId}/edit`} className="ml-auto text-sm text-brand-600 hover:underline">Editar</Link>
+        <Link href={`/clients/${clientId}/edit`} className="ml-auto text-sm text-brand-600 hover:underline">Editar</Link>
       </div>
 
       {client.next_check_in_date && (
-        <div className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm mb-4 ${new Date(client.next_check_in_date).getTime() < Date.now() ? "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800" : "bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800"}`}>
+        <div className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm mb-4 ${new Date(client.next_check_in_date).getTime() < now ? "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800" : "bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-800"}`}>
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          {new Date(client.next_check_in_date).getTime() < Date.now() ? (
+          {new Date(client.next_check_in_date).getTime() < now ? (
             <><span className="font-semibold">Check-in vencido</span> — {client.next_check_in_date.slice(0, 10)}</>
           ) : (
             <><span className="font-semibold">Próximo check-in</span>: {client.next_check_in_date.slice(0, 10)}</>
@@ -347,7 +364,7 @@ export function ClientDetail() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
         <button onClick={() => { setEditingCheckin(undefined); setShowCheckin(true); }} className="flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-brand-300 dark:border-brand-700 bg-brand-50 dark:bg-brand-900/20 hover:bg-brand-100 dark:hover:bg-brand-900/40 hover:border-brand-400 dark:hover:border-brand-600 transition-all text-sm font-semibold text-brand-700 dark:text-brand-300 cursor-pointer">
           <Camera className="w-4 h-4" /> Check-in
         </button>
@@ -356,6 +373,9 @@ export function ClientDetail() {
         </button>
         <button onClick={() => setShowPhases(!showPhases)} className="flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 hover:border-orange-400 dark:hover:border-orange-600 transition-all text-sm font-semibold text-orange-700 dark:text-orange-300 cursor-pointer">
           <Award className="w-4 h-4" /> {showPhases ? "Ocultar Fases" : "Fases"}
+        </button>
+        <button onClick={() => router.push(`/clients/${clientId}/training`)} className="flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-cyan-300 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-950/20 hover:bg-cyan-100 dark:hover:bg-cyan-950/40 hover:border-cyan-400 transition-all text-sm font-semibold text-cyan-700 dark:text-cyan-300 cursor-pointer">
+          <Dumbbell className="w-4 h-4"/> Rutina
         </button>
         {(editResult || result || latest) && (
           <button onClick={() => handleCreatePlan()} className="flex items-center gap-2 p-3 rounded-xl border-2 border-dashed border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 hover:border-emerald-400 dark:hover:border-emerald-600 transition-all text-sm font-semibold text-emerald-700 dark:text-emerald-300 cursor-pointer">
@@ -383,7 +403,7 @@ export function ClientDetail() {
             <br/>
             <strong>Transición</strong> — Post-competencia: proteína 2.0g/kg, carbos normales (100%), grasas moderadas. Para reestabilización después del show.
             <br/><br/>
-            La tabla "Macros ajustados por fase" muestra el delta vs tus macros actuales. Usa "Aplicar cambios" para actualizar los macros en el grid.
+            La tabla &quot;Macros ajustados por fase&quot; muestra el delta vs tus macros actuales. Usa &quot;Aplicar cambios&quot; para actualizar los macros en el grid.
           </p>
           )}
           <div className="flex flex-wrap gap-2 mb-4">
@@ -480,8 +500,8 @@ export function ClientDetail() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm" key={`weight-${checkinVersion}`}>
+      <div className="client-summary-grid grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div className="client-summary-card bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm" key={`weight-${checkinVersion}`}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700 flex items-center justify-center shadow-sm">
               <TrendingUp className="w-5 h-5 text-white" />
@@ -507,7 +527,7 @@ export function ClientDetail() {
             </div>
           </div>
         </div>
-        <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm" key={`bf-${checkinVersion}`}>
+        <div className="client-summary-card bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm" key={`bf-${checkinVersion}`}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 dark:from-emerald-500 dark:to-emerald-700 flex items-center justify-center shadow-sm">
               <Activity className="w-5 h-5 text-white" />
@@ -533,7 +553,7 @@ export function ClientDetail() {
             </div>
           </div>
         </div>
-        <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
+        <div className="client-summary-card bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 dark:from-purple-500 dark:to-purple-700 flex items-center justify-center shadow-sm">
               <FileText className="w-5 h-5 text-white" />
@@ -610,13 +630,6 @@ export function ClientDetail() {
               );
             })}
           </div>
-          {!editResult && (
-            <button onClick={() => { setEditResult({ ...latest }); setChangedFields(new Set()); }}
-              className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-all shadow-sm animate-scale-in">
-              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              Editar macros
-            </button>
-          )}
           {editResult && (
             <div className="animate-scale-in">
               {changedFields.size > 0 && (
@@ -708,7 +721,7 @@ export function ClientDetail() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 mb-8 shadow-sm">
+      <div className="client-calculator-card bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 mb-8 shadow-sm">
         <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <h3 className="font-semibold flex items-center gap-2 dark:text-white">
             <TrendingUp className="w-4 h-4 text-brand-600" /> Calculadora de Macros
@@ -1118,7 +1131,8 @@ export function ClientDetail() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <CheckInHistory key={checkinVersion} clientId={clientId} phase={selectedPhase} onEdit={(c) => { setEditingCheckin(c); setShowCheckin(true); }} onDelete={(id) => { db.deleteCheckIn(id); setCheckinVersion((v) => v + 1); }} />
         {selectedPhase === "peak_week" ? (
-          <PeakWeekSimulator clientId={clientId} competition={competitions[0]} latestMacros={latest ? { tmb: latest.tmb, tdee: latest.tdee, protein: latest.protein, carbs: latest.carbs, fat: latest.fat, fiber: latest.fiber, antioxidants: latest.antioxidants } : undefined} />
+          <div className="min-w-0 lg:col-span-2"><label className="block mb-3 text-sm">Competencia para Peak Week <select className="ml-2 rounded-lg border p-2 dark:bg-gray-800" value={peakCompetitionId??competitions[0]?.id??""} onChange={e=>setPeakCompetitionId(Number(e.target.value))}>{competitions.map(c=><option key={c.id} value={c.id}>{c.name} · {c.date.slice(0,10)}</option>)}</select></label>
+          <PeakWeekSimulator clientId={clientId} competition={competitions.find(c=>c.id===peakCompetitionId)??competitions[0]} latestMacros={latest ? { tmb: latest.tmb, tdee: latest.tdee, protein: latest.protein, carbs: latest.carbs, fat: latest.fat, fiber: latest.fiber, antioxidants: latest.antioxidants } : undefined} /></div>
         ) : (
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
           <h3 className="font-semibold flex items-center gap-2 mb-4 dark:text-white"><Award className="w-4 h-4 text-orange-600" /> Competencias</h3>
@@ -1159,7 +1173,7 @@ export function ClientDetail() {
                   )}
                   <button onClick={() => {
                     setEditingCompetition(c);
-                    const config = c.peak_week_config ? JSON.parse(c.peak_week_config) as PeakWeekDayConfig[] : [];
+                    let config:PeakWeekDayConfig[]=[];try{const parsed=JSON.parse(db.getCompetitions(clientId).find(x=>x.id===c.id)?.peak_week_config??c.peak_week_config??"[]");if(Array.isArray(parsed))config=parsed.filter(d=>d&&typeof d.date==="string");}catch{}
                     setCompEditorData({
                       name: c.name,
                       date: new Date(c.date).toISOString().slice(0, 10),
@@ -1197,7 +1211,7 @@ export function ClientDetail() {
           {plans.map((p) => {
             const isRestDay = p.name.includes("Rest Day");
             return (
-            <div key={p.id} className={`px-5 py-3.5 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${isRestDay ? "bg-indigo-50/50 dark:bg-indigo-950/20" : ""}`}>
+            <div key={p.id} data-opening-plan={openingPlanId===p.id?"true":undefined} className={`px-5 py-3.5 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${openingPlanId===p.id?"animate-plan-row-open pointer-events-none ":""}${isRestDay ? "bg-indigo-50/50 dark:bg-indigo-950/20" : ""}`}>
               <div>
                 <p className="text-sm font-medium dark:text-white flex items-center gap-2">
                   {p.name}
@@ -1214,7 +1228,7 @@ export function ClientDetail() {
                 </p>
               </div>
               <div className="flex gap-1 items-center">
-                <button onClick={() => navigate(`/plans/${p.id}`)} className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">Ver</button>
+                <button aria-label={openingPlanId===p.id?`Abriendo ${p.name}`:`Ver ${p.name}`} onMouseEnter={()=>router.prefetch(`/plans/${p.id}`)} onFocus={()=>router.prefetch(`/plans/${p.id}`)} onClick={() => openPlan(p.id)} className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">{openingPlanId===p.id?"Abriendo…":"Ver"}</button>
                 <button onClick={() => handleExportPDF(p.id)} className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">PDF</button>
                 <button onClick={() => handleDeletePlan(p.id)} className="p-1.5 rounded-lg text-gray-300 dark:text-gray-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
@@ -1266,15 +1280,15 @@ export function ClientDetail() {
             <div className="flex gap-3 mt-6">
               <button onClick={() => {
                 if (!compEditorData || !compEditorData.name) return;
-                if (editingCompetition) {
-                  db.deleteCompetition(editingCompetition.id);
-                }
-                db.saveCompetition({
-                  client_id: clientId, name: compEditorData.name, date: new Date(compEditorData.date).toISOString(),
+                if (!peakDates(compEditorData.date).length) {alert("Selecciona una fecha válida.");return;}
+                try{compEditorData.config.forEach(d=>dailyMacros(d,latest??{protein:0,carbs:0,fat:0}));}catch{alert("Revisa los macros: deben ser números iguales o mayores que cero.");return;}
+                const competitionData = {
+                  client_id: clientId, name: compEditorData.name.trim(), date: compEditorData.date,
                   category: compEditorData.category || undefined, weight: compEditorData.weight ? Number(compEditorData.weight) : undefined,
                   placement: compEditorData.placement ? Number(compEditorData.placement) : undefined,
                   peak_week_config: JSON.stringify(compEditorData.config),
-                });
+                };
+                if(editingCompetition)db.updateCompetition(editingCompetition.id,competitionData);else db.saveCompetition(competitionData);
                 setCompetitions(db.getCompetitions(clientId));
                 setShowCompetitionForm(false);
                 setEditingCompetition(undefined);
@@ -1301,4 +1315,3 @@ export function ClientDetail() {
     </div>
   );
 }
-

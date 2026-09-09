@@ -1,11 +1,13 @@
+"use client";
+
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useRouter, useParams } from "next/navigation";
 import { db } from "@/lib/db";
 import { PREP_TYPES } from "@/types";
 
 export function ClientForm() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
+  const router = useRouter();
   const isEdit = !!id;
 
   const [form, setForm] = useState(() => {
@@ -22,19 +24,23 @@ export function ClientForm() {
 
     if (isEdit) {
       db.updateClient(Number(id), form);
-      navigate(`/clients/${id}`);
+      router.push(`/clients/${id}`);
     } else {
       const c = db.saveClient(form);
-      navigate(`/clients/${c.id}`, { state: { openCalc: true } });
+      router.push(`/clients/${c.id}?openCalc=1`);
     }
   };
 
   return (
-    <div>
-      <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-6">
+    <div className="client-form-page">
+      <div className="client-form-hero">
+        <span>Expediente clínico</span>
+      <h2>
         {isEdit ? "Editar Cliente" : "Nuevo Cliente"}
       </h2>
-      <form onSubmit={handleSubmit} className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm max-w-lg space-y-4">
+        <p>{isEdit ? "Actualiza los datos y el ritmo de seguimiento." : "Registra los datos base para comenzar su planificación."}</p>
+      </div>
+      <form onSubmit={handleSubmit} className="client-form-card">
         <div>
           <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Nombre *</label>
           <input
@@ -45,13 +51,14 @@ export function ClientForm() {
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Email</label>
+          <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Correo de contacto (opcional)</label>
           <input
             type="email"
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 dark:focus:border-brand-400 transition-all"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
           />
+          <p className="mt-1.5 text-[11px] text-gray-400 dark:text-gray-500">No crea una cuenta. Después puedes habilitar su acceso al portal desde el expediente del cliente.</p>
         </div>
         <div>
           <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Teléfono</label>
@@ -105,7 +112,7 @@ export function ClientForm() {
           </button>
           <button
             type="button"
-            onClick={() => navigate("/clients")}
+            onClick={() => router.push("/clients")}
             className="px-5 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.97] transition-all"
           >
             Cancelar

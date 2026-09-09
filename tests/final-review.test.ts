@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {createTrainingDraft,exerciseFromLibrary,resizeProgramWeeks,normalizeTrainingWeeks,trainingSaveErrors} from '../src/lib/training';
+import {makeSession,sessionErrors,progressionSuggestion} from '../src/lib/training-tracking';
+import {measurementsToCSV} from '../src/lib/csv';
+import type {ClientMeasurement} from '../src/types';
+const fixture=()=>{const p={...createTrainingDraft(1,'Demo','2026-09-08'),id:1,created_at:'',updated_at:''};p.days[0].exercises=[exerciseFromLibrary({id:'press',name:'Press',muscle_group:'Pectoral'},5)];return p;};
+test('resizing never aliases the original prescription and clamps decimal weeks',()=>{const p=fixture();const copy=resizeProgramWeeks(p,7);copy.days[0].exercises[0].prescriptions[0].sets=9;assert.equal(p.days[0].exercises[0].prescriptions[0].sets,3);assert.equal(normalizeTrainingWeeks(2.4),2);assert.equal(normalizeTrainingWeeks(Infinity),1);});
+test('saving validates hidden weeks, invalid dates and negative loads',()=>{const p=fixture();assert.deepEqual(trainingSaveErrors(p),[]);p.days[0].exercises[0].prescriptions[4].load_kg=-10;assert.match(trainingSaveErrors(p).join(' '),/semana 5/);p.start_date='2026-02-30';assert.match(trainingSaveErrors(p).join(' '),/fecha/);const session=makeSession(p,p.days[0].id,1);session.date='2026-02-30';assert.ok(sessionErrors(session).length);});
+test('duplicate exposure cannot propose progression or lower an existing load',()=>{const p=fixture();const ex=p.days[0].exercises[0];const s=makeSession(p,p.days[0].id,1);s.completed=true;s.exercises[0].sets.forEach(v=>{v.kg=40;v.reps=12;v.rir=2;v.completed=true;});assert.equal(progressionSuggestion(ex,[s,structuredClone(s)],2).action,'hold');const next=structuredClone(s);next.date='2026-09-10';assert.equal(progressionSuggestion(ex,[s,next],2).load_kg,41);ex.prescriptions[1].load_kg=45;assert.equal(progressionSuggestion(ex,[s,next],2).action,'hold');});
+test('CSV quotes separators and neutralizes formula text',()=>{const m={date:'2026-09-08',goal:'=1+1',activity_level:'uno,dos',weight:72} as unknown as ClientMeasurement;const csv=measurementsToCSV({id:1,name:'Demo',created_at:'',updated_at:''},[m]);assert.ok(csv.includes("'=1+1"));assert.ok(csv.includes('"uno,dos"'));});

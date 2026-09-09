@@ -121,7 +121,7 @@ export function adjustMacroField(
   value: number,
   targetKcal: number,
 ): { protein: number; carbs: number; fat: number } {
-  let p = field === "protein" ? value : current.protein;
+  const p = field === "protein" ? value : current.protein;
   let c = field === "carbs" ? value : current.carbs;
   let f = field === "fat" ? value : current.fat;
 
@@ -159,7 +159,7 @@ export function distributeMeals(
   }[] = [];
 
   let remaining = 100;
-  let mealIndex = 0;
+  // mealCount counts regular meals; workout meals are additional.
 
   if (hasWorkout) {
     meals.push({
@@ -181,10 +181,9 @@ export function distributeMeals(
       protein: 0, carbs: 0, fat: 0,
     });
     remaining -= 40;
-    mealIndex = 3;
   }
 
-  const remainingMeals = mealCount - mealIndex;
+  const remainingMeals = Number.isFinite(mealCount) ? Math.max(1, Math.min(6, Math.trunc(mealCount))) : 3;
   const perMeal = remainingMeals > 0 ? remaining / remainingMeals : 0;
 
   for (let i = 0; i < remainingMeals; i++) {

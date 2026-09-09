@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { db } from "@/lib/db";
 import { Camera, Save, X } from "lucide-react";
 import { useToast } from "./Toast";
@@ -29,43 +29,34 @@ interface Props {
   onCancel: () => void;
 }
 
-export function CheckInForm({ clientId, existing, onSave, onCancel }: Props) {
+export function CheckInForm(props:Props){return <CheckInFields key={`${props.clientId}-${props.existing?.id??"new"}`} {...props}/>;}
+
+function CheckInFields({ clientId, existing, onSave, onCancel }: Props) {
   const { toast } = useToast();
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  const [date, setDate] = useState(todayStr);
-  const [weight, setWeight] = useState("");
-  const [bodyFat, setBodyFat] = useState("");
-  const [measurements, setMeasurements] = useState<Record<string, string>>({});
-  const [photos, setPhotos] = useState<{ angle: PhotoAngle; data: string }[]>([]);
+  const [date, setDate] = useState(existing?.date.slice(0,10)??todayStr);
+  const [weight, setWeight] = useState(existing?String(existing.weight):"");
+  const [bodyFat, setBodyFat] = useState(existing?.body_fat!=null?String(existing.body_fat):"");
+  const [measurements, setMeasurements] = useState<Record<string, string>>(()=>Object.fromEntries(Object.entries(existing?.measurements??{}).map(([k,v])=>[k,String(v)])));
+  const [photos, setPhotos] = useState<{ angle: PhotoAngle; data: string }[]>(()=>existing?db.getPhotosForCheckIn(existing.id).map(p=>({angle:p.angle,data:p.data})):[]);
   const [capturing, setCapturing] = useState<PhotoAngle | null>(null);
-  const [adherence, setAdherence] = useState({
+  const [adherence, setAdherence] = useState(existing?.adherence ? {
+    meals:String(existing.adherence.meals),
+    supplements:String(existing.adherence.supplements),
+    training:String(existing.adherence.training),
+    cardio:String(existing.adherence.cardio),
+    energy:String(existing.adherence.energy),
+    sleep:String(existing.adherence.sleep),
+    hunger:String(existing.adherence.hunger),
+    libido:String(existing.adherence.libido),
+    digestion:String(existing.adherence.digestion)
+  } : {
     meals: "100", supplements: "100", training: "100", cardio: "100",
     energy: "3", sleep: "3", hunger: "3", libido: "3", digestion: "3",
   });
-  const [notes, setNotes] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (!existing) return;
-    setDate(existing.date.slice(0, 10));
-    setWeight(String(existing.weight));
-    setBodyFat(existing.body_fat ? String(existing.body_fat) : "");
-    setMeasurements(existing.measurements ? Object.fromEntries(Object.entries(existing.measurements).map(([k, v]) => [k, String(v)])) : {});
-    setPhotos(db.getPhotosForCheckIn(existing.id).map((p) => ({ angle: p.angle, data: p.data })));
-    setAdherence(existing.adherence ? {
-      meals: String(existing.adherence.meals),
-      supplements: String(existing.adherence.supplements),
-      training: String(existing.adherence.training),
-      cardio: String(existing.adherence.cardio),
-      energy: String(existing.adherence.energy),
-      sleep: String(existing.adherence.sleep),
-      hunger: String(existing.adherence.hunger),
-      libido: String(existing.adherence.libido),
-      digestion: String(existing.adherence.digestion),
-    } : { meals: "100", supplements: "100", training: "100", cardio: "100", energy: "3", sleep: "3", hunger: "3", libido: "3", digestion: "3" });
-    setNotes(existing.notes || "");
-  }, [existing]);
+  const [notes, setNotes] = useState(existing?.notes??"");
+  const [errors, setErrors] = useState<Record<string, string>>(()=>Object.fromEntries(Object.entries(existing?.measurements??{}).map(([k,v])=>[k,String(v)])));
 
   const measureFields = [
     { key: "neck", label: "Cuello" },

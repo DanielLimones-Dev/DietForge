@@ -1,6 +1,8 @@
+"use client";
+
 import { useState, useCallback, useMemo } from "react";
 import { calculateMacros, distributeMeals, calculateBodyFatFromSkinfolds, adjustMacroField, macroKcal } from "@/lib/calculator";
-import { Ruler, RotateCcw, Lock, Unlock, AlertTriangle } from "lucide-react";
+import { Ruler, RotateCcw, Lock, AlertTriangle } from "lucide-react";
 import type { ActivityLevel, Goal, MacroResult } from "@/types";
 
 export function CalculatorPage() {
@@ -43,7 +45,7 @@ export function CalculatorPage() {
     const w = Number(form.weight);
     const h = Number(form.height);
     const a = Number(form.age);
-    if (!w || !h || !a) {
+    if (![w, h, a].every(v => Number.isFinite(v) && v > 0)) {
       setCalcError("Completa peso, altura y edad para calcular");
       return;
     }
@@ -67,6 +69,10 @@ export function CalculatorPage() {
       if (calculated !== null) bf = calculated;
     }
 
+    if (bf !== undefined && (!Number.isFinite(bf) || bf <= 0 || bf >= 100)) {
+      setCalcError("El porcentaje de grasa debe ser mayor que 0 y menor que 100.");
+      return;
+    }
     const r = calculateMacros(w, h, a, form.sex, form.activityLevel, form.goal, bf);
     setResult(r);
     setAdjusted({ protein: r.protein, carbs: r.carbs, fat: r.fat });
@@ -85,7 +91,7 @@ export function CalculatorPage() {
     setLastField(null);
   };
 
-  const display = adjusted || (result ? { protein: result.protein, carbs: result.carbs, fat: result.fat } : null);
+  const display = useMemo(() => adjusted || (result ? { protein: result.protein, carbs: result.carbs, fat: result.fat } : null), [adjusted,result]);
 
   const fillers = useMemo(() => {
     if (!result || !display) return null;
@@ -111,11 +117,15 @@ export function CalculatorPage() {
   const totalKcal = display ? macroKcal(display) : 0;
 
   return (
-    <div>
-      <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">Calculadora de Macros</h2>
-      <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">Los campos con <span className="text-red-400">*</span> son obligatorios</p>
+    <div className="calculator-page">
+      <div className="calculator-hero">
+        <span>Evaluación nutricional</span>
+        <h2>Calculadora de Macros</h2>
+        <p>Estima gasto energético y distribuye macronutrientes con datos antropométricos.</p>
+      </div>
+      <p className="calculator-required">Los campos con <span className="text-red-400">*</span> son obligatorios</p>
 
-      <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-6 mb-6">
+      <div className="calculator-form-card">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div>
             <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Peso <span className="text-red-400">*</span></label>

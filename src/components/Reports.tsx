@@ -1,7 +1,10 @@
-import { useNavigate } from "react-router-dom";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { db } from "@/lib/db";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
-import { Users, UserPlus, Clock, CheckCircle, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { Users, UserPlus, Clock, CheckCircle, AlertTriangle, TrendingUp } from "lucide-react";
 
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
@@ -18,10 +21,10 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 }
 
 export function Reports() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const clients = db.getClients();
 
-  const now = Date.now();
+  const [now] = useState(() => Date.now());
   const monthAgo = new Date(now - 30 * 86400000);
   const weekAgo = new Date(now - 7 * 86400000);
 
@@ -47,19 +50,19 @@ export function Reports() {
   const compliancePct = clients.length ? Math.round((checkinCompliance / clients.length) * 100) : 0;
 
   return (
-    <div className="space-y-8">
-      <div>
+    <div className="reports-page">
+      <div className="reports-hero">
         <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-          Panel del Coach
+          Reportes
         </h2>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           Visión general del progreso de tus clientes
         </p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="reports-metrics">
         <div className="relative group active:scale-[0.98] transition-transform duration-150">
-          <div className="relative bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 p-5">
+          <div className="reports-metric">
             <div className="flex items-start justify-between mb-3">
               <div className="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-900/30">
                 <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -70,7 +73,7 @@ export function Reports() {
           </div>
         </div>
         <div className="relative group active:scale-[0.98] transition-transform duration-150">
-          <div className="relative bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 p-5">
+          <div className="reports-metric">
             <div className="flex items-start justify-between mb-3">
               <div className="p-2.5 rounded-xl bg-green-100 dark:bg-green-900/30">
                 <UserPlus className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -81,7 +84,7 @@ export function Reports() {
           </div>
         </div>
         <div className="relative group active:scale-[0.98] transition-transform duration-150">
-          <div className="relative bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 p-5">
+          <div className="reports-metric">
             <div className="flex items-start justify-between mb-3">
               <div className="p-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/30">
                 <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
@@ -92,7 +95,7 @@ export function Reports() {
           </div>
         </div>
         <div className="relative group active:scale-[0.98] transition-transform duration-150">
-          <div className="relative bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 p-5">
+          <div className="reports-metric">
             <div className="flex items-start justify-between mb-3">
               <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-900/30">
                 <Clock className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -104,8 +107,8 @@ export function Reports() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow duration-300 p-6 relative overflow-hidden">
+      <div className="reports-grid">
+        <div className="reports-card">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-cyan-500" />
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -142,7 +145,7 @@ export function Reports() {
           )}
         </div>
 
-        <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow duration-300 p-6 relative overflow-hidden">
+        <div className="reports-card">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 to-green-500" />
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -200,7 +203,7 @@ export function Reports() {
         </div>
       </div>
 
-      <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm relative overflow-hidden">
+      <div className="reports-table-card">
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-500 to-amber-500" />
         <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800">
           <h3 className="font-semibold text-gray-900 dark:text-white">Estado de Clientes</h3>
@@ -223,7 +226,7 @@ export function Reports() {
                 const ci = db.getLatestCheckIn(c.id);
                 const overdue = c.next_check_in_date && new Date(c.next_check_in_date).getTime() < now;
                 return (
-                  <tr key={c.id} className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer" onClick={() => navigate(`/clients/${c.id}`)}>
+                  <tr key={c.id} className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer" onClick={() => router.push(`/clients/${c.id}`)}>
                     <td className="px-4 py-3 font-medium dark:text-white">{c.name}</td>
                     <td className="px-4 py-3 text-center dark:text-gray-300">{m ? `${m.weight} kg` : "—"}</td>
                     <td className="px-4 py-3 text-center text-xs text-gray-400">{ci ? new Date(ci.date).toLocaleDateString("es-MX") : "—"}</td>

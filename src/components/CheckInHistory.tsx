@@ -1,3 +1,4 @@
+import NextImage from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { db } from "@/lib/db";
 import { calculateWeightTrend, getRateLabel } from "@/lib/trends";
@@ -221,7 +222,7 @@ export function CheckInHistory({ clientId, phase, onEdit, onDelete }: Props) {
                   <div className="grid grid-cols-2 gap-2">
                     {photos.map((p, i) => (
                       <div key={p.id} className="relative cursor-pointer" onClick={() => setPhotoViewer({ photos, index: i })}>
-                        <img src={p.data} alt={p.angle} className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700 hover:opacity-80 transition-opacity" />
+                        <NextImage unoptimized width={800} height={800} src={p.data} alt={p.angle} className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700 hover:opacity-80 transition-opacity" />
                         <span className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/60 text-[9px] text-white rounded">{angleLabels[p.angle] || p.angle}</span>
                       </div>
                     ))}
@@ -312,7 +313,7 @@ export function CheckInHistory({ clientId, phase, onEdit, onDelete }: Props) {
               </button>
             )}
 
-            <img
+            <NextImage unoptimized width={800} height={800}
               src={photoViewer.photos[photoViewer.index].data}
               alt={photoViewer.photos[photoViewer.index].angle}
               className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg animate-scale-in"

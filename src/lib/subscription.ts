@@ -1,4 +1,5 @@
-import { checkSubscription, clearSubscriptionCache } from "@/lib/supabase";
+import { getPreference, setPreference, hasPendingCloudWrites } from "@/lib/db";
+import { checkSubscription, clearSubscriptionCache, supabase } from "@/lib/supabase";
 import type { SubscriptionStatus } from "@/lib/supabase";
 
 const EMAIL_KEY = "dietforge_email";
@@ -13,14 +14,17 @@ export function setStoredEmail(email: string) {
   localStorage.setItem(EMAIL_KEY, email);
 }
 
-export function clearStoredEmail() {
+export async function clearStoredEmail() {
+  if(hasPendingCloudWrites())throw new Error("Espera a que termine el guardado antes de cerrar sesión.");
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
   localStorage.removeItem(EMAIL_KEY);
   clearSubscriptionCache();
 }
 
 export async function verifySubscription(email: string): Promise<SubscriptionStatus> {
   if (!email) return { active: false, status: null, expiresAt: null };
-  return checkSubscription(email);
+  return checkSubscription();
 }
 
 export function needsSubscription(status: SubscriptionStatus): boolean {
@@ -33,18 +37,18 @@ export function daysUntilExpiry(expiresAt: string | null): number {
   return Math.max(0, Math.ceil(diff / 86400000));
 }
 
-export const STRIPE_PAYMENT_LINK_MONTHLY = import.meta.env.VITE_STRIPE_PAYMENT_LINK_MONTHLY || "";
-export const STRIPE_PAYMENT_LINK_ANNUAL = import.meta.env.VITE_STRIPE_PAYMENT_LINK_ANNUAL || "";
+export const STRIPE_PAYMENT_LINK_MONTHLY = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_MONTHLY || "";
+export const STRIPE_PAYMENT_LINK_ANNUAL = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_ANNUAL || "";
 
 // Trial system (device-based, 15 days, non-renewable)
 export function getTrialStart(): string | null {
-  return localStorage.getItem(TRIAL_KEY);
+  return getPreference(TRIAL_KEY);
 }
 
 export function setTrialStart(): string {
   const now = new Date().toISOString();
-  localStorage.setItem(TRIAL_KEY, now);
-  import("./db").then(m => m.saveTrialStart(now)).catch(() => {});
+  setPreference(TRIAL_KEY, now);
+
   return now;
 }
 

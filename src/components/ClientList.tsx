@@ -1,5 +1,8 @@
+"use client";
+
 import { useState, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, Search, ChevronRight, Trash2, Users, Mail, Phone, Layers, Tags, Clock, AlertTriangle } from "lucide-react";
 import { db } from "@/lib/db";
 import type { Client, Goal } from "@/types";
@@ -29,7 +32,7 @@ function OverdueBadge() {
 }
 
 export function ClientList() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [clients, setClients] = useState<Client[]>(() => db.getClients());
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -63,8 +66,8 @@ export function ClientList() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="clients-page">
+      <div className="clients-hero">
         <div>
           <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
             Clientes
@@ -79,7 +82,7 @@ export function ClientList() {
             Asignación Masiva
           </button>
           <Link
-            to="/clients/new"
+            href="/clients/new"
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-gradient-to-r from-brand-500 to-brand-600 text-white hover:from-brand-600 hover:to-brand-700 shadow-sm hover:shadow-md transition-all duration-200"
           >
             <Plus className="w-4 h-4" />
@@ -88,7 +91,7 @@ export function ClientList() {
         </div>
       </div>
 
-      <div className="flex gap-2">
+      <div className="clients-tabs">
         <button onClick={() => { setTab("todos"); setSelectedTag(null); }}
           className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-all uppercase tracking-wider ${
             tab === "todos" ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white shadow-sm" : "bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700 hover:border-gray-300"
@@ -105,7 +108,7 @@ export function ClientList() {
         </button>
       </div>
 
-      <div className="relative">
+      <div className="clients-search">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
         <input
           className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
@@ -139,14 +142,14 @@ export function ClientList() {
         </div>
       )}
 
-      <div className="space-y-2">
+      <div className="clients-directory">
         {filtered.map((c) => {
           const overdue = overdueIds.has(c.id);
           return (
             <div
               key={c.id}
-              onClick={() => navigate(`/clients/${c.id}`)}
-              className={`group bg-white dark:bg-gray-900 rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer ${
+              onClick={() => router.push(`/clients/${c.id}`)}
+              className={`client-directory-row group ${
                 overdue
                   ? "border-red-200 dark:border-red-900/60 hover:border-red-300 dark:hover:border-red-700 bg-gradient-to-r from-red-50/50 to-white dark:from-red-950/20 dark:to-gray-900"
                   : "border-gray-100 dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700"
@@ -233,7 +236,7 @@ export function ClientList() {
               </p>
               {clients.length === 0 && (
                 <Link
-                  to="/clients/new"
+                  href="/clients/new"
                   className="mt-4 px-4 py-2 rounded-xl text-xs font-medium bg-brand-500 text-white hover:bg-brand-600 transition-colors"
                 >
                   Crear primer cliente

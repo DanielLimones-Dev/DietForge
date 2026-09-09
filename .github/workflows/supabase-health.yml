@@ -1,0 +1,25 @@
+name: Check DietForge Supabase
+
+on:
+  schedule:
+    # Every three days. Scheduled runs can be delayed by GitHub during high load.
+    - cron: '17 9 */3 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_HEALTH_URL: ${{ secrets.SUPABASE_HEALTH_URL }}
+      SUPABASE_HEALTH_ANON_KEY: ${{ secrets.SUPABASE_HEALTH_ANON_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check database through its public RPC
+        run: node scripts/supabase-healthcheck.mjs

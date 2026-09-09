@@ -1,5 +1,7 @@
+"use client";
+
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useRouter } from "next/navigation";
 import { db } from "@/lib/db";
 import { getCarbDayLabel, getCarbDayColor, getCarbDayKcalAdjustment, calculateDayMacros } from "@/lib/carbCycle";
 import { DEFAULT_CARB_PATTERNS, type CarbDay, type CarbCyclePattern, type MealPlan, type MacroResult } from "@/types";
@@ -8,8 +10,8 @@ import { ArrowLeft, Check, ChevronRight, Moon } from "lucide-react";
 const DAY_LABELS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
 export function WeekPlanView() {
-  const { clientId } = useParams<{ clientId: string }>();
-  const navigate = useNavigate();
+  const { id: clientId } = useParams<{ id: string }>();
+  const router = useRouter();
   const cid = Number(clientId);
   const [client] = useState(() => db.getClient(cid));
   const [latest] = useState(() => db.getLatestMeasurement(cid));
@@ -26,8 +28,8 @@ export function WeekPlanView() {
   );
 
   useEffect(() => {
-    if (!client) navigate("/clients");
-  }, [client, navigate]);
+    if (!client) router.push("/clients");
+  }, [client, router]);
 
   if (!client || !latest) return (
     <div className="p-6 text-center text-gray-400">Cliente no encontrado o sin mediciones</div>
@@ -71,7 +73,7 @@ export function WeekPlanView() {
     const newPlans = [...dayPlans];
     newPlans[index] = plan;
     setDayPlans(newPlans);
-    navigate(`/plans/${plan.id}`);
+    router.push(`/plans/${plan.id}`);
   };
 
   const handleSaveWeek = () => {
@@ -84,9 +86,9 @@ export function WeekPlanView() {
   };
 
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate(`/clients/${cid}`)} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors active:scale-[0.97]">
+    <div className="week-plan-page">
+      <div className="week-plan-hero">
+        <button onClick={() => router.push(`/clients/${cid}`)} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors active:scale-[0.97]">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
@@ -94,7 +96,7 @@ export function WeekPlanView() {
         </h2>
       </div>
 
-      <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm p-5 mb-6 relative overflow-hidden">
+      <div className="week-pattern-card">
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-500 to-pink-500" />
         <h3 className="font-semibold text-sm mb-3 dark:text-white">Patrón de Carb Cycling</h3>
         <div className="flex flex-wrap gap-2 mb-4">
@@ -112,13 +114,13 @@ export function WeekPlanView() {
         <p className="text-xs text-gray-400 dark:text-gray-500">{pattern.description}</p>
       </div>
 
-      <div className="grid grid-cols-7 gap-3 mb-6">
+      <div className="week-days-grid">
         {days.map((day, i) => {
           const adj = getCarbDayKcalAdjustment(baseMacros.tdee, day);
           const hasPlan = dayPlans[i] !== null;
           const isRest = restDays[i];
           return (
-            <div key={i} className={`rounded-xl border p-3.5 text-center transition-all ${isRest ? "bg-indigo-50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800" : "bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 border-gray-200 dark:border-gray-700 shadow-sm"}`}>
+            <div key={i} className={`week-day-card ${isRest ? "is-rest" : ""}`}>
               <p className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wider">{DAY_LABELS[i]}</p>
               {isRest ? (
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold shadow-sm bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">
@@ -132,7 +134,7 @@ export function WeekPlanView() {
               <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1.5">{isRest ? "-25% kcal" : adj.label}</p>
               <div className="mt-2.5 space-y-1.5">
                 {hasPlan ? (
-                  <button onClick={() => navigate(`/plans/${dayPlans[i]!.id}`)} className="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-medium bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-500 dark:hover:text-white transition-all active:scale-[0.97]">
+                  <button onClick={() => router.push(`/plans/${dayPlans[i]!.id}`)} className="w-full inline-flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-medium bg-brand-50 text-brand-600 hover:bg-brand-500 hover:text-white dark:bg-brand-900/20 dark:text-brand-400 dark:hover:bg-brand-500 dark:hover:text-white transition-all active:scale-[0.97]">
                     <Check className="w-3 h-3" /> Plan <ChevronRight className="w-3 h-3" />
                   </button>
                 ) : (
@@ -163,11 +165,11 @@ export function WeekPlanView() {
         })}
       </div>
 
-      <div className="flex gap-3">
+      <div className="week-plan-actions">
         <button onClick={handleSaveWeek} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold bg-gradient-to-r from-brand-500 to-brand-600 text-white hover:from-brand-600 hover:to-brand-700 active:scale-[0.97] transition-all shadow-sm">
           Guardar Semana
         </button>
-        <button onClick={() => navigate(`/clients/${cid}`)} className="px-5 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.97] transition-all">
+        <button onClick={() => router.push(`/clients/${cid}`)} className="px-5 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.97] transition-all">
           Volver al cliente
         </button>
       </div>

@@ -1,89 +1,44 @@
+"use client";
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
-import { getStoredEmail, setStoredEmail, clearStoredEmail, verifySubscription, isTrialActive, getTrialDaysLeft, getTrialEndDate, setTrialStart, getTrialStart } from "@/lib/subscription";
-import type { SubscriptionStatus } from "@/lib/supabase";
+import { clearStoredEmail } from "@/lib/subscription";
+import { checkSubscription, type SubscriptionStatus } from "@/lib/supabase";
+import { useToast } from "@/components/Toast";
 
-interface SubscriptionContextValue {
-  email: string;
-  status: SubscriptionStatus;
-  loading: boolean;
-  trialActive: boolean;
-  trialDaysLeft: number;
-  trialEndDate: string;
-  setEmail: (email: string) => void;
-  refresh: () => Promise<void>;
-  logout: () => void;
-  startTrial: () => void;
+interface AccessContext {
+  email: string; status: SubscriptionStatus; loading: boolean; error: string;
+  trialActive: boolean; trialDaysLeft: number; trialEndDate: string;
+  refresh: () => Promise<void>; logout: () => Promise<void>;
 }
-
-const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
-
+const Context = createContext<AccessContext | null>(null);
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const [email, setEmailState] = useState(getStoredEmail);
-  const [status, setStatus] = useState<SubscriptionStatus>({ active: false, status: null, expiresAt: null });
+  const { toast } = useToast();
+  const [status, setStatus] = useState<SubscriptionStatus>({ active:false,status:null,expiresAt:null });
   const [loading, setLoading] = useState(true);
-  const [trialActive, setTrialActive] = useState(isTrialActive);
-  const [trialDaysLeft, setTrialDaysLeft] = useState(getTrialDaysLeft);
-  const [trialEndDate, setTrialEndDate] = useState(getTrialEndDate);
-  const [trialStarted, setTrialStarted] = useState(!!getTrialStart());
-
+  const [error, setError] = useState("");
+  const [checkedAt, setCheckedAt] = useState(0);
   const refresh = useCallback(async () => {
-    const stored = getStoredEmail();
-    if (!stored) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    const s = await verifySubscription(stored);
-    setStatus(s);
-    setLoading(false);
+    try { const next = await checkSubscription(); setStatus(next);setCheckedAt(Date.now()); setError(""); }
+    catch (e) { setError(e instanceof Error ? e.message : "No se pudo verificar el acceso."); setStatus({ active:false,status:null,expiresAt:null }); }
+    finally { setLoading(false); }
   }, []);
-
   useEffect(() => {
-    refresh();
-    const recheck = () => {
-      setTrialActive(isTrialActive());
-      setTrialDaysLeft(getTrialDaysLeft());
-      setTrialEndDate(getTrialEndDate());
-      refresh();
+    let live = true;
+    const recheck = async () => {
+      try { const next = await checkSubscription(); if(live){setStatus(next);setCheckedAt(Date.now());setError("");} }
+      catch(e){if(live){setError(e instanceof Error?e.message:"No se pudo verificar el acceso.");setStatus({active:false,status:null,expiresAt:null});}}
+      finally{if(live)setLoading(false);}
     };
-    document.addEventListener("visibilitychange", () => { if (!document.hidden) recheck(); });
-    window.addEventListener("focus", recheck);
-    const interval = setInterval(recheck, 60000);
-    return () => {
-      document.removeEventListener("visibilitychange", recheck);
-      window.removeEventListener("focus", recheck);
-      clearInterval(interval);
-    };
-  }, [refresh]);
-
-  const setEmail = useCallback((newEmail: string) => {
-    setStoredEmail(newEmail);
-    setEmailState(newEmail);
+    void recheck();
+    const focus = () => { if (!document.hidden) void recheck(); };
+    window.addEventListener("focus",focus);document.addEventListener("visibilitychange",focus);
+    const timer=setInterval(focus,60_000);
+    return ()=>{live=false;clearInterval(timer);window.removeEventListener("focus",focus);document.removeEventListener("visibilitychange",focus);};
   }, []);
-
-  const logout = useCallback(() => {
-    clearStoredEmail();
-    setEmailState("");
-    setStatus({ active: false, status: null, expiresAt: null });
-  }, []);
-
-  const startTrial = useCallback(() => {
-    setTrialStart();
-    setTrialActive(true);
-    setTrialDaysLeft(15);
-    setTrialEndDate(getTrialEndDate());
-    setTrialStarted(true);
-  }, []);
-
-  return (
-    <SubscriptionContext.Provider value={{ email, status, loading, trialActive, trialDaysLeft, trialEndDate, setEmail, refresh, logout, startTrial }}>
-      {children}
-    </SubscriptionContext.Provider>
-  );
+  const logout=useCallback(async()=>{
+    try{await clearStoredEmail();}catch(e){toast(e instanceof Error?e.message:"No se pudo salir.","error");}
+  },[toast]);
+  const trialActive=status.status==="trialing";
+  const trialDaysLeft=trialActive&&status.expiresAt?Math.max(0,Math.ceil((Date.parse(status.expiresAt)-checkedAt)/86400000)):0;
+  return <Context.Provider value={{email:status.email??"",status,loading,error,trialActive,trialDaysLeft,trialEndDate:trialActive?status.expiresAt??"":"",refresh,logout}}>{children}</Context.Provider>;
 }
-
-export function useSubscription(): SubscriptionContextValue {
-  const ctx = useContext(SubscriptionContext);
-  if (!ctx) throw new Error("useSubscription must be inside SubscriptionProvider");
-  return ctx;
-}
+export function useSubscription(){const ctx=useContext(Context);if(!ctx)throw new Error("Missing account provider");return ctx;}

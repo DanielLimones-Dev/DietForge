@@ -1,5 +1,7 @@
+"use client";
+
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from "next/navigation";
 import { db } from "@/lib/db";
 import { calculateWeightTrend } from "@/lib/trends";
 import { Users, TrendingUp, AlertTriangle, Calendar, FileText, Tags, X, Check, Search, Plus } from "lucide-react";
@@ -7,7 +9,7 @@ import type { Client } from "@/types";
 import { TAGS_LIST } from "@/types";
 
 export function CoachDashboard() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [now] = useState(() => Date.now());
   const [clients, setClients] = useState<Client[]>(() => db.getClients());
   const [panelKey, setPanelKey] = useState(0);
@@ -50,17 +52,9 @@ export function CoachDashboard() {
     ? allClients.filter((c) => c.name.toLowerCase().includes(tagSearch.toLowerCase()))
     : allClients;
 
-  const tagFilteredList = activeTag
-    ? allClients.filter((c) => c.tags?.includes(activeTag as string))
-    : allClients;
-
-  const tagClientsFiltered = tagSearch
-    ? tagFilteredList.filter((c) => c.name.toLowerCase().includes(tagSearch.toLowerCase()))
-    : tagFilteredList;
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="coach-page">
+      <div className="coach-hero">
         <div>
           <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
             Panel de Coach
@@ -80,7 +74,7 @@ export function CoachDashboard() {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="coach-metrics">
         {[
           { label: "Total Clientes", value: stats.clients, icon: Users, color: "bg-blue-100 dark:bg-blue-900/30 text-blue-600" },
           { label: "Activos", value: stats.activeClients, icon: TrendingUp, color: "bg-green-100 dark:bg-green-900/30 text-green-600" },
@@ -88,7 +82,7 @@ export function CoachDashboard() {
           { label: "Planes", value: stats.mealPlans, icon: FileText, color: "bg-purple-100 dark:bg-purple-900/30 text-purple-600" },
           { label: "Check-ins", value: stats.checkins, icon: Calendar, color: "bg-orange-100 dark:bg-orange-900/30 text-orange-600" },
         ].map((s) => (
-          <div key={s.label} className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+          <div key={s.label} className="coach-metric">
             <div className="flex items-center gap-3 mb-3">
               <div className={`w-10 h-10 rounded-xl ${s.color} flex items-center justify-center shadow-sm`}>
                 <s.icon className="w-5 h-5" />
@@ -103,7 +97,7 @@ export function CoachDashboard() {
       </div>
 
       {atRiskClients.length > 0 && (
-        <div className="bg-gradient-to-b from-red-50 to-white dark:from-red-900/15 dark:to-gray-900/50 rounded-xl border border-red-200 dark:border-red-800 p-5 shadow-sm">
+        <div className="coach-alert-card">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
               <AlertTriangle className="w-4 h-4 text-red-600 dark:text-red-400" />
@@ -115,7 +109,7 @@ export function CoachDashboard() {
           </div>
           <div className="space-y-2">
             {atRiskClients.map(({ client, daysSinceCheckin }) => (
-              <div key={client.id} onClick={() => navigate(`/clients/${client.id}`)} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg cursor-pointer hover:shadow-sm transition-shadow">
+              <div key={client.id} onClick={() => router.push(`/clients/${client.id}`)} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg cursor-pointer hover:shadow-sm transition-shadow">
                 <span className="text-sm font-medium dark:text-white">{client.name}</span>
                 <span className="text-xs text-red-600 dark:text-red-400 font-semibold">{daysSinceCheckin} días sin check-in</span>
               </div>
@@ -125,7 +119,7 @@ export function CoachDashboard() {
       )}
 
       {showTagPanel && (
-        <div key={panelKey} className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
+        <div key={panelKey} className="coach-tag-panel">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-sm dark:text-white flex items-center gap-2">
               <Tags className="w-4 h-4 text-brand-600" /> Gestionar Etiquetas
@@ -225,7 +219,7 @@ export function CoachDashboard() {
         </div>
       )}
 
-      <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="coach-directory">
         <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-sm dark:text-white">Todos los Clientes</h3>
@@ -250,7 +244,7 @@ export function CoachDashboard() {
         </div>
         <div className="divide-y divide-gray-100 dark:divide-gray-700">
           {clientsWithStatus.filter((c) => !activeTag || (c.client.tags || []).includes(activeTag)).map(({ client, trend, daysSinceCheckin, hasAlert }) => (
-            <div key={client.id} onClick={() => navigate(`/clients/${client.id}`)} className="p-3 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <div key={client.id} onClick={() => router.push(`/clients/${client.id}`)} className="p-3 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
               <div className="flex items-center gap-3">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 ${
                   hasAlert ? "bg-red-100 text-red-600" : "bg-gradient-to-br from-brand-500 to-brand-600 text-white"

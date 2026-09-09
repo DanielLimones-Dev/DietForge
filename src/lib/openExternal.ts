@@ -1,8 +1,5 @@
 export async function openExternal(url: string) {
-  try {
-    const { open } = await import("@tauri-apps/plugin-shell");
-    await open(url);
-  } catch {
-    window.open(url, "_blank", "noopener");
-  }
+  const target = new URL(url, window.location.origin);
+  if (target.protocol !== "https:" && target.protocol !== "http:") return;
+  window.open(target.href, "_blank", "noopener,noreferrer");
 }

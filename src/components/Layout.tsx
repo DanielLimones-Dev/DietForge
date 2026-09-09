@@ -1,5 +1,8 @@
-import { NavLink, Outlet } from "react-router-dom";
-import { useEffect, useState } from "react";
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Users,
   ClipboardList,
@@ -9,84 +12,95 @@ import {
   Moon,
   Sun,
   LayoutDashboard,
-  LogOut,
+  LogOut, ShieldCheck, Leaf, Menu, X, Dumbbell, Library, ChevronDown, FolderKanban, Activity,
 } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
-const links = [
+const primaryLinks = [
   { to: "/", label: "Dashboard", icon: Home },
-  { to: "/coach", label: "Panel Coach", icon: LayoutDashboard },
   { to: "/clients", label: "Clientes", icon: Users },
-  { to: "/foods", label: "Alimentos", icon: Apple },
-  { to: "/calculator", label: "Calculadora", icon: ClipboardList },
-  { to: "/reports", label: "Reportes", icon: BarChart3 },
 ];
 
-export function Layout() {
-  const [dark, setDark] = useState(() => localStorage.getItem("dietforge_dark") === "true");
-  const { email, status, logout } = useSubscription();
+const baseGroups = [
+  {
+    id: "tracking",
+    label: "Seguimiento",
+    icon: Activity,
+    links: [
+      { to: "/coach", label: "Panel Coach", icon: LayoutDashboard },
+      { to: "/agenda", label: "Agenda", icon: ClipboardList },
+      { to: "/reports", label: "Reportes", icon: BarChart3 },
+    ],
+  },
+  {
+    id: "planning",
+    label: "Planificación",
+    icon: FolderKanban,
+    links: [
+      { to: "/training", label: "Rutinas", icon: Dumbbell },
+      { to: "/foods", label: "Alimentos", icon: Apple },
+      { to: "/exercises", label: "Ejercicios", icon: Library },
+    ],
+  },
+];
+
+const isCurrent = (pathname: string, to: string) => pathname === to || (to !== "/" && pathname.startsWith(`${to}/`));
+
+export function Layout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const mainRef = useRef<HTMLElement>(null);
+  const [dark, setDark] = useState(() => { try { return localStorage.getItem("dietforge_dark") === "true"; } catch { return false; } });
+  const { logout, email, status } = useSubscription();
+  const [mobile, setMobile] = useState(false);
+  const groups = [...baseGroups, {
+    id: "system",
+    label: "Sistema",
+    icon: ShieldCheck,
+    links: [
+      { to: "/quality", label: "Calidad y respaldos", icon: ShieldCheck },
+      ...(status.isAdmin ? [{ to: "/admin", label: "Administración", icon: ShieldCheck }] : []),
+    ],
+  }];
+  const allLinks = [...primaryLinks, ...groups.flatMap(group => group.links)];
+  const [openGroups, setOpenGroups] = useState<string[]>([]);
+  const currentLabel = allLinks.find(link => isCurrent(pathname, link.to))?.label ?? "Planificación";
+
+  const toggleGroup = (id: string) => setOpenGroups(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
+
+  useEffect(() => { mainRef.current?.scrollTo(0, 0); }, [pathname]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
-    localStorage.setItem("dietforge_dark", String(dark));
+    try { localStorage.setItem("dietforge_dark", String(dark)); } catch { /* Theme still applies for this session. */ }
   }, [dark]);
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <nav className="w-56 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col shrink-0 shadow-sm">
-        <div className="p-5 border-b border-gray-100 dark:border-gray-800">
-          <div className="flex items-center gap-2.5">
-            <img src="/favicon.svg" alt="DietForge" className="w-8 h-8" />
-            <div>
-              <h1 className="text-base font-bold bg-gradient-to-r from-brand-500 to-brand-600 bg-clip-text text-transparent">DietForge</h1>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500">Planificador de dietas</p>
-            </div>
-          </div>
-        </div>
-        <div className="flex-1 p-3 space-y-1">
-          {links.map((l) => (
-            <NavLink
-              key={l.to}
-              to={l.to}
-              end={l.to === "/"}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-[0.97] ${
-                  isActive
-                    ? "bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-sm"
-                    : "text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-200"
-                }`
-              }
-            >
-              <l.icon className="w-4 h-4" />
-              {l.label}
-            </NavLink>
-          ))}
-        </div>
-        <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
-          <button
-            onClick={() => setDark(!dark)}
-            className="flex items-center gap-2.5 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-all active:scale-[0.97] w-full px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              {dark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            </div>
-            {dark ? "Modo claro" : "Modo oscuro"}
-          </button>
-          <button
-            onClick={logout}
-            className="flex items-center gap-2.5 text-xs text-gray-400 hover:text-red-500 transition-all active:scale-[0.97] w-full px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-              <LogOut className="w-3.5 h-3.5" />
-            </div>
-            Cerrar sesión
-          </button>
-          <p className="text-[10px] text-gray-300 dark:text-gray-600 px-2">DietForge v1.0.0</p>
-        </div>
-      </nav>
-      <main className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-950">
-        <Outlet />
-      </main>
+    <div className="df-shell">
+      {mobile&&<button className="df-backdrop" aria-label="Cerrar navegación" onClick={()=>setMobile(false)}/>}
+      <aside className={"df-sidebar "+(mobile?"is-open":"")}>
+        <Link href="/" className="df-wordmark"><span className="df-logo"><Leaf size={21}/></span>DietForge<span className="df-wordmark-tag">PRO</span></Link>
+        <p className="text-[10px] tracking-widest text-emerald-200/50 mt-9 px-3">ESPACIO DE TRABAJO</p>
+        <nav aria-label="Navegación principal" className="df-navigation">
+          {primaryLinks.map(link=><Link key={link.to} href={link.to} onClick={()=>setMobile(false)} aria-current={isCurrent(pathname,link.to)?"page":undefined}><link.icon size={17}/>{link.label}</Link>)}
+          <div className="df-nav-divider"/>
+          {groups.map(group=>{
+            const active=group.links.some(link=>isCurrent(pathname,link.to));
+            const open=active||openGroups.includes(group.id);
+            return <div className="df-nav-group" key={group.id}>
+              <button type="button" className="df-nav-group-toggle" aria-expanded={open} aria-controls={`nav-${group.id}`} data-active={active||undefined} onClick={()=>toggleGroup(group.id)}>
+                <group.icon size={17}/><span>{group.label}</span><ChevronDown className="df-nav-chevron" size={15}/>
+              </button>
+              <div id={`nav-${group.id}`} className="df-nav-submenu" hidden={!open}>
+                {group.links.map(link=><Link key={link.to} href={link.to} onClick={()=>setMobile(false)} aria-current={isCurrent(pathname,link.to)?"page":undefined}><link.icon size={15}/>{link.label}</Link>)}
+              </div>
+            </div>;
+          })}
+        </nav>
+        <div className="df-sidebar-foot"><div className="border-t border-white/10 pt-4 pb-3 px-3"><p className="text-xs font-medium">{status.isAdmin?"Administrador":"Cuenta de coach"}</p><p className="text-[10px] text-emerald-100/50 mt-2 break-all">{email}</p></div><button onClick={()=>setDark(!dark)}>{dark?<Sun size={16}/>:<Moon size={16}/>}Modo {dark?"claro":"oscuro"}</button><button onClick={logout}><LogOut size={16}/>Cerrar sesión</button></div>
+      </aside>
+      <div className="df-main"><header className="df-topbar"><div className="flex gap-3 items-center"><button className="df-mobile-toggle" aria-label="Abrir navegación" aria-expanded={mobile} onClick={()=>setMobile(!mobile)}>{mobile?<X size={20}/>:<Menu size={20}/>}</button><span className="df-muted">DietForge <span className="mx-2 opacity-40">/</span> <strong className="df-text font-medium">{currentLabel}</strong></span></div><span className="df-badge df-badge-green">{status.isAdmin?"Administrador":"Coach profesional"}</span></header>
+        <main ref={mainRef} className="df-content">{children}</main>
+      </div>
     </div>
   );
 }
