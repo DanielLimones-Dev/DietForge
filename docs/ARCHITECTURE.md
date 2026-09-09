@@ -224,7 +224,7 @@ Ver [contratos, uso, seguridad y límites](CLIENT_CARE.md). Se añadieron activi
 
 ## Disponibilidad y beta
 
-La RPC pública `dietforge_healthcheck()` responde sin leer datos y `scripts/supabase-healthcheck.mjs` valida su contrato. Se usa para detectar indisponibilidad y como señal periódica; no promete evitar la pausa del plan gratuito. El estado y los criterios para abrir el producto están en [BETA_READINESS.md](BETA_READINESS.md).
+La RPC pública `dietforge_healthcheck()` responde sin leer datos. `scripts/supabase-healthcheck.mjs` la valida desde GitHub Actions cada tres días. En producción, `vercel.json` invoca diariamente `GET /api/cron/supabase-health`; el Route Handler exige el bearer `CRON_SECRET` y usa únicamente la anon key. Ambas rutas son señales periódicas independientes; no prometen evitar la pausa del plan gratuito. El estado y los criterios para abrir el producto están en [BETA_READINESS.md](BETA_READINESS.md).
 
 ## Revisión y videos personalizables
 

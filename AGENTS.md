@@ -55,6 +55,7 @@ DietForge es una aplicación web para coaches de nutrición y entrenamiento. Adm
 - En impresión, no usar márgenes negativos para compensar `@page`. Las comidas pueden fragmentarse entre páginas por filas y cada fila debe permanecer íntegra.
 - Los parámetros dinámicos de rutas deben validarse antes de llegar a los componentes.
 - El estado normal de persistencia en Supabase es silencioso. La interfaz muestra la franja global únicamente cuando existe un error recuperable, con acciones para reintentar o descargar respaldo.
+- `vercel.json` programa diariamente `/api/cron/supabase-health`. La ruta exige `CRON_SECRET` y llama al RPC público `dietforge_healthcheck` con la anon key. GitHub Actions conserva una comprobación cada tres días como respaldo.
 
 ## Modelo de datos resumido
 

@@ -153,6 +153,9 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `tests/sql/client-portal.sql` | Regresiones reales de autorización y recuperación con rollback |
 | `scripts/supabase-healthcheck.mjs` | Comprobación externa de disponibilidad sin datos privados |
 | `.github/workflows/supabase-health.yml` | Programación cada tres días cuando el repositorio y sus secretos estén configurados |
+| `vercel.json` | Cron diario de producción para `/api/cron/supabase-health` |
+| `src/app/api/cron/supabase-health/route.ts` | Endpoint protegido por `CRON_SECRET` que comprueba Supabase con la anon key |
+| `src/lib/server/supabase-health-handler.ts` | Contrato probado de autorización, timeout y validación del RPC de salud |
 | `20260908050000_healthcheck.sql` | RPC mínima de salud para anon y usuarios autenticados |
 
 Detalle de conexión y límites: [CLIENT_CARE.md](CLIENT_CARE.md).

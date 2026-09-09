@@ -35,6 +35,8 @@ npm run health:supabase
 
 `.github/workflows/supabase-health.yml` está preparado para ejecutarse cada tres días. Antes de usarlo en GitHub deben existir los secretos `SUPABASE_HEALTH_URL` y `SUPABASE_HEALTH_ANON_KEY`, y los cambios deben estar publicados en el repositorio. No usar la service role.
 
+Vercel también ejecuta `/api/cron/supabase-health` una vez al día desde el despliegue de producción, según `vercel.json`. Requiere `CRON_SECRET` en las variables de Vercel; la plataforma lo envía como Bearer token. La ruta usa la anon key para llamar a `dietforge_healthcheck` y nunca necesita la service role. GitHub Actions queda como respaldo independiente.
+
 Además se creó una automatización local de Codex cada tres días. Solo debe avisar cuando la comprobación falle. Depende de que el host de Codex pueda ejecutar el proyecto.
 
 Esta comprobación es útil para detectar caídas y genera actividad real, pero Supabase no garantiza que evite la pausa de un proyecto gratuito. La documentación oficial indica que los proyectos Free con poca actividad durante siete días pueden pausarse y que Pro garantiza que no se pausen por inactividad.
