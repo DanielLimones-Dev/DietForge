@@ -9,7 +9,8 @@ import {normalizeNumericInput} from '../src/lib/numeric-input';
 import {destinationForRole} from '../src/lib/auth-role';
 import {macroEvaluationAt,saveMacroEvaluation} from '../src/lib/macro-evaluation';
 import {isStorageAlert} from '../src/lib/cloud/engine';
-import {weightComparison} from '../src/lib/client-progress';
+import {bodyFatComparison,progressChart,weightComparison} from '../src/lib/client-progress';
+import {COMPETITION_PHASES,PHASE_REQUIREMENTS} from '../src/lib/phases';
 import type {ClientMeasurement,MealPlan} from '../src/types';
 
 test('numeric fields remove accidental leading zeros without changing decimals',()=>{
@@ -35,12 +36,35 @@ test('macro evaluations persist without creating a check-in',()=>{
  assert.equal(calls.length,1);assert.equal(saved.weight,78);
 });
 
-test('macro history is navigable and the first check-in compares with its evaluation baseline',()=>{
- const newest={id:2,client_id:1,date:'2026-09-08',weight:78,height:171,age:26,sex:'male',activity_level:'moderate',goal:'maintain',tmb:1700,tdee:2400,protein:170,carbs:280,fat:70,fiber:25,antioxidants:1} satisfies ClientMeasurement;
+test('all competition phases expose Peak Week with its own macro factors',()=>{
+ assert.deepEqual(COMPETITION_PHASES,['offseason','precontest','peak_week','transition']);
+ assert.equal(PHASE_REQUIREMENTS.peak_week.protein,2.6);
+ assert.equal(PHASE_REQUIREMENTS.peak_week.carbModifier,0.5);
+});
+
+test('a check-in compares weight and body fat with the most recent prior record',()=>{
+ const newest={id:2,client_id:1,date:'2026-09-08',weight:78,height:171,age:26,sex:'male',body_fat:14,activity_level:'moderate',goal:'maintain',tmb:1700,tdee:2400,protein:170,carbs:280,fat:70,fiber:25,antioxidants:1} satisfies ClientMeasurement;
  const older={...newest,id:1,date:'2026-08-20',weight:76};
  assert.equal(macroEvaluationAt([newest,older],0)?.id,2);assert.equal(macroEvaluationAt([newest,older],1)?.id,1);
  assert.deepEqual(weightComparison([{id:1,client_id:1,date:'2026-09-09',weight:77}],[newest,older]),{current:77,previous:78,previousSource:'evaluation'});
  assert.deepEqual(weightComparison([{id:2,client_id:1,date:'2026-09-10',weight:76.5},{id:1,client_id:1,date:'2026-09-09',weight:77}],[newest]),{current:76.5,previous:77,previousSource:'checkin'});
+ assert.deepEqual(bodyFatComparison([{id:1,client_id:1,date:'2026-09-09',weight:77,body_fat:13.5}],[newest,older]),{current:13.5,previous:14,previousSource:'evaluation'});
+ const recalculation={...newest,id:3,date:'2026-09-11',weight:76,body_fat:13};
+ const current={id:3,client_id:1,date:'2026-09-12',weight:75.5,body_fat:12.5};
+ const previous={id:2,client_id:1,date:'2026-09-10',weight:76.5,body_fat:13.5};
+ assert.deepEqual(weightComparison([current,previous],[recalculation,newest]),{current:75.5,previous:76,previousSource:'evaluation'});
+ assert.deepEqual(bodyFatComparison([current,previous],[recalculation,newest]),{current:12.5,previous:13,previousSource:'evaluation'});
+ const chart=progressChart([newest,recalculation],[previous,current]);
+ assert.deepEqual(chart.map(point=>[point.date,point.weight,point.bodyFat,point.source]),[
+  ['2026-09-08',78,14,'evaluation'],
+  ['2026-09-10',76.5,13.5,'checkin'],
+  ['2026-09-11',76,13,'evaluation'],
+  ['2026-09-12',75.5,12.5,'checkin'],
+ ]);
+ const sameDay=progressChart([{...newest,date:'2026-09-12',weight:80,body_fat:15}],[current]);
+ assert.deepEqual(sameDay.map(point=>[point.weight,point.bodyFat,point.source]),[[75.5,12.5,'checkin']]);
+ const latestSameDay=progressChart([{...newest,id:4,date:'2026-09-13',weight:74},{...newest,id:5,date:'2026-09-13',weight:73}],[]);
+ assert.deepEqual(latestSameDay.map(point=>point.weight),[73]);
 });
 
 test('successful cloud saves stay quiet while synchronization errors remain visible',()=>{

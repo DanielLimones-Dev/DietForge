@@ -90,7 +90,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `src/lib/progressReport.ts` | documento A4 del progreso y apertura aislada de la ventana de impresión |
 | `src/lib/csv.ts` | CSV de mediciones y descarga |
 | `src/lib/macro-evaluation.ts` | guarda evaluaciones sin crear check-ins y selecciona su historial para el carrusel |
-| `src/lib/client-progress.ts` | resuelve la comparación de peso entre evaluación, primer check-in y check-ins siguientes |
+| `src/lib/client-progress.ts` | compara peso y grasa con el registro previo y combina evaluaciones/check-ins para las gráficas antropométricas |
 | `src/lib/cloud/engine.ts` | cola de persistencia, estado de sincronización y criterio para mostrar solo alertas de error |
 | `src/lib/openExternal.ts` | apertura de URLs desde el navegador |
 | `src/data/training-exercises.json` | 463 ejercicios incluidos sin videos; se muestran dentro de “Mis ejercicios” junto con los personalizados del coach |

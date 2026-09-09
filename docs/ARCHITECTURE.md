@@ -152,6 +152,8 @@ En impresión, `@page` define el margen físico y el contenido comienza en flujo
 
 `PeakWeekSimulator` y `PeakCalendar` editan el calendario. `peakDates` calcula siete fechas en UTC, desde seis días antes hasta la competencia. Cada día puede tener fase, recordatorios, notas y macros propios. `dailyMacros` usa el valor diario cuando existe y recurre a los macros base cuando no existe; las calorías se calculan con proteína×4 + carbohidratos×4 + grasa×9.
 
+`COMPETITION_PHASES` define el selector visible de fases e incluye Peak Week. Al elegirla, el resumen usa los factores de `PHASE_REQUIREMENTS.peak_week` y el expediente sustituye el bloque de competencias por el calendario editable de la competencia seleccionada.
+
 `savePeakPlans` crea o actualiza un plan por combinación de competencia y fecha. `mergePeakConfig` conserva configuraciones de otras semanas y reemplaza solamente los siete días editados.
 
 ## Administración y suscripciones
@@ -185,7 +187,7 @@ Panel Coach resume el portafolio y sus alertas; Clientes ofrece búsqueda, estad
 
 El Dashboard calcula todas sus métricas desde `db`: actividad en 14 días, adherencia a partir de check-ins, promedio calórico y distribución energética de planes. La consola administrativa presenta únicamente estados devueltos por `dietforge_admin_list`; no infiere facturación ni ingresos que el backend todavía no registra.
 
-La calculadora guarda evaluaciones antropométricas y macros mediante `saveMacroEvaluation`, pero no genera check-ins. `macroEvaluationAt` permite recorrerlas desde la más reciente sin sustituir el historial. La tarjeta de peso, la composición, los promedios, la tendencia y las sugerencias de ajuste consumen exclusivamente check-ins. `weightComparison` usa el check-in anterior como referencia; cuando todavía existe uno solo, usa la evaluación más reciente como línea base. Así, probar escenarios de macros no contamina el seguimiento real del cliente. `CloudGate` mantiene la persistencia normal en silencio y solo presenta la franja global cuando `SaveState.phase` es `error`; en ese caso conserva el bloqueo de edición y las acciones de recuperación.
+La calculadora guarda evaluaciones antropométricas y macros mediante `saveMacroEvaluation`, pero no genera check-ins. `macroEvaluationAt` permite recorrerlas desde la más reciente sin sustituir el historial. `progressChart` combina peso y grasa de evaluaciones y check-ins como puntos antropométricos; si coinciden en fecha, el check-in tiene prioridad. Los promedios, la tendencia, la adherencia y las sugerencias de ajuste consumen exclusivamente check-ins. `weightComparison` y `bodyFatComparison` comparan el check-in actual contra el valor anterior más reciente por fecha; la referencia puede ser un check-in o una evaluación posterior a ese check-in. Así, un cálculo nuevo actualiza la línea base y las gráficas de peso y grasa sin convertirse en un check-in. `CloudGate` mantiene la persistencia normal en silencio y solo presenta la franja global cuando `SaveState.phase` es `error`; en ese caso conserva el bloqueo de edición y las acciones de recuperación.
 
 ## Cálculos, seguimiento y salidas
 

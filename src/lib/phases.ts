@@ -1,5 +1,7 @@
 import type { CompetitionPhase, MacroResult } from "@/types";
 
+export const COMPETITION_PHASES: CompetitionPhase[] = ["offseason", "precontest", "peak_week", "transition"];
+
 const PHASE_REQUIREMENTS: Record<CompetitionPhase, {
   protein: number;
   fatMin: number;

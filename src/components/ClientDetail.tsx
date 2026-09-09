@@ -11,10 +11,10 @@ import { generateDietPDF } from "@/lib/pdf";
 import { openProgressReport } from "@/lib/progressReport";
 import { calculateWeightTrend, getRateLabel } from "@/lib/trends";
 import { macroEvaluationAt, saveMacroEvaluation } from "@/lib/macro-evaluation";
-import { weightComparison } from "@/lib/client-progress";
+import { bodyFatComparison, progressChart, weightComparison } from "@/lib/client-progress";
 import { suggestAdjustment, getTargetRate } from "@/lib/progression";
 import { calculateFFMI, calculateLeanBodyMass } from "@/lib/metrics";
-import { getPhaseLabel, getPhaseColor, calculatePhaseMacros } from "@/lib/phases";
+import { COMPETITION_PHASES, PHASE_REQUIREMENTS, getPhaseLabel, getPhaseColor, calculatePhaseMacros } from "@/lib/phases";
 import { downloadCSV, measurementsToCSV } from "@/lib/csv";
 import { CheckInForm } from "./CheckInForm";
 import { CheckInHistory } from "./CheckInHistory";
@@ -130,10 +130,11 @@ export function ClientDetail() {
   const latest = measurements[0];
   const macroView = macroEvaluationAt(measurements, macroHistoryIndex);
   const checkins = db.getCheckIns(clientId);
-  // El progreso pertenece al seguimiento del cliente. Las evaluaciones de la
-  // calculadora pueden cambiar varias veces sin crear puntos artificiales.
+  // Las evaluaciones aportan puntos antropométricos, pero no alteran las
+  // métricas propias del seguimiento, como promedio, tendencia o adherencia.
   const trend = calculateWeightTrend(checkins);
   const weightChange = weightComparison(checkins, measurements);
+  const bodyFatChange = bodyFatComparison(checkins, measurements);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _carouselKey = checkinVersion;
   const suggestion = latest && selectedPhase
@@ -152,21 +153,7 @@ export function ClientDetail() {
     gain_weight: { label: "Aumento", classes: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800" },
   };
 
-  interface ChartPoint { date: string; weight: number; bodyFat: number | undefined }
-  const weightChart: ChartPoint[] = [
-    ...checkins.map((c) => ({ date: c.date.slice(0, 10), weight: c.weight, bodyFat: c.body_fat })),
-  ]
-    .filter((p) => p.weight > 0)
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .reduce<ChartPoint[]>((acc, p) => {
-      const last = acc[acc.length - 1];
-      if (last && last.date === p.date) {
-        acc[acc.length - 1] = p;
-      } else {
-        acc.push(p);
-      }
-      return acc;
-    }, []);
+  const weightChart = progressChart(measurements, checkins);
 
   const handleCalc = () => {
     const w = Number(calcForm.weight);
@@ -412,7 +399,7 @@ export function ClientDetail() {
           </p>
           )}
           <div className="flex flex-wrap gap-2 mb-4">
-            {(["offseason", "precontest", "transition"] as CompetitionPhase[]).map((p) => (
+            {COMPETITION_PHASES.map((p) => (
               <button key={p} onClick={() => {
                 setSelectedPhase(selectedPhase === p ? undefined : p);
               }}
@@ -427,11 +414,11 @@ export function ClientDetail() {
             <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="text-center p-3 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                <p className="text-lg font-bold dark:text-white">{selectedPhase === "offseason" ? "2.0" : "2.4"}g</p>
+                <p className="text-lg font-bold dark:text-white">{PHASE_REQUIREMENTS[selectedPhase].protein.toFixed(1)}g</p>
                 <p className="text-[10px] text-gray-400 dark:text-gray-500">Proteína/kg</p>
               </div>
               <div className="text-center p-3 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                <p className="text-lg font-bold dark:text-white">{(selectedPhase === "offseason" ? 1.2 : 0.7) * 100}%</p>
+                <p className="text-lg font-bold dark:text-white">{Math.round(PHASE_REQUIREMENTS[selectedPhase].carbModifier * 100)}%</p>
                 <p className="text-[10px] text-gray-400 dark:text-gray-500">Carbos base</p>
               </div>
             </div>
@@ -542,10 +529,13 @@ export function ClientDetail() {
             <div className="min-w-0 flex-1">
               <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Composición</p>
               {(() => {
-                const prev = checkins[1]?.body_fat;
-                const curr = checkins[0]?.body_fat;
-                if (!curr) return <p className="text-sm text-gray-400 mt-1">Sin datos</p>;
-                if (!prev || prev === curr) return <span className="text-xl font-bold dark:text-white">{curr}<span className="text-sm font-medium text-gray-400 ml-0.5">% BF</span></span>;
+                const prev = bodyFatChange.previous;
+                const curr = bodyFatChange.current;
+                if (curr == null) {
+                  if (latest?.body_fat == null) return <p className="text-sm text-gray-400 mt-1">Sin datos</p>;
+                  return <span className="text-xl font-bold dark:text-white">{latest.body_fat}<span className="text-sm font-medium text-gray-400 ml-0.5">% BF</span></span>;
+                }
+                if (prev == null || prev === curr) return <span className="text-xl font-bold dark:text-white">{curr}<span className="text-sm font-medium text-gray-400 ml-0.5">% BF</span></span>;
                 return (
                   <div className="flex items-center gap-1.5 transition-all duration-500 ease-out">
                     <span className="text-sm text-gray-400 dark:text-gray-500">{prev}<span className="text-sm font-medium ml-0.5">% BF</span></span>
@@ -554,6 +544,15 @@ export function ClientDetail() {
                   </div>
                 );
               })()}
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                {!bodyFatChange.current && latest?.body_fat != null
+                  ? "Referencia de evaluación"
+                  : bodyFatChange.previousSource === "evaluation"
+                    ? "Base: evaluación más reciente"
+                    : bodyFatChange.current != null && bodyFatChange.previousSource !== "checkin"
+                      ? "Sin comparación anterior"
+                      : "Comparado con check-in anterior"}
+              </p>
               {checkins[0]?.body_fat && latest?.height && (
                   <p className="text-[11px] text-gray-400 mt-0.5">FFMI: {calculateFFMI(checkins[0].weight, latest.height, checkins[0].body_fat)} · MML: {calculateLeanBodyMass(checkins[0].weight, checkins[0].body_fat)} kg</p>
                 )}
