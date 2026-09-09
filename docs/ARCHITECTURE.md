@@ -45,7 +45,7 @@ sequenceDiagram
 
 `CloudGate` escucha `onAuthStateChange`, por lo que Supabase es la fuente de identidad. `SubscriptionProvider` consulta `dietforge_my_access` al cargar, al recuperar el foco y cada minuto. `SubscriptionGate` solo deja pasar cuentas activas, administradores o pruebas vigentes. `CloudDataGate` carga los datos después de superar el acceso comercial; así ningún componente consulta un snapshot perteneciente a otra cuenta.
 
-La primera validación o una recuperación entra por `/auth/callback`; el token de un solo uso se elimina del historial y puede dirigir a `/auth/password`. Los accesos siguientes usan correo y contraseña. `/admin/login` presenta el acceso administrativo, pero el rol final siempre se comprueba con `dietforge_is_admin()`.
+La primera validación o una recuperación entra por `/auth/callback`; el token de un solo uso se elimina del historial y puede dirigir a `/auth/password`. Los accesos siguientes usan correo y contraseña en `/`. Después de autenticar, la pantalla consulta `dietforge_is_admin()` y dirige a `/admin` o al panel del coach según la respuesta del servidor.
 
 ## Persistencia y sincronización
 
@@ -158,7 +158,7 @@ En impresión, `@page` define el margen físico y el contenido comienza en flujo
 
 El panel llama `POST /api/admin/coaches`. El Route Handler valida el bearer token con `dietforge_is_admin`; solo el servidor usa `SUPABASE_SERVICE_ROLE_KEY` para invitar por correo una identidad Auth todavía inexistente. La invitación vuelve a `/auth/callback?next=password`, confirma el correo y entrega una sesión de un solo uso para que el coach defina su propia contraseña. Luego ejecuta `dietforge_admin_set_access` con un `requestId` idempotente. Una cuenta existente no recibe otra invitación al renovarse.
 
-La pantalla general de acceso vive en `/` y contiene un enlace visible a `/admin/login`; esta segunda ruta precarga la identidad administradora y muestra el contexto de gestión. Conocer la URL no concede permisos: la interfaz y los handlers vuelven a consultar `dietforge_is_admin()` contra la identidad Auth verificada.
+La pantalla de acceso vive en `/` y sirve a todos los roles. No muestra un acceso administrativo separado ni compara el correo con una identidad conocida: después de validar la contraseña consulta `dietforge_is_admin()` contra la sesión Auth y dirige al administrador a `/admin`; cualquier cuenta no administradora continúa al panel de coach. `/admin/login` redirige a `/` para conservar enlaces antiguos.
 
 ## Seguridad web
 

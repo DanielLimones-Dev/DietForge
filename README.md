@@ -63,7 +63,7 @@ La evidencia y el historial se registran en la memoria de DietForge en la bóved
 
 ## Administración de coaches (2026-09-06)
 
-El administrador entra en `/admin/login` con correo y contraseña. El rol real se valida contra `dietforge_admins` en Supabase. Los coaches usan `/`; el login no crea cuentas automáticamente.
+Administradores y coaches entran en `/` con correo y contraseña. El login consulta el rol real contra `dietforge_admins` mediante Supabase y dirige automáticamente al área correspondiente; no crea cuentas automáticamente. `/admin/login` redirige al acceso único por compatibilidad.
 
 En `/admin`, dar de alta el correo y registrar el periodo pagado: 1, 3 o 12 meses. Renovar suma desde el vencimiento vigente o desde ahora si ya venció. Suspender conserva datos; retirar suspensión no extiende el periodo. El panel registra pagos manualmente y no hace cargos. Al dar de alta un correo nuevo, activa el periodo y Supabase envía automáticamente una invitación: el coach abre el enlace, valida su correo y crea su propia contraseña. Después entra normalmente desde `/`; una renovación conserva esa contraseña y solo amplía el vencimiento. También puede usar `Olvidé mi contraseña`.
 

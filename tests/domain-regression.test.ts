@@ -6,6 +6,7 @@ import {distributeMeals,macroKcal,calculateMacros} from '../src/lib/calculator';
 import {generateProgressReportHTML} from '../src/lib/progressReport';
 import {generateDietPDF} from '../src/lib/pdf';
 import {normalizeNumericInput} from '../src/lib/numeric-input';
+import {destinationForRole} from '../src/lib/auth-role';
 import type {ClientMeasurement,MealPlan} from '../src/types';
 
 test('numeric fields remove accidental leading zeros without changing decimals',()=>{
@@ -15,6 +16,13 @@ test('numeric fields remove accidental leading zeros without changing decimals',
  assert.equal(normalizeNumericInput('-050'),'-50');
  assert.equal(normalizeNumericInput('0.50'),'0.50');
  assert.equal(normalizeNumericInput(''),'');
+});
+
+test('the unified login routes only from the server-backed role result',()=>{
+ assert.equal(destinationForRole({data:true,error:null}),'/admin');
+ assert.equal(destinationForRole({data:false,error:null}),'/');
+ assert.equal(destinationForRole({data:null,error:null}),'/');
+ assert.throws(()=>destinationForRole({data:null,error:{message:'unavailable'}}),/verificar el rol/);
 });
 
 test('meal distribution preserves 100 percent on rest and workout days',()=>{

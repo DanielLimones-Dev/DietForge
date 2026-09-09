@@ -1,2 +1,3 @@
-import { LoginScreen } from "@/components/LoginScreen";
-export default function AdminLoginPage(){return <LoginScreen admin/>;}
+import { redirect } from "next/navigation";
+
+export default function AdminLoginPage(){redirect("/");}

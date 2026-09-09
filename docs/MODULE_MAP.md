@@ -20,7 +20,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `/reports` | `src/app/(workspace)/reports/page.tsx` | `Reports` |
 | `/training` | `src/app/(workspace)/training/page.tsx` | `TrainingHub` |
 | `/admin` | `src/app/(workspace)/admin/page.tsx` | `AdminPanel` |
-| `/admin/login` | `src/app/admin/login/page.tsx` | `LoginScreen admin` |
+| `/admin/login` | `src/app/admin/login/page.tsx` | redirección compatible al login único `/` |
 | `/auth/callback` | `src/app/auth/callback/page.tsx` | validación de correo y recuperación |
 | `/auth/password` | `src/app/auth/password/page.tsx` | creación o cambio de contraseña |
 | `/api/admin/coaches` | `src/app/api/admin/coaches/route.ts` | alta y renovación administrativa |
@@ -35,7 +35,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `WorkspaceProviders.tsx` | orden de proveedores del área privada | Cloud, toast, suscripción y layout |
 | `NumericInputNormalizer.tsx` | normalización global de campos numéricos controlados | `numeric-input`, DOM y eventos React |
 | `CloudGate.tsx` | sesión, carga de cuenta, importación heredada y estado de guardado | Supabase Auth, `db`, `SaveQueue` |
-| `LoginScreen.tsx` | login normal/admin, primera validación y recuperación | Supabase Auth, `email-access` |
+| `LoginScreen.tsx` | login único por rol, primera validación y recuperación | Supabase Auth, RPC `dietforge_is_admin`, `auth-role` |
 | `SubscriptionGate.tsx` / `SubscriptionPage.tsx` | bloquea o explica acceso comercial | `SubscriptionContext` |
 | `AdminPanel.tsx` | consola administrativa clínica: métricas, directorio, alta, periodos, suspensión e historial | RPC Supabase y API `/admin/coaches` |
 | `Layout.tsx` | navegación, tema y cierre de sesión | rutas, suscripción |
