@@ -45,7 +45,7 @@ sequenceDiagram
 
 `CloudGate` escucha `onAuthStateChange`, por lo que Supabase es la fuente de identidad. `SubscriptionProvider` consulta `dietforge_my_access` al cargar, al recuperar el foco y cada minuto. `SubscriptionGate` solo deja pasar cuentas activas, administradores o pruebas vigentes. `CloudDataGate` carga los datos después de superar el acceso comercial; así ningún componente consulta un snapshot perteneciente a otra cuenta.
 
-La primera validación o una recuperación entra por `/auth/callback`; el token de un solo uso se elimina del historial y puede dirigir a `/auth/password`. Los accesos siguientes usan correo y contraseña en `/`. Después de autenticar, la pantalla consulta `dietforge_is_admin()` y dirige a `/admin` o al panel del coach según la respuesta del servidor.
+La primera validación entra exclusivamente desde la invitación administrativa y una recuperación desde `Olvidé mi contraseña`; ambas pasan por `/auth/callback`. El token de un solo uso se elimina del historial y puede dirigir a `/auth/password`. El login no expone una solicitud manual de primera activación. Los accesos siguientes usan correo y contraseña en `/`. Después de autenticar, la pantalla consulta `dietforge_is_admin()` y dirige a `/admin` o al panel del coach según la respuesta del servidor.
 
 ## Persistencia y sincronización
 

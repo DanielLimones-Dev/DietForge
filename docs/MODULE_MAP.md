@@ -35,7 +35,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `WorkspaceProviders.tsx` | orden de proveedores del área privada | Cloud, toast, suscripción y layout |
 | `NumericInputNormalizer.tsx` | normalización global de campos numéricos controlados | `numeric-input`, DOM y eventos React |
 | `CloudGate.tsx` | sesión, carga de cuenta, importación heredada y estado de guardado | Supabase Auth, `db`, `SaveQueue` |
-| `LoginScreen.tsx` | login único por rol, primera validación y recuperación | Supabase Auth, RPC `dietforge_is_admin`, `auth-role` |
+| `LoginScreen.tsx` | login único por rol y recuperación; la primera activación solo llega por invitación | Supabase Auth, RPC `dietforge_is_admin`, `auth-role` |
 | `SubscriptionGate.tsx` / `SubscriptionPage.tsx` | bloquea o explica acceso comercial | `SubscriptionContext` |
 | `AdminPanel.tsx` | consola administrativa clínica: métricas, directorio, alta, periodos, suspensión e historial | RPC Supabase y API `/admin/coaches` |
 | `Layout.tsx` | navegación, tema y cierre de sesión | rutas, suscripción |

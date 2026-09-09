@@ -49,7 +49,7 @@ El layout compartido mantiene la sesión y la cola durante la navegación. Cambi
 
 Solo son públicas la URL y clave pública/anon de Supabase y los enlaces de pago Stripe. `FATSECRET_CONSUMER_KEY`, `FATSECRET_CONSUMER_SECRET`, `FATSECRET_WORKER` y `USDA_API_KEY` se leen en el servidor. Nunca usar una clave `service_role` en el frontend.
 
-En Supabase Auth permitir los orígenes locales usados y, al publicar, el dominio HTTPS definitivo. Se soportan enlaces estándar y pegado manual de código/enlace. El alta administrativa envía una invitación; `Primera vez` y `Olvidé mi contraseña` permiten solicitar otro enlace cuando corresponda. Las pruebas automatizadas no envían correos.
+En Supabase Auth permitir los orígenes locales usados y, al publicar, el dominio HTTPS definitivo. Se soportan enlaces estándar y pegado manual de código/enlace. El alta administrativa envía la invitación para validar el correo y crear la primera contraseña; el login no permite solicitar esa activación manualmente. `Olvidé mi contraseña` permanece disponible para cuentas activadas. Las pruebas automatizadas no envían correos.
 
 Si existe `FATSECRET_WORKER`, se conserva ese proveedor a través de Next.js; en caso contrario se usan las credenciales OAuth. La base de alimentos propia sigue disponible si un proveedor falla.
 
