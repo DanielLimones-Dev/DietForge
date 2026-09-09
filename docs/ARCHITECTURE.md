@@ -185,7 +185,7 @@ Panel Coach resume el portafolio y sus alertas; Clientes ofrece búsqueda, estad
 
 El Dashboard calcula todas sus métricas desde `db`: actividad en 14 días, adherencia a partir de check-ins, promedio calórico y distribución energética de planes. La consola administrativa presenta únicamente estados devueltos por `dietforge_admin_list`; no infiere facturación ni ingresos que el backend todavía no registra.
 
-La calculadora guarda evaluaciones antropométricas y macros mediante `saveMacroEvaluation`, pero no genera check-ins. La tarjeta de peso, la composición, los promedios, la tendencia y las sugerencias de ajuste consumen exclusivamente el historial de check-ins. Así, probar escenarios de macros no contamina el seguimiento real del cliente. `CloudGate` mantiene la persistencia normal en silencio y solo presenta la franja global cuando `SaveState.phase` es `error`; en ese caso conserva el bloqueo de edición y las acciones de recuperación.
+La calculadora guarda evaluaciones antropométricas y macros mediante `saveMacroEvaluation`, pero no genera check-ins. `macroEvaluationAt` permite recorrerlas desde la más reciente sin sustituir el historial. La tarjeta de peso, la composición, los promedios, la tendencia y las sugerencias de ajuste consumen exclusivamente check-ins. `weightComparison` usa el check-in anterior como referencia; cuando todavía existe uno solo, usa la evaluación más reciente como línea base. Así, probar escenarios de macros no contamina el seguimiento real del cliente. `CloudGate` mantiene la persistencia normal en silencio y solo presenta la franja global cuando `SaveState.phase` es `error`; en ese caso conserva el bloqueo de edición y las acciones de recuperación.
 
 ## Cálculos, seguimiento y salidas
 

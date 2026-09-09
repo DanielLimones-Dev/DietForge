@@ -36,7 +36,7 @@ DietForge es una aplicación web para coaches de nutrición y entrenamiento. Adm
 - Al apagar Rest Day, mantener temporalmente su columna montada durante la transición de unión; después desmontarla. `restDay` gobierna el modo y `restDayLayout` la presencia visual durante esos 1050 ms.
 - El título de un plan nunca puede persistirse vacío. Si la edición queda en blanco se conserva el nombre anterior; un registro histórico vacío muestra `Plan sin título` y mantiene un control accesible para editarlo.
 - El porcentaje de Rest Day modifica las metas mostradas; las cantidades y nutrientes reales de los alimentos no se reducen artificialmente.
-- Calcular o guardar una evaluación de macros nunca crea un check-in. Solo el formulario de seguimiento modifica el peso, composición, promedio, tendencia e historial mostrados en el expediente.
+- Calcular o guardar una evaluación de macros nunca crea un check-in. Las evaluaciones se conservan como historial navegable, con la más reciente en la posición 1. Solo el formulario de seguimiento modifica peso, composición, promedio, tendencia e historial; el primer check-in compara contra la evaluación más reciente y los siguientes contra el check-in anterior.
 - El control compacto de reducción Rest Day persiste `rd_percent_{planId}` y mantiene visible que el ajuste solo cambia las metas.
 - Las unidades admitidas en comidas son gramos, mililitros, libras y pieza. Una libra equivale a `453.59237 g`; una pieza usa `Food.serving_size` como peso declarado.
 - Una Peak Week siempre contiene los siete días terminando en la fecha de competencia. Guardar vuelve a usar el plan del mismo `competition_id` y `peak_week_date` para evitar duplicados.

@@ -11,3 +11,8 @@ export function saveMacroEvaluation(
 ) {
   return storage.saveMeasurement(measurement);
 }
+
+export function macroEvaluationAt(evaluations: ClientMeasurement[], index: number) {
+  if (evaluations.length === 0) return undefined;
+  return evaluations[Math.min(Math.max(0, index), evaluations.length - 1)];
+}

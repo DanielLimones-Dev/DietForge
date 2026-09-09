@@ -10,7 +10,8 @@ import { getPreference } from "@/lib/db";
 import { generateDietPDF } from "@/lib/pdf";
 import { openProgressReport } from "@/lib/progressReport";
 import { calculateWeightTrend, getRateLabel } from "@/lib/trends";
-import { saveMacroEvaluation } from "@/lib/macro-evaluation";
+import { macroEvaluationAt, saveMacroEvaluation } from "@/lib/macro-evaluation";
+import { weightComparison } from "@/lib/client-progress";
 import { suggestAdjustment, getTargetRate } from "@/lib/progression";
 import { calculateFFMI, calculateLeanBodyMass } from "@/lib/metrics";
 import { getPhaseLabel, getPhaseColor, calculatePhaseMacros } from "@/lib/phases";
@@ -22,7 +23,7 @@ import { PeakWeekSimulator } from "./PeakWeekSimulator";
 import { CompetitionPeakWeekEditor } from "./CompetitionPeakWeekEditor";
 import { ConfirmDialog } from "./ui";
 import { useToast } from "./Toast";
-import { ArrowLeft, FileText, TrendingUp, Ruler, Camera, Download, BarChart3, Award, Activity, Moon, Dumbbell } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, FileText, TrendingUp, Ruler, Camera, Download, BarChart3, Award, Activity, Moon, Dumbbell } from "lucide-react";
 import type {
   Client, ClientMeasurement, ActivityLevel, Goal, MacroResult,
   DietTemplate, MealTime, CompetitionPhase, CheckIn, Competition, PeakWeekDayConfig,
@@ -69,6 +70,7 @@ export function ClientDetail() {
     hasWorkout: true, usePhase: false,
   });
   const [result, setResult] = useState<MacroResult | null>(null);
+  const [macroHistoryIndex, setMacroHistoryIndex] = useState(0);
   const [editResult, setEditResult] = useState<MacroResult | null>(null);
   const [changedFields, setChangedFields] = useState<Set<string>>(new Set());
   const [calcError, setCalcError] = useState("");
@@ -93,7 +95,7 @@ export function ClientDetail() {
   };
 
   const resetMacros = () => {
-    const orig = result || latest;
+    const orig = result || macroView || latest;
     if (orig) {
       setEditResult({ ...orig });
       setChangedFields(new Set());
@@ -126,10 +128,12 @@ export function ClientDetail() {
 
   const measurements = db.getMeasurements(clientId);
   const latest = measurements[0];
+  const macroView = macroEvaluationAt(measurements, macroHistoryIndex);
   const checkins = db.getCheckIns(clientId);
   // El progreso pertenece al seguimiento del cliente. Las evaluaciones de la
   // calculadora pueden cambiar varias veces sin crear puntos artificiales.
   const trend = calculateWeightTrend(checkins);
+  const weightChange = weightComparison(checkins, measurements);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _carouselKey = checkinVersion;
   const suggestion = latest && selectedPhase
@@ -226,12 +230,13 @@ export function ClientDetail() {
     };
 
     saveMacroEvaluation(measurement, db);
+    setMacroHistoryIndex(0);
     setResult(macros);
     setEditResult({ ...macros });
   };
 
   const handleCreatePlan = () => {
-    let macros = editResult || result || latest;
+    let macros = editResult || result || macroView || latest;
     if (!macros) return;
     if (selectedPhase && latest) {
       macros = calculatePhaseMacros(macros, latest.weight, selectedPhase);
@@ -510,9 +515,9 @@ export function ClientDetail() {
               <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Peso</p>
               <div className="flex items-center gap-1.5 mt-0.5 transition-all duration-500 ease-out">
                 {(() => {
-                  const prev = checkins[1]?.weight;
-                  const curr = checkins[0]?.weight;
-                  if (!curr) return <span className="text-xl font-bold dark:text-white">{trend.currentWeight}<span className="text-sm font-medium text-gray-400 ml-0.5">kg</span></span>;
+                  const prev = weightChange.previous;
+                  const curr = weightChange.current;
+                  if (!curr) return <span className="text-xl font-bold dark:text-white">{latest?.weight ?? 0}<span className="text-sm font-medium text-gray-400 ml-0.5">kg</span></span>;
                   if (!prev || prev === curr) return <span className="text-xl font-bold dark:text-white">{curr}<span className="text-sm font-medium text-gray-400 ml-0.5">kg</span></span>;
                   return (
                     <>
@@ -523,7 +528,9 @@ export function ClientDetail() {
                   );
                 })()}
               </div>
-              <p className="text-[11px] text-gray-400 mt-0.5">Prom 7d: {trend.rollingAverage7 ?? "—"} kg · {getRateLabel(trend.weeklyChangePercent)}</p>
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                {!weightChange.current && latest ? "Referencia de evaluación · " : weightChange.previousSource === "evaluation" ? "Base: última evaluación · " : ""}Prom 7d: {trend.rollingAverage7 ?? "—"} kg · {getRateLabel(trend.weeklyChangePercent)}
+              </p>
             </div>
           </div>
         </div>
@@ -581,14 +588,29 @@ export function ClientDetail() {
         </div>
       )}
 
-      {latest && (
+      {macroView && (
         <div className="mb-4 animate-slide-down">
-          {!editResult && (
-            <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">
-              Últimos macros • {latest.date.slice(0, 10)}
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              Macros • {macroView.date.slice(0, 10)}
             </p>
-          )}
-          <div className="grid grid-cols-5 gap-3">
+            {measurements.length > 1 && (
+              <div className="inline-flex items-center gap-2" aria-label="Historial de cálculos">
+                <button type="button" aria-label="Ver cálculo más reciente" disabled={macroHistoryIndex === 0}
+                  onClick={() => { setMacroHistoryIndex((index) => Math.max(0, index - 1)); setResult(null); setEditResult(null); setChangedFields(new Set()); }}
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-all hover:border-brand-400 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-35 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="min-w-24 text-center text-[11px] font-medium text-gray-500 dark:text-gray-400">Cálculo {macroHistoryIndex + 1} de {measurements.length}</span>
+                <button type="button" aria-label="Ver cálculo anterior" disabled={macroHistoryIndex >= measurements.length - 1}
+                  onClick={() => { setMacroHistoryIndex((index) => Math.min(measurements.length - 1, index + 1)); setResult(null); setEditResult(null); setChangedFields(new Set()); }}
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-all hover:border-brand-400 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-35 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+          <div key={macroView.id} className="grid grid-cols-2 gap-3 animate-slide-in-right sm:grid-cols-5">
             <div className="text-center p-3 rounded-xl border shadow-sm stagger-1" style={{ borderColor: "#0ea5e944", background: "linear-gradient(to bottom, #0ea5e930, #0ea5e915)" }}>
               <p className="text-[9px] font-semibold mb-1 uppercase tracking-wide" style={{ color: "#0ea5e9" }}>Calorías</p>
               {editResult ? (
@@ -597,12 +619,12 @@ export function ClientDetail() {
                   className="w-20 mx-auto text-center text-lg font-bold bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:outline-none dark:text-gray-100"
                   style={{ color: "#0ea5e9" }} />
               ) : (
-                <p className="text-xl font-bold" style={{ color: "#0ea5e9" }}>{latest.tdee}</p>
+                <p className="text-xl font-bold" style={{ color: "#0ea5e9" }}>{macroView.tdee}</p>
               )}
               <p className="text-[10px] text-gray-400 dark:text-gray-500">kcal</p>
             </div>
             {(["protein","carbs","fat","fiber"] as const).map((k, i) => {
-              const val = editResult ? editResult[k] : latest[k];
+              const val = editResult ? editResult[k] : macroView[k];
               const accent = k === "protein" ? "#f87171" : k === "carbs" ? "#fbbf24" : k === "fat" ? "#60a5fa" : "#a78bfa";
               const changed = changedFields.has(k);
               return (
@@ -645,7 +667,7 @@ export function ClientDetail() {
                     </thead>
                     <tbody>
                       {(["protein","carbs","fat"] as const).map((k) => {
-                        const orig = latest[k];
+                        const orig = macroView[k];
                         const adj = editResult[k];
                         const diff = adj - orig;
                         const mult = k === "fat" ? 9 : 4;
@@ -663,10 +685,10 @@ export function ClientDetail() {
                       })}
                       <tr className="border-t border-gray-200 dark:border-gray-700">
                         <td className="px-2 py-1 font-medium text-gray-800 dark:text-gray-200">Total kcal</td>
-                        <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{latest.tdee}</td>
+                        <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{macroView.tdee}</td>
                         <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{editResult.tdee}</td>
-                        <td className={`text-right px-2 py-1 font-medium ${editResult.tdee === latest.tdee ? "text-gray-400" : editResult.tdee > latest.tdee ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-                          {editResult.tdee > latest.tdee ? "+" : ""}{editResult.tdee - latest.tdee}
+                        <td className={`text-right px-2 py-1 font-medium ${editResult.tdee === macroView.tdee ? "text-gray-400" : editResult.tdee > macroView.tdee ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                          {editResult.tdee > macroView.tdee ? "+" : ""}{editResult.tdee - macroView.tdee}
                         </td>
                       </tr>
                     {(() => {
@@ -695,7 +717,7 @@ export function ClientDetail() {
               <div className="flex gap-2 mt-3">
                 <button onClick={() => {
                   const m = editResult;
-                  db.updateMeasurement(latest.id, {
+                  db.updateMeasurement(macroView.id, {
                     tmb: m.tmb, tdee: m.tdee, protein: m.protein, carbs: m.carbs,
                     fat: m.fat, fiber: m.fiber, antioxidants: m.antioxidants,
                   });

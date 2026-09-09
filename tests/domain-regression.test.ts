@@ -7,8 +7,9 @@ import {generateProgressReportHTML} from '../src/lib/progressReport';
 import {generateDietPDF} from '../src/lib/pdf';
 import {normalizeNumericInput} from '../src/lib/numeric-input';
 import {destinationForRole} from '../src/lib/auth-role';
-import {saveMacroEvaluation} from '../src/lib/macro-evaluation';
+import {macroEvaluationAt,saveMacroEvaluation} from '../src/lib/macro-evaluation';
 import {isStorageAlert} from '../src/lib/cloud/engine';
+import {weightComparison} from '../src/lib/client-progress';
 import type {ClientMeasurement,MealPlan} from '../src/types';
 
 test('numeric fields remove accidental leading zeros without changing decimals',()=>{
@@ -32,6 +33,14 @@ test('macro evaluations persist without creating a check-in',()=>{
  const measurement={id:7,client_id:1,date:'2026-09-09',weight:78,height:171,age:26,sex:'male',activity_level:'moderate',goal:'maintain',tmb:1700,tdee:2400,protein:170,carbs:280,fat:70,fiber:25,antioxidants:1} satisfies ClientMeasurement;
  const saved=saveMacroEvaluation(measurement,{saveMeasurement:data=>{const row={...data,id:7};calls.push(row);return row;}});
  assert.equal(calls.length,1);assert.equal(saved.weight,78);
+});
+
+test('macro history is navigable and the first check-in compares with its evaluation baseline',()=>{
+ const newest={id:2,client_id:1,date:'2026-09-08',weight:78,height:171,age:26,sex:'male',activity_level:'moderate',goal:'maintain',tmb:1700,tdee:2400,protein:170,carbs:280,fat:70,fiber:25,antioxidants:1} satisfies ClientMeasurement;
+ const older={...newest,id:1,date:'2026-08-20',weight:76};
+ assert.equal(macroEvaluationAt([newest,older],0)?.id,2);assert.equal(macroEvaluationAt([newest,older],1)?.id,1);
+ assert.deepEqual(weightComparison([{id:1,client_id:1,date:'2026-09-09',weight:77}],[newest,older]),{current:77,previous:78,previousSource:'evaluation'});
+ assert.deepEqual(weightComparison([{id:2,client_id:1,date:'2026-09-10',weight:76.5},{id:1,client_id:1,date:'2026-09-09',weight:77}],[newest]),{current:76.5,previous:77,previousSource:'checkin'});
 });
 
 test('successful cloud saves stay quiet while synchronization errors remain visible',()=>{
