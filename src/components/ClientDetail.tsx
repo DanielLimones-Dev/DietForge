@@ -296,7 +296,7 @@ export function ClientDetail() {
     setEditResult({ ...macroView });
     setMacroInputs({ tdee: String(macroView.tdee), protein: String(macroView.protein), carbs: String(macroView.carbs), fat: String(macroView.fat), fiber: String(macroView.fiber) });
     setChangedFields(new Set());
-    setShowCalc(true);
+    setShowCalc(false);
     requestAnimationFrame(() => document.getElementById("macro-editor")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" }));
   };
 
@@ -416,6 +416,114 @@ export function ClientDetail() {
   const handleProgressReport = () => {
     openProgressReport({ client, measurements, checkins, competition: competitions[0], phase: selectedPhase });
   };
+
+  const macroEditor = editResult && (
+
+          <div id="macro-editor" className="px-5 pb-5 pt-4 border-t border-gray-100 dark:border-gray-800 animate-slide-down">
+            <div className="macro-draft-heading"><div><span>AJUSTE DE PRESCRIPCIÓN</span><h4>{editingMeasurementId !== null ? "Editar macros guardados" : "Macros calculados"}</h4></div><p>{editingMeasurementId !== null ? "Guardar actualiza este cálculo; Cancelar conserva sus valores originales." : "Revisa, ajusta y guarda para incorporarlos al historial."}</p></div>
+            <div className="macro-control-grid">
+              <div className="macro-control-card is-calories stagger-1">
+                <header><span><i/>Calorías</span><b>Objetivo energético</b></header>
+                <div><button type="button" aria-label="Reducir calorías" onClick={() => stepMacroDraft("tdee", -1)}>−</button><input type="number" data-plain-number min="0" value={macroInputs.tdee}
+                  onChange={(e) => updateMacroDraft("tdee", e.target.value)} onBlur={() => restoreEmptyMacroDraft("tdee")}
+                  className="macro-edit-number" /><small>kcal</small><button type="button" aria-label="Aumentar calorías" onClick={() => stepMacroDraft("tdee", 1)}>+</button></div>
+                <footer>Pasos de 50 kcal · redistribuye P/C/G</footer>
+              </div>
+              {(["protein","carbs","fat","fiber"] as const).map((k, i) => {
+                const accent = k === "protein" ? "#f87171" : k === "carbs" ? "#fbbf24" : k === "fat" ? "#60a5fa" : "#a78bfa";
+                const changed = changedFields.has(k);
+                const kcal = k === "fat" ? editResult[k] * 9 : k === "fiber" ? null : editResult[k] * 4;
+                return (
+                <div key={k} className={`macro-control-card stagger-${Math.min(i + 2, 5)} ${changed ? "is-changed" : ""}`} style={{ "--macro-accent": accent } as React.CSSProperties}>
+                    <header><span><i/>{k === "protein" ? "Proteína" : k === "carbs" ? "Carbohidratos" : k === "fat" ? "Grasas" : "Fibra"}</span><b>{kcal == null ? (editResult.fiber >= 30 ? "Óptimo" : "Meta ≥ 30 g") : `${kcal.toLocaleString("es-MX")} kcal`}</b></header>
+                    <div><button type="button" aria-label={`Reducir ${k}`} onClick={() => stepMacroDraft(k, -1)}>−</button><input type="number" data-plain-number min="0" value={macroInputs[k]}
+                      onChange={(e) => updateMacroDraft(k, e.target.value)} onBlur={() => restoreEmptyMacroDraft(k)}
+                      className="macro-edit-number" /><small>g</small><button type="button" aria-label={`Aumentar ${k}`} onClick={() => stepMacroDraft(k, 1)}>+</button></div>
+                    <footer>{k === "protein" ? `${(editResult.protein / Number(draftMeasurement?.weight || calcForm.weight || 1)).toFixed(2)} g/kg de peso` : k === "carbs" ? "Combustible y rendimiento" : k === "fat" ? "Soporte hormonal" : "Saciedad y salud digestiva"}</footer>
+                  </div>
+                );
+              })}
+            </div>
+            {changedFields.size > 0 && result && (
+              <div className="mt-3 text-[11px] animate-slide-up">
+                <table className="w-full max-w-md mx-auto">
+                  <thead>
+                    <tr className="text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                      <th className="text-left px-2 py-1">Macro</th>
+                      <th className="text-right px-2 py-1">Original</th>
+                      <th className="text-right px-2 py-1">Ajustado</th>
+                      <th className="text-right px-2 py-1">Diferencia</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(["protein","carbs","fat"] as const).map((k) => {
+                      const orig = result[k];
+                      const adj = editResult[k];
+                      const diff = adj - orig;
+                      const mult = k === "fat" ? 9 : 4;
+                      const accent = k === "protein" ? "text-red-500" : k === "carbs" ? "text-amber-500" : "text-blue-500";
+                      return (
+                        <tr key={k}>
+                          <td className={`px-2 py-1 font-medium ${accent}`}>{k === "protein" ? "Proteína" : k === "carbs" ? "Carbohidratos" : "Grasas"}</td>
+                          <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400">{orig}g ({orig * mult} kcal)</td>
+                          <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400">{adj}g ({adj * mult} kcal)</td>
+                          <td className={`text-right px-2 py-1 font-medium ${diff === 0 ? "text-gray-400" : diff > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                            {diff > 0 ? "+" : ""}{diff}g ({diff * mult > 0 ? "+" : ""}{diff * mult} kcal)
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    <tr className="border-t border-gray-200 dark:border-gray-700">
+                      <td className="px-2 py-1 font-medium text-gray-800 dark:text-gray-200">Total kcal</td>
+                      <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{result.tdee}</td>
+                      <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{editResult.tdee}</td>
+                      <td className={`text-right px-2 py-1 font-medium ${editResult.tdee === result.tdee ? "text-gray-400" : editResult.tdee > result.tdee ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                        {editResult.tdee > result.tdee ? "+" : ""}{editResult.tdee - result.tdee}
+                      </td>
+                    </tr>
+                    {(() => {
+                      const actual = editResult.protein * 4 + editResult.carbs * 4 + editResult.fat * 9;
+                      const diff = actual - editResult.tdee;
+                      if (Math.abs(diff) <= 5) return null;
+                      return (
+                        <tr className="border-t border-gray-200 dark:border-gray-700">
+                          <td className={`px-2 py-1 font-medium text-${diff > 0 ? "amber" : "blue"}-600 dark:text-${diff > 0 ? "amber" : "blue"}-400`}>
+                            {diff > 0 ? "Sobran" : "Faltan"}
+                          </td>
+                          <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400">—</td>
+                          <td className={`text-right px-2 py-1 font-medium text-${diff > 0 ? "amber" : "blue"}-600 dark:text-${diff > 0 ? "amber" : "blue"}-400`}>
+                            {actual} kcal
+                          </td>
+                          <td className={`text-right px-2 py-1 font-medium text-${diff > 0 ? "amber" : "blue"}-600 dark:text-${diff > 0 ? "amber" : "blue"}-400`}>
+                            {diff > 0 ? "+" : ""}{diff} kcal
+                          </td>
+                        </tr>
+                      );
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {changedFields.size > 0 && result && (
+              <button onClick={resetMacros}
+                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-all shadow-sm animate-scale-in">
+                Restaurar macros originales
+              </button>
+            )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" onClick={saveCalculatedMacros} disabled={Object.values(macroInputs).some((value) => value === "")}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold bg-brand-600 text-white hover:bg-brand-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 transition-all shadow-sm">
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Guardar macros
+              </button>
+              <button type="button" onClick={cancelCalculatedMacros}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-medium bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm">
+                Cancelar
+              </button>
+            </div>
+          </div>
+
+  );
 
   return (
     <div className="client-detail-page"><Link className="care-entry" href={`/clients/${client.id}/care`}>Portal, seguimiento y acceso del cliente →</Link>
@@ -633,6 +741,7 @@ export function ClientDetail() {
         </div>
       )}
 
+      {editingMeasurementId !== null && <section className="mb-6 macro-result-promoted">{macroEditor}</section>}
       {macroView && !result && (
         <div key={macroView.id} className="mb-4 macro-result-promoted">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -682,7 +791,7 @@ export function ClientDetail() {
             <TrendingUp className="w-4 h-4 text-brand-600" /> Calculadora de Macros
           </h3>
           <button onClick={() => {
-            if (showCalc && result) cancelCalculatedMacros();
+            if (result) cancelCalculatedMacros();
             setShowCalc(!showCalc);
           }}
             className="text-xs font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors flex items-center gap-1">
@@ -943,111 +1052,7 @@ export function ClientDetail() {
           </>
         )}
 
-        {showCalc && editResult && (
-          <div id="macro-editor" className="px-5 pb-5 pt-4 border-t border-gray-100 dark:border-gray-800 animate-slide-down">
-            <div className="macro-draft-heading"><div><span>AJUSTE DE PRESCRIPCIÓN</span><h4>{editingMeasurementId !== null ? "Editar macros guardados" : "Macros calculados"}</h4></div><p>{editingMeasurementId !== null ? "Guardar actualiza este cálculo; Cancelar conserva sus valores originales." : "Revisa, ajusta y guarda para incorporarlos al historial."}</p></div>
-            <div className="macro-control-grid">
-              <div className="macro-control-card is-calories stagger-1">
-                <header><span><i/>Calorías</span><b>Objetivo energético</b></header>
-                <div><button type="button" aria-label="Reducir calorías" onClick={() => stepMacroDraft("tdee", -1)}>−</button><input type="number" min="0" value={macroInputs.tdee}
-                  onChange={(e) => updateMacroDraft("tdee", e.target.value)} onBlur={() => restoreEmptyMacroDraft("tdee")}
-                  className="macro-edit-number" /><small>kcal</small><button type="button" aria-label="Aumentar calorías" onClick={() => stepMacroDraft("tdee", 1)}>+</button></div>
-                <footer>Pasos de 50 kcal · redistribuye P/C/G</footer>
-              </div>
-              {(["protein","carbs","fat","fiber"] as const).map((k, i) => {
-                const accent = k === "protein" ? "#f87171" : k === "carbs" ? "#fbbf24" : k === "fat" ? "#60a5fa" : "#a78bfa";
-                const changed = changedFields.has(k);
-                const kcal = k === "fat" ? editResult[k] * 9 : k === "fiber" ? null : editResult[k] * 4;
-                return (
-                <div key={k} className={`macro-control-card stagger-${Math.min(i + 2, 5)} ${changed ? "is-changed" : ""}`} style={{ "--macro-accent": accent } as React.CSSProperties}>
-                    <header><span><i/>{k === "protein" ? "Proteína" : k === "carbs" ? "Carbohidratos" : k === "fat" ? "Grasas" : "Fibra"}</span><b>{kcal == null ? (editResult.fiber >= 30 ? "Óptimo" : "Meta ≥ 30 g") : `${kcal.toLocaleString("es-MX")} kcal`}</b></header>
-                    <div><button type="button" aria-label={`Reducir ${k}`} onClick={() => stepMacroDraft(k, -1)}>−</button><input type="number" min="0" value={macroInputs[k]}
-                      onChange={(e) => updateMacroDraft(k, e.target.value)} onBlur={() => restoreEmptyMacroDraft(k)}
-                      className="macro-edit-number" /><small>g</small><button type="button" aria-label={`Aumentar ${k}`} onClick={() => stepMacroDraft(k, 1)}>+</button></div>
-                    <footer>{k === "protein" ? `${(editResult.protein / Number(draftMeasurement?.weight || calcForm.weight || 1)).toFixed(2)} g/kg de peso` : k === "carbs" ? "Combustible y rendimiento" : k === "fat" ? "Soporte hormonal" : "Saciedad y salud digestiva"}</footer>
-                  </div>
-                );
-              })}
-            </div>
-            {changedFields.size > 0 && result && (
-              <div className="mt-3 text-[11px] animate-slide-up">
-                <table className="w-full max-w-md mx-auto">
-                  <thead>
-                    <tr className="text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                      <th className="text-left px-2 py-1">Macro</th>
-                      <th className="text-right px-2 py-1">Original</th>
-                      <th className="text-right px-2 py-1">Ajustado</th>
-                      <th className="text-right px-2 py-1">Diferencia</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(["protein","carbs","fat"] as const).map((k) => {
-                      const orig = result[k];
-                      const adj = editResult[k];
-                      const diff = adj - orig;
-                      const mult = k === "fat" ? 9 : 4;
-                      const accent = k === "protein" ? "text-red-500" : k === "carbs" ? "text-amber-500" : "text-blue-500";
-                      return (
-                        <tr key={k}>
-                          <td className={`px-2 py-1 font-medium ${accent}`}>{k === "protein" ? "Proteína" : k === "carbs" ? "Carbohidratos" : "Grasas"}</td>
-                          <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400">{orig}g ({orig * mult} kcal)</td>
-                          <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400">{adj}g ({adj * mult} kcal)</td>
-                          <td className={`text-right px-2 py-1 font-medium ${diff === 0 ? "text-gray-400" : diff > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-                            {diff > 0 ? "+" : ""}{diff}g ({diff * mult > 0 ? "+" : ""}{diff * mult} kcal)
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    <tr className="border-t border-gray-200 dark:border-gray-700">
-                      <td className="px-2 py-1 font-medium text-gray-800 dark:text-gray-200">Total kcal</td>
-                      <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{result.tdee}</td>
-                      <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{editResult.tdee}</td>
-                      <td className={`text-right px-2 py-1 font-medium ${editResult.tdee === result.tdee ? "text-gray-400" : editResult.tdee > result.tdee ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-                        {editResult.tdee > result.tdee ? "+" : ""}{editResult.tdee - result.tdee}
-                      </td>
-                    </tr>
-                    {(() => {
-                      const actual = editResult.protein * 4 + editResult.carbs * 4 + editResult.fat * 9;
-                      const diff = actual - editResult.tdee;
-                      if (Math.abs(diff) <= 5) return null;
-                      return (
-                        <tr className="border-t border-gray-200 dark:border-gray-700">
-                          <td className={`px-2 py-1 font-medium text-${diff > 0 ? "amber" : "blue"}-600 dark:text-${diff > 0 ? "amber" : "blue"}-400`}>
-                            {diff > 0 ? "Sobran" : "Faltan"}
-                          </td>
-                          <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400">—</td>
-                          <td className={`text-right px-2 py-1 font-medium text-${diff > 0 ? "amber" : "blue"}-600 dark:text-${diff > 0 ? "amber" : "blue"}-400`}>
-                            {actual} kcal
-                          </td>
-                          <td className={`text-right px-2 py-1 font-medium text-${diff > 0 ? "amber" : "blue"}-600 dark:text-${diff > 0 ? "amber" : "blue"}-400`}>
-                            {diff > 0 ? "+" : ""}{diff} kcal
-                          </td>
-                        </tr>
-                      );
-                    })()}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            {changedFields.size > 0 && result && (
-              <button onClick={resetMacros}
-                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-medium bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-all shadow-sm animate-scale-in">
-                Restaurar macros originales
-              </button>
-            )}
-            <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" onClick={saveCalculatedMacros} disabled={Object.values(macroInputs).some((value) => value === "")}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold bg-brand-600 text-white hover:bg-brand-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 transition-all shadow-sm">
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                Guardar macros
-              </button>
-              <button type="button" onClick={cancelCalculatedMacros}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-medium bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm">
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
+        {editingMeasurementId === null && showCalc && macroEditor}
 
       </div>
 

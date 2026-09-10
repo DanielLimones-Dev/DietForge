@@ -92,3 +92,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 
 Los macros guardados mantienen la acción Ajustar macros en ClientDetail. El editor único compara contra el registro seleccionado; Guardar actualiza únicamente sus campos nutricionales mediante updateMeasurement, conserva ID, fecha y antropometría; Cancelar no escribe. Un cálculo nuevo usa saveMacroEvaluation.
+
+
+El ajuste de macros guardados se monta en la sección superior, en la posición del resumen, mientras la calculadora permanece cerrada. macroEditor se comparte con resultados nuevos sin duplicación. Los inputs de sus tarjetas usan data-plain-number para excluir los steppers globales visuales y de puntero; mantienen sus botones −/+.
