@@ -167,3 +167,9 @@ Detalle de conexión y límites: [CLIENT_CARE.md](CLIENT_CARE.md).
 | `tests/sql/training-videos.sql` | Aislamiento real de lectura/escritura de medios |
 | `nutrition-normalization.ts` | Base g/ml verificable en resúmenes FatSecret |
 | `tests/final-review.test.ts`, `tests/nutrition-normalization.test.ts` | Regresiones de rutina, progresión, CSV y porciones |
+
+
+Los macros guardados mantienen la acción Ajustar macros en ClientDetail. El editor único compara contra el registro seleccionado; Guardar actualiza únicamente sus campos nutricionales mediante updateMeasurement, conserva ID, fecha y antropometría; Cancelar no escribe. Un cálculo nuevo usa saveMacroEvaluation.
+
+
+BiometricChart presenta una curva de ancho completo con selector peso/grasa, periodos relativos al último registro, área degradada, tooltip y media de registros de los últimos siete días. La media es visual y no modifica el seguimiento. Los valores ausentes no se convierten a cero.

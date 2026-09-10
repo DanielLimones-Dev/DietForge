@@ -229,3 +229,9 @@ La RPC pública `dietforge_healthcheck()` responde sin leer datos. `scripts/supa
 ## Revisión y videos personalizables
 
 Ver [revisión de cierre](FINAL_REVIEW_2026-09-08.md) y [contratos de videos](TRAINING_MEDIA.md). El catálogo con alimentos existentes nunca se reinicia al actualizar la semilla. Los resúmenes externos se normalizan solo con base explícita. Las prescripciones se clonan sin compartir referencias y se validan todas las semanas. Los archivos de entrenamiento son privados y su acceso depende de la rutina activa asignada, no de conocer su URL.
+
+
+Los macros guardados mantienen la acción Ajustar macros en ClientDetail. El editor único compara contra el registro seleccionado; Guardar actualiza únicamente sus campos nutricionales mediante updateMeasurement, conserva ID, fecha y antropometría; Cancelar no escribe. Un cálculo nuevo usa saveMacroEvaluation.
+
+
+BiometricChart presenta una curva de ancho completo con selector peso/grasa, periodos relativos al último registro, área degradada, tooltip y media de registros de los últimos siete días. La media es visual y no modifica el seguimiento. Los valores ausentes no se convierten a cero.

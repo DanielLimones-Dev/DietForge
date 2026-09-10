@@ -29,9 +29,7 @@ import type {
   Client, ClientMeasurement, ActivityLevel, Goal, MacroResult,
   DietTemplate, MealTime, CompetitionPhase, CheckIn, Competition, PeakWeekDayConfig,
 } from "@/types";
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from "recharts";
+import { BiometricChart } from "./BiometricChart";
 
 export function ClientDetail() {
   const { id } = useParams<{ id?: string }>();
@@ -72,6 +70,7 @@ export function ClientDetail() {
   });
   const [result, setResult] = useState<MacroResult | null>(null);
   const [draftMeasurement, setDraftMeasurement] = useState<Omit<ClientMeasurement, "id"> | null>(null);
+  const [editingMeasurementId, setEditingMeasurementId] = useState<number | null>(null);
   const [macroHistoryIndex, setMacroHistoryIndex] = useState(0);
   const [editResult, setEditResult] = useState<MacroResult | null>(null);
   const [macroInputs, setMacroInputs] = useState({ tdee: "", protein: "", carbs: "", fat: "", fiber: "" });
@@ -186,7 +185,6 @@ export function ClientDetail() {
   };
 
   const weightChart = progressChart(measurements, checkins);
-  const bodyFatChart = weightChart.filter((point) => point.bodyFat != null);
 
   const handleCalc = () => {
     const w = Number(calcForm.weight);
@@ -249,6 +247,7 @@ export function ClientDetail() {
       ...macros,
     };
 
+    setEditingMeasurementId(null);
     setDraftMeasurement(measurement);
     setMacroHistoryIndex(0);
     setResult(macros);
@@ -259,8 +258,7 @@ export function ClientDetail() {
 
   const saveCalculatedMacros = () => {
     if (!draftMeasurement || !editResult) return;
-    saveMacroEvaluation({
-      ...draftMeasurement,
+    const adjusted = {
       tmb: editResult.tmb,
       tdee: editResult.tdee,
       protein: editResult.protein,
@@ -268,9 +266,12 @@ export function ClientDetail() {
       fat: editResult.fat,
       fiber: editResult.fiber,
       antioxidants: editResult.antioxidants,
-    }, db);
+    };
+    if (editingMeasurementId !== null) db.updateMeasurement(editingMeasurementId, adjusted);
+    else saveMacroEvaluation({ ...draftMeasurement, ...adjusted }, db);
     const showSavedResult = () => {
-      setMacroHistoryIndex(0);
+      if (editingMeasurementId === null) setMacroHistoryIndex(0);
+      setEditingMeasurementId(null);
       setResult(null);
       setEditResult(null);
       setDraftMeasurement(null);
@@ -287,7 +288,20 @@ export function ClientDetail() {
     toast("Macros guardados correctamente");
   };
 
+  const editSavedMacros = () => {
+    if (!macroView) return;
+    setEditingMeasurementId(macroView.id);
+    setDraftMeasurement({ ...macroView });
+    setResult({ ...macroView });
+    setEditResult({ ...macroView });
+    setMacroInputs({ tdee: String(macroView.tdee), protein: String(macroView.protein), carbs: String(macroView.carbs), fat: String(macroView.fat), fiber: String(macroView.fiber) });
+    setChangedFields(new Set());
+    setShowCalc(true);
+    requestAnimationFrame(() => document.getElementById("macro-editor")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" }));
+  };
+
   const cancelCalculatedMacros = () => {
+    setEditingMeasurementId(null);
     setResult(null);
     setEditResult(null);
     setDraftMeasurement(null);
@@ -542,6 +556,7 @@ export function ClientDetail() {
                 <button onClick={() => {
                   const { id: _measurementId, ...measurement } = latest;
                   void _measurementId;
+                  setEditingMeasurementId(null);
                   setDraftMeasurement({ ...measurement, date: new Date().toISOString() });
                   setResult({ tmb: latest.tmb, tdee: latest.tdee, protein: latest.protein, carbs: latest.carbs, fat: latest.fat, fiber: latest.fiber, antioxidants: latest.antioxidants });
                   setEditResult({ ...phaseMacros });
@@ -600,28 +615,7 @@ export function ClientDetail() {
             <p>{checkins.length} check-ins · {competitions.length} competencias</p>
           </article>
         </div>
-        {weightChart.length > 0 ? (
-          <div className="biometric-charts">
-            <article>
-              <header><div><span>CURVA BIOMÉTRICA</span><h4>Historial de peso</h4></div><b>kg</b></header>
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={weightChart} margin={{ top: 12, right: 14, left: -18, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="4 5" stroke="var(--clinical-line)" vertical={false}/><XAxis dataKey="date" fontSize={10} tickLine={false} axisLine={false} stroke="var(--clinical-muted)"/><YAxis fontSize={10} tickLine={false} axisLine={false} stroke="var(--clinical-muted)" domain={["auto", "auto"]}/><Tooltip/>
-                  <Line type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={3} dot={{ r: 3, fill: "#071b15", stroke: "#10b981", strokeWidth: 2 }} activeDot={{ r: 5 }} name="Peso (kg)"/>
-                </LineChart>
-              </ResponsiveContainer>
-            </article>
-            <article>
-              <header><div><span>COMPOSICIÓN</span><h4>Historial de grasa corporal</h4></div><b>% BF</b></header>
-              {bodyFatChart.length > 0 ? <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={bodyFatChart} margin={{ top: 12, right: 14, left: -18, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="4 5" stroke="var(--clinical-line)" vertical={false}/><XAxis dataKey="date" fontSize={10} tickLine={false} axisLine={false} stroke="var(--clinical-muted)"/><YAxis fontSize={10} tickLine={false} axisLine={false} stroke="var(--clinical-muted)" domain={["auto", "auto"]}/><Tooltip/>
-                  <Line type="monotone" dataKey="bodyFat" stroke="#2dd4bf" strokeWidth={3} dot={{ r: 3, fill: "#071b15", stroke: "#2dd4bf", strokeWidth: 2 }} activeDot={{ r: 5 }} name="Grasa corporal (%)"/>
-                </LineChart>
-              </ResponsiveContainer> : <div className="biometric-chart-empty">Agrega grasa corporal en una evaluación o check-in para ver la curva.</div>}
-            </article>
-          </div>
-        ) : <div className="biometric-chart-empty">El historial aparecerá cuando exista una evaluación o check-in.</div>}
+        <BiometricChart points={weightChart}/>
         {checkins[0]?.body_fat && latest?.height && <footer>FFMI {calculateFFMI(checkins[0].weight, latest.height, checkins[0].body_fat)} · Masa magra {calculateLeanBodyMass(checkins[0].weight, checkins[0].body_fat)} kg</footer>}
       </section>
 
@@ -645,6 +639,7 @@ export function ClientDetail() {
             <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               Macros • {macroView.date.slice(0, 10)}
             </p>
+            <button type="button" className="df-button-secondary" onClick={editSavedMacros}>Ajustar macros</button>
             {measurements.length > 1 && (
               <div className="inline-flex items-center gap-2" aria-label="Historial de cálculos">
                 <button type="button" aria-label="Ver cálculo más reciente" disabled={macroHistoryIndex === 0}
@@ -949,8 +944,8 @@ export function ClientDetail() {
         )}
 
         {showCalc && editResult && (
-          <div className="px-5 pb-5 pt-4 border-t border-gray-100 dark:border-gray-800 animate-slide-down">
-            <div className="macro-draft-heading"><div><span>AJUSTE DE PRESCRIPCIÓN</span><h4>Macros calculados</h4></div><p>Revisa, ajusta y guarda para incorporarlos al historial.</p></div>
+          <div id="macro-editor" className="px-5 pb-5 pt-4 border-t border-gray-100 dark:border-gray-800 animate-slide-down">
+            <div className="macro-draft-heading"><div><span>AJUSTE DE PRESCRIPCIÓN</span><h4>{editingMeasurementId !== null ? "Editar macros guardados" : "Macros calculados"}</h4></div><p>{editingMeasurementId !== null ? "Guardar actualiza este cálculo; Cancelar conserva sus valores originales." : "Revisa, ajusta y guarda para incorporarlos al historial."}</p></div>
             <div className="macro-control-grid">
               <div className="macro-control-card is-calories stagger-1">
                 <header><span><i/>Calorías</span><b>Objetivo energético</b></header>
@@ -969,7 +964,7 @@ export function ClientDetail() {
                     <div><button type="button" aria-label={`Reducir ${k}`} onClick={() => stepMacroDraft(k, -1)}>−</button><input type="number" min="0" value={macroInputs[k]}
                       onChange={(e) => updateMacroDraft(k, e.target.value)} onBlur={() => restoreEmptyMacroDraft(k)}
                       className="macro-edit-number" /><small>g</small><button type="button" aria-label={`Aumentar ${k}`} onClick={() => stepMacroDraft(k, 1)}>+</button></div>
-                    <footer>{k === "protein" ? `${(editResult.protein / Number(calcForm.weight || 1)).toFixed(2)} g/kg de peso` : k === "carbs" ? "Combustible y rendimiento" : k === "fat" ? "Soporte hormonal" : "Saciedad y salud digestiva"}</footer>
+                    <footer>{k === "protein" ? `${(editResult.protein / Number(draftMeasurement?.weight || calcForm.weight || 1)).toFixed(2)} g/kg de peso` : k === "carbs" ? "Combustible y rendimiento" : k === "fat" ? "Soporte hormonal" : "Saciedad y salud digestiva"}</footer>
                   </div>
                 );
               })}
