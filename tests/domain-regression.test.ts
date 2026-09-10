@@ -54,6 +54,9 @@ test('a check-in compares weight and body fat with the most recent prior record'
  const previous={id:2,client_id:1,date:'2026-09-10',weight:76.5,body_fat:13.5};
  assert.deepEqual(weightComparison([current,previous],[recalculation,newest]),{current:75.5,previous:76,previousSource:'evaluation'});
  assert.deepEqual(bodyFatComparison([current,previous],[recalculation,newest]),{current:12.5,previous:13,previousSource:'evaluation'});
+ const latestEvaluation={...newest,id:8,date:'2026-09-14',weight:74.8,body_fat:11.8};
+ assert.deepEqual(weightComparison([current,previous],[latestEvaluation,recalculation,newest]),{current:74.8,previous:75.5,previousSource:'checkin'});
+ assert.deepEqual(bodyFatComparison([current,previous],[latestEvaluation,recalculation,newest]),{current:11.8,previous:12.5,previousSource:'checkin'});
  const chart=progressChart([newest,recalculation],[previous,current]);
  assert.deepEqual(chart.map(point=>[point.date,point.weight,point.bodyFat,point.source]),[
   ['2026-09-08',78,14,'evaluation'],

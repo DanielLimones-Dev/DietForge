@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { db } from "@/lib/db";
@@ -70,8 +71,10 @@ export function ClientDetail() {
     hasWorkout: true, usePhase: false,
   });
   const [result, setResult] = useState<MacroResult | null>(null);
+  const [draftMeasurement, setDraftMeasurement] = useState<Omit<ClientMeasurement, "id"> | null>(null);
   const [macroHistoryIndex, setMacroHistoryIndex] = useState(0);
   const [editResult, setEditResult] = useState<MacroResult | null>(null);
+  const [macroInputs, setMacroInputs] = useState({ tdee: "", protein: "", carbs: "", fat: "", fiber: "" });
   const [changedFields, setChangedFields] = useState<Set<string>>(new Set());
   const [calcError, setCalcError] = useState("");
   const [compEditorData, setCompEditorData] = useState<{ name: string; date: string; category: string; weight: string; placement: string; config: PeakWeekDayConfig[] } | null>(null);
@@ -80,24 +83,53 @@ export function ClientDetail() {
   const handleEditMacro = (field: string, value: number) => {
     if (!editResult) return;
     if (field === "tdee") {
-      setEditResult({
+      const next = {
         ...editResult,
         tdee: value,
         protein: Math.round(value * 0.23 / 4),
         carbs: Math.round(value * 0.50 / 4),
         fat: Math.round(value * 0.27 / 9),
-      });
+      };
+      setEditResult(next);
+      setMacroInputs((current) => ({ ...current, tdee: String(value), protein: String(next.protein), carbs: String(next.carbs), fat: String(next.fat) }));
       setChangedFields((prev) => new Set(prev).add("tdee"));
       return;
     }
     setEditResult({ ...editResult, [field]: value });
+    setMacroInputs((current) => ({ ...current, [field]: String(value) }));
     setChangedFields((prev) => new Set(prev).add(field));
+  };
+
+  const updateMacroDraft = (field: "tdee" | "protein" | "carbs" | "fat" | "fiber", raw: string) => {
+    setMacroInputs((current) => ({ ...current, [field]: raw }));
+    if (raw === "") return;
+    const value = Number(raw);
+    if (!Number.isFinite(value) || value < 0) return;
+    if (field === "fiber") {
+      setEditResult((current) => current ? { ...current, fiber: value } : current);
+      setChangedFields((current) => new Set(current).add(field));
+      return;
+    }
+    handleEditMacro(field, value);
+  };
+
+  const restoreEmptyMacroDraft = (field: "tdee" | "protein" | "carbs" | "fat" | "fiber") => {
+    if (macroInputs[field] !== "" || !editResult) return;
+    setMacroInputs((current) => ({ ...current, [field]: String(editResult[field]) }));
+  };
+
+  const stepMacroDraft = (field: "tdee" | "protein" | "carbs" | "fat" | "fiber", direction: -1 | 1) => {
+    if (!editResult) return;
+    const current = macroInputs[field] === "" ? editResult[field] : Number(macroInputs[field]);
+    const step = field === "tdee" ? 50 : 1;
+    updateMacroDraft(field, String(Math.max(0, current + direction * step)));
   };
 
   const resetMacros = () => {
     const orig = result || macroView || latest;
     if (orig) {
       setEditResult({ ...orig });
+      setMacroInputs({ tdee: String(orig.tdee), protein: String(orig.protein), carbs: String(orig.carbs), fat: String(orig.fat), fiber: String(orig.fiber) });
       setChangedFields(new Set());
     }
   };
@@ -154,6 +186,7 @@ export function ClientDetail() {
   };
 
   const weightChart = progressChart(measurements, checkins);
+  const bodyFatChart = weightChart.filter((point) => point.bodyFat != null);
 
   const handleCalc = () => {
     const w = Number(calcForm.weight);
@@ -216,10 +249,49 @@ export function ClientDetail() {
       ...macros,
     };
 
-    saveMacroEvaluation(measurement, db);
+    setDraftMeasurement(measurement);
     setMacroHistoryIndex(0);
     setResult(macros);
     setEditResult({ ...macros });
+    setMacroInputs({ tdee: String(macros.tdee), protein: String(macros.protein), carbs: String(macros.carbs), fat: String(macros.fat), fiber: String(macros.fiber) });
+    setChangedFields(new Set());
+  };
+
+  const saveCalculatedMacros = () => {
+    if (!draftMeasurement || !editResult) return;
+    saveMacroEvaluation({
+      ...draftMeasurement,
+      tmb: editResult.tmb,
+      tdee: editResult.tdee,
+      protein: editResult.protein,
+      carbs: editResult.carbs,
+      fat: editResult.fat,
+      fiber: editResult.fiber,
+      antioxidants: editResult.antioxidants,
+    }, db);
+    const showSavedResult = () => {
+      setMacroHistoryIndex(0);
+      setResult(null);
+      setEditResult(null);
+      setDraftMeasurement(null);
+      setChangedFields(new Set());
+      setShowCalc(false);
+      setCheckinVersion((version) => version + 1);
+    };
+    const page = document as Document & { startViewTransition?: (callback: () => void) => void };
+    if (page.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      page.startViewTransition(() => flushSync(showSavedResult));
+    } else {
+      showSavedResult();
+    }
+    toast("Macros guardados correctamente");
+  };
+
+  const cancelCalculatedMacros = () => {
+    setResult(null);
+    setEditResult(null);
+    setDraftMeasurement(null);
+    setChangedFields(new Set());
   };
 
   const handleCreatePlan = () => {
@@ -467,7 +539,16 @@ export function ClientDetail() {
             {latest && selectedPhase && (() => {
               const phaseMacros = calculatePhaseMacros({ tmb: latest.tmb, tdee: latest.tdee, protein: latest.protein, carbs: latest.carbs, fat: latest.fat, fiber: latest.fiber, antioxidants: latest.antioxidants }, latest.weight, selectedPhase);
               return (
-                <button onClick={() => { setEditResult({ ...phaseMacros }); setChangedFields(new Set(["protein", "carbs", "fat", "fiber"])); }}
+                <button onClick={() => {
+                  const { id: _measurementId, ...measurement } = latest;
+                  void _measurementId;
+                  setDraftMeasurement({ ...measurement, date: new Date().toISOString() });
+                  setResult({ tmb: latest.tmb, tdee: latest.tdee, protein: latest.protein, carbs: latest.carbs, fat: latest.fat, fiber: latest.fiber, antioxidants: latest.antioxidants });
+                  setEditResult({ ...phaseMacros });
+                  setMacroInputs({ tdee: String(phaseMacros.tdee), protein: String(phaseMacros.protein), carbs: String(phaseMacros.carbs), fat: String(phaseMacros.fat), fiber: String(phaseMacros.fiber) });
+                  setChangedFields(new Set(["protein", "carbs", "fat", "fiber"]));
+                  setShowCalc(true);
+                }}
                   className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold bg-brand-600 text-white hover:bg-brand-700 active:scale-[0.98] transition-all shadow-sm">
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 13l4 4L19 7"/></svg>
                   Aplicar cambios
@@ -492,86 +573,57 @@ export function ClientDetail() {
         </div>
       )}
 
-      <div className="client-summary-grid grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="client-summary-card bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm" key={`weight-${checkinVersion}`}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 dark:from-blue-500 dark:to-blue-700 flex items-center justify-center shadow-sm">
-              <TrendingUp className="w-5 h-5 text-white" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Peso</p>
-              <div className="flex items-center gap-1.5 mt-0.5 transition-all duration-500 ease-out">
-                {(() => {
-                  const prev = weightChange.previous;
-                  const curr = weightChange.current;
-                  if (!curr) return <span className="text-xl font-bold dark:text-white">{latest?.weight ?? 0}<span className="text-sm font-medium text-gray-400 ml-0.5">kg</span></span>;
-                  if (!prev || prev === curr) return <span className="text-xl font-bold dark:text-white">{curr}<span className="text-sm font-medium text-gray-400 ml-0.5">kg</span></span>;
-                  return (
-                    <>
-                      <span className="text-sm text-gray-400 dark:text-gray-500">{prev}<span className="text-sm font-medium ml-0.5">kg</span></span>
-                      <span className="text-gray-300 dark:text-gray-600 text-xs">→</span>
-                      <span className="text-xl font-bold dark:text-white">{curr}<span className="text-sm font-medium text-gray-400 ml-0.5">kg</span></span>
-                    </>
-                  );
-                })()}
-              </div>
-              <p className="text-[11px] text-gray-400 mt-0.5">
-                {!weightChange.current && latest ? "Referencia de evaluación · " : weightChange.previousSource === "evaluation" ? "Base: última evaluación · " : ""}Prom 7d: {trend.rollingAverage7 ?? "—"} kg · {getRateLabel(trend.weeklyChangePercent)}
-              </p>
-            </div>
-          </div>
+      <section className="biometric-overview mb-6" key={`biometrics-${weightChange.previous ?? "empty"}-${weightChange.current ?? "empty"}-${bodyFatChange.previous ?? "empty"}-${bodyFatChange.current ?? "empty"}-${checkinVersion}`}>
+        <header className="biometric-overview-head">
+          <div><span>EVOLUCIÓN DEL CLIENTE</span><h3>Progreso corporal</h3><p>Peso, grasa corporal y tendencia reunidos en una sola lectura.</p></div>
+          <b><i /> {weightChart.length} registros</b>
+        </header>
+        <div className="biometric-metrics">
+          <article>
+            <span><TrendingUp size={15}/> Peso actual</span>
+            <strong>{weightChange.current ?? latest?.weight ?? "—"}<small> kg</small></strong>
+            <p>{weightChange.previous != null && weightChange.current != null && weightChange.previous !== weightChange.current ? `${weightChange.previous} kg → ${weightChange.current} kg` : "Sin cambio comparativo"}</p>
+          </article>
+          <article>
+            <span><Activity size={15}/> Grasa corporal</span>
+            <strong>{bodyFatChange.current ?? latest?.body_fat ?? "—"}<small>{(bodyFatChange.current ?? latest?.body_fat) != null ? "% BF" : ""}</small></strong>
+            <p>{bodyFatChange.previous != null && bodyFatChange.current != null && bodyFatChange.previous !== bodyFatChange.current ? `${bodyFatChange.previous}% → ${bodyFatChange.current}%` : "Sin cambio comparativo"}</p>
+          </article>
+          <article>
+            <span>Media suavizada</span>
+            <strong>{trend.rollingAverage7 ?? "—"}<small> kg</small></strong>
+            <p>{getRateLabel(trend.weeklyChangePercent)} · promedio de 7 días</p>
+          </article>
+          <article>
+            <span><FileText size={15}/> Actividad</span>
+            <strong>{plans.length}<small> planes</small></strong>
+            <p>{checkins.length} check-ins · {competitions.length} competencias</p>
+          </article>
         </div>
-        <div className="client-summary-card bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm" key={`bf-${checkinVersion}`}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 dark:from-emerald-500 dark:to-emerald-700 flex items-center justify-center shadow-sm">
-              <Activity className="w-5 h-5 text-white" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Composición</p>
-              {(() => {
-                const prev = bodyFatChange.previous;
-                const curr = bodyFatChange.current;
-                if (curr == null) {
-                  if (latest?.body_fat == null) return <p className="text-sm text-gray-400 mt-1">Sin datos</p>;
-                  return <span className="text-xl font-bold dark:text-white">{latest.body_fat}<span className="text-sm font-medium text-gray-400 ml-0.5">% BF</span></span>;
-                }
-                if (prev == null || prev === curr) return <span className="text-xl font-bold dark:text-white">{curr}<span className="text-sm font-medium text-gray-400 ml-0.5">% BF</span></span>;
-                return (
-                  <div className="flex items-center gap-1.5 transition-all duration-500 ease-out">
-                    <span className="text-sm text-gray-400 dark:text-gray-500">{prev}<span className="text-sm font-medium ml-0.5">% BF</span></span>
-                    <span className="text-gray-300 dark:text-gray-600 text-xs">→</span>
-                    <span className="text-xl font-bold dark:text-white">{curr}<span className="text-sm font-medium text-gray-400 ml-0.5">% BF</span></span>
-                  </div>
-                );
-              })()}
-              <p className="text-[11px] text-gray-400 mt-0.5">
-                {!bodyFatChange.current && latest?.body_fat != null
-                  ? "Referencia de evaluación"
-                  : bodyFatChange.previousSource === "evaluation"
-                    ? "Base: evaluación más reciente"
-                    : bodyFatChange.current != null && bodyFatChange.previousSource !== "checkin"
-                      ? "Sin comparación anterior"
-                      : "Comparado con check-in anterior"}
-              </p>
-              {checkins[0]?.body_fat && latest?.height && (
-                  <p className="text-[11px] text-gray-400 mt-0.5">FFMI: {calculateFFMI(checkins[0].weight, latest.height, checkins[0].body_fat)} · MML: {calculateLeanBodyMass(checkins[0].weight, checkins[0].body_fat)} kg</p>
-                )}
-            </div>
+        {weightChart.length > 0 ? (
+          <div className="biometric-charts">
+            <article>
+              <header><div><span>CURVA BIOMÉTRICA</span><h4>Historial de peso</h4></div><b>kg</b></header>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={weightChart} margin={{ top: 12, right: 14, left: -18, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="4 5" stroke="var(--clinical-line)" vertical={false}/><XAxis dataKey="date" fontSize={10} tickLine={false} axisLine={false} stroke="var(--clinical-muted)"/><YAxis fontSize={10} tickLine={false} axisLine={false} stroke="var(--clinical-muted)" domain={["auto", "auto"]}/><Tooltip/>
+                  <Line type="monotone" dataKey="weight" stroke="#10b981" strokeWidth={3} dot={{ r: 3, fill: "#071b15", stroke: "#10b981", strokeWidth: 2 }} activeDot={{ r: 5 }} name="Peso (kg)"/>
+                </LineChart>
+              </ResponsiveContainer>
+            </article>
+            <article>
+              <header><div><span>COMPOSICIÓN</span><h4>Historial de grasa corporal</h4></div><b>% BF</b></header>
+              {bodyFatChart.length > 0 ? <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={bodyFatChart} margin={{ top: 12, right: 14, left: -18, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="4 5" stroke="var(--clinical-line)" vertical={false}/><XAxis dataKey="date" fontSize={10} tickLine={false} axisLine={false} stroke="var(--clinical-muted)"/><YAxis fontSize={10} tickLine={false} axisLine={false} stroke="var(--clinical-muted)" domain={["auto", "auto"]}/><Tooltip/>
+                  <Line type="monotone" dataKey="bodyFat" stroke="#2dd4bf" strokeWidth={3} dot={{ r: 3, fill: "#071b15", stroke: "#2dd4bf", strokeWidth: 2 }} activeDot={{ r: 5 }} name="Grasa corporal (%)"/>
+                </LineChart>
+              </ResponsiveContainer> : <div className="biometric-chart-empty">Agrega grasa corporal en una evaluación o check-in para ver la curva.</div>}
+            </article>
           </div>
-        </div>
-        <div className="client-summary-card bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 dark:from-purple-500 dark:to-purple-700 flex items-center justify-center shadow-sm">
-              <FileText className="w-5 h-5 text-white" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">Planes</p>
-              <p className="text-xl font-bold dark:text-white">{plans.length}</p>
-              <p className="text-[11px] text-gray-400 mt-0.5">{checkins.length} check-ins · {competitions.length} competencias</p>
-            </div>
-          </div>
-        </div>
-      </div>
+        ) : <div className="biometric-chart-empty">El historial aparecerá cuando exista una evaluación o check-in.</div>}
+        {checkins[0]?.body_fat && latest?.height && <footer>FFMI {calculateFFMI(checkins[0].weight, latest.height, checkins[0].body_fat)} · Masa magra {calculateLeanBodyMass(checkins[0].weight, checkins[0].body_fat)} kg</footer>}
+      </section>
 
       {suggestion && (
         <div className={`mb-6 p-4 rounded-xl border text-sm ${
@@ -587,8 +639,8 @@ export function ClientDetail() {
         </div>
       )}
 
-      {macroView && (
-        <div className="mb-4 animate-slide-down">
+      {macroView && !result && (
+        <div key={macroView.id} className="mb-4 macro-result-promoted">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               Macros • {macroView.date.slice(0, 10)}
@@ -609,136 +661,23 @@ export function ClientDetail() {
               </div>
             )}
           </div>
-          <div key={macroView.id} className="grid grid-cols-2 gap-3 animate-slide-in-right sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             <div className="text-center p-3 rounded-xl border shadow-sm stagger-1" style={{ borderColor: "#0ea5e944", background: "linear-gradient(to bottom, #0ea5e930, #0ea5e915)" }}>
               <p className="text-[9px] font-semibold mb-1 uppercase tracking-wide" style={{ color: "#0ea5e9" }}>Calorías</p>
-              {editResult ? (
-                <input type="number" value={editResult.tdee}
-                  onChange={(e) => { const raw = e.target.value; if (raw === "") return; handleEditMacro("tdee", Number(raw)); }}
-                  className="w-20 mx-auto text-center text-lg font-bold bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:outline-none dark:text-gray-100"
-                  style={{ color: "#0ea5e9" }} />
-              ) : (
-                <p className="text-xl font-bold" style={{ color: "#0ea5e9" }}>{macroView.tdee}</p>
-              )}
+              <p className="text-xl font-bold" style={{ color: "#0ea5e9" }}>{macroView.tdee}</p>
               <p className="text-[10px] text-gray-400 dark:text-gray-500">kcal</p>
             </div>
             {(["protein","carbs","fat","fiber"] as const).map((k, i) => {
-              const val = editResult ? editResult[k] : macroView[k];
               const accent = k === "protein" ? "#f87171" : k === "carbs" ? "#fbbf24" : k === "fat" ? "#60a5fa" : "#a78bfa";
-              const changed = changedFields.has(k);
               return (
                 <div key={k} className={`text-center p-3 rounded-xl border shadow-sm transition-all duration-300 stagger-${Math.min(i + 2, 5)}`} style={{ borderColor: accent + "44", background: `linear-gradient(to bottom, ${accent}40, ${accent}18)` }}>
                   <p className="text-[9px] font-semibold mb-1 capitalize tracking-wide" style={{ color: accent }}>{k === "protein" ? "Proteína" : k === "carbs" ? "Carbos" : k === "fat" ? "Grasas" : "Fibra"}</p>
-                  {editResult ? (
-                    <input type="number" value={editResult[k]}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        if (raw === "") return;
-                        const v = Number(raw);
-                        if (k === "fiber") {
-                          setEditResult({ ...editResult, fiber: v });
-                        } else {
-                          handleEditMacro(k, v);
-                        }
-                      }}
-                      className={`w-16 mx-auto text-center text-lg font-bold bg-transparent border-b-2 focus:outline-none dark:text-gray-100 transition-all duration-300 ${changed ? "ring-2 ring-offset-1" : ""}`}
-                      style={{ borderColor: accent + "88", color: accent, ...(changed ? { ringColor: accent } : {}) }} />
-                  ) : (
-                    <p className="text-lg font-bold" style={{ color: accent }}>{val}</p>
-                  )}
+                  <p className="text-lg font-bold" style={{ color: accent }}>{macroView[k]}</p>
                   <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">g</p>
                 </div>
               );
             })}
           </div>
-          {editResult && (
-            <div className="animate-scale-in">
-              {changedFields.size > 0 && (
-                <div className="mt-3 text-[11px] animate-slide-up">
-                  <table className="w-full max-w-md mx-auto">
-                    <thead>
-                      <tr className="text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                        <th className="text-left px-2 py-1">Macro</th>
-                        <th className="text-right px-2 py-1">Original</th>
-                        <th className="text-right px-2 py-1">Ajustado</th>
-                        <th className="text-right px-2 py-1">Diferencia</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(["protein","carbs","fat"] as const).map((k) => {
-                        const orig = macroView[k];
-                        const adj = editResult[k];
-                        const diff = adj - orig;
-                        const mult = k === "fat" ? 9 : 4;
-                        const accent = k === "protein" ? "text-red-500" : k === "carbs" ? "text-amber-500" : "text-blue-500";
-                        return (
-                          <tr key={k}>
-                            <td className={`px-2 py-1 font-medium ${accent}`}>{k === "protein" ? "Proteína" : k === "carbs" ? "Carbohidratos" : "Grasas"}</td>
-                            <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400">{orig}g ({orig * mult} kcal)</td>
-                            <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400">{adj}g ({adj * mult} kcal)</td>
-                            <td className={`text-right px-2 py-1 font-medium ${diff === 0 ? "text-gray-400" : diff > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-                              {diff > 0 ? "+" : ""}{diff}g ({diff * mult > 0 ? "+" : ""}{diff * mult} kcal)
-                            </td>
-                          </tr>
-                        );
-                      })}
-                      <tr className="border-t border-gray-200 dark:border-gray-700">
-                        <td className="px-2 py-1 font-medium text-gray-800 dark:text-gray-200">Total kcal</td>
-                        <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{macroView.tdee}</td>
-                        <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{editResult.tdee}</td>
-                        <td className={`text-right px-2 py-1 font-medium ${editResult.tdee === macroView.tdee ? "text-gray-400" : editResult.tdee > macroView.tdee ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-                          {editResult.tdee > macroView.tdee ? "+" : ""}{editResult.tdee - macroView.tdee}
-                        </td>
-                      </tr>
-                    {(() => {
-                      const actual = editResult.protein * 4 + editResult.carbs * 4 + editResult.fat * 9;
-                      const diff = actual - editResult.tdee;
-                      if (Math.abs(diff) <= 5) return null;
-                      return (
-                        <tr className="border-t border-gray-200 dark:border-gray-700">
-                          <td className={`px-2 py-1 font-medium text-${diff > 0 ? "amber" : "blue"}-600 dark:text-${diff > 0 ? "amber" : "blue"}-400`}>
-                            {diff > 0 ? "Sobran" : "Faltan"}
-                          </td>
-                          <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400">—</td>
-                          <td className={`text-right px-2 py-1 font-medium text-${diff > 0 ? "amber" : "blue"}-600 dark:text-${diff > 0 ? "amber" : "blue"}-400`}>
-                            {actual} kcal
-                          </td>
-                          <td className={`text-right px-2 py-1 font-medium text-${diff > 0 ? "amber" : "blue"}-600 dark:text-${diff > 0 ? "amber" : "blue"}-400`}>
-                            {diff > 0 ? "+" : ""}{diff} kcal
-                          </td>
-                        </tr>
-                      );
-                    })()}
-                  </tbody>
-                  </table>
-                </div>
-              )}
-              <div className="flex gap-2 mt-3">
-                <button onClick={() => {
-                  const m = editResult;
-                  db.updateMeasurement(macroView.id, {
-                    tmb: m.tmb, tdee: m.tdee, protein: m.protein, carbs: m.carbs,
-                    fat: m.fat, fiber: m.fiber, antioxidants: m.antioxidants,
-                  });
-                  setCheckinVersion((v) => v + 1);
-                  setEditResult(null);
-                  setChangedFields(new Set());
-                }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold bg-brand-600 text-white hover:bg-brand-700 active:scale-[0.98] transition-all shadow-sm">
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                  Guardar macros
-                </button>
-                <button onClick={resetMacros}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-medium bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm">
-                  Restaurar
-                </button>
-                <button onClick={() => { setEditResult(null); setChangedFields(new Set()); }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-medium bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm">
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -747,7 +686,10 @@ export function ClientDetail() {
           <h3 className="font-semibold flex items-center gap-2 dark:text-white">
             <TrendingUp className="w-4 h-4 text-brand-600" /> Calculadora de Macros
           </h3>
-          <button onClick={() => setShowCalc(!showCalc)}
+          <button onClick={() => {
+            if (showCalc && result) cancelCalculatedMacros();
+            setShowCalc(!showCalc);
+          }}
             className="text-xs font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors flex items-center gap-1">
             {showCalc ? "▲ Ocultar" : "▼ Nuevo cálculo"}
           </button>
@@ -996,13 +938,6 @@ export function ClientDetail() {
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 3h6v6H9zM15 15h6v6h-6zM3 15h6v6H3zM3 3h6v6H3z"/></svg>
                 Calcular Macros
               </button>
-              {result && (
-                <button onClick={() => handleCreatePlan()}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700 active:scale-[0.98] transition-all shadow-sm animate-scale-in">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
-                  Crear Plan de Comidas
-                </button>
-              )}
               <button onClick={handleLoadTemplate}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.98] transition-all">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -1015,35 +950,26 @@ export function ClientDetail() {
 
         {showCalc && editResult && (
           <div className="px-5 pb-5 pt-4 border-t border-gray-100 dark:border-gray-800 animate-slide-down">
-            <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-3">Resultado</p>
-            <div className="grid grid-cols-5 gap-3">
-              <div className="text-center p-3 bg-gradient-to-b from-gray-50 to-white dark:from-gray-800 dark:to-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm stagger-1">
-                <p className="text-[9px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">Calorías</p>
-                <input type="number" value={editResult.tdee}
-                  onChange={(e) => { const raw = e.target.value; if (raw === "") return; handleEditMacro("tdee", Number(raw)); }}
-                  className="w-20 mx-auto text-center text-lg font-bold bg-transparent border-b-2 border-gray-300 dark:border-gray-600 focus:outline-none dark:text-gray-100" />
-                <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">kcal</p>
+            <div className="macro-draft-heading"><div><span>AJUSTE DE PRESCRIPCIÓN</span><h4>Macros calculados</h4></div><p>Revisa, ajusta y guarda para incorporarlos al historial.</p></div>
+            <div className="macro-control-grid">
+              <div className="macro-control-card is-calories stagger-1">
+                <header><span><i/>Calorías</span><b>Objetivo energético</b></header>
+                <div><button type="button" aria-label="Reducir calorías" onClick={() => stepMacroDraft("tdee", -1)}>−</button><input type="number" min="0" value={macroInputs.tdee}
+                  onChange={(e) => updateMacroDraft("tdee", e.target.value)} onBlur={() => restoreEmptyMacroDraft("tdee")}
+                  className="macro-edit-number" /><small>kcal</small><button type="button" aria-label="Aumentar calorías" onClick={() => stepMacroDraft("tdee", 1)}>+</button></div>
+                <footer>Pasos de 50 kcal · redistribuye P/C/G</footer>
               </div>
               {(["protein","carbs","fat","fiber"] as const).map((k, i) => {
                 const accent = k === "protein" ? "#f87171" : k === "carbs" ? "#fbbf24" : k === "fat" ? "#60a5fa" : "#a78bfa";
                 const changed = changedFields.has(k);
+                const kcal = k === "fat" ? editResult[k] * 9 : k === "fiber" ? null : editResult[k] * 4;
                 return (
-                <div key={k} className={`text-center p-3 rounded-xl border shadow-sm transition-all duration-300 stagger-${Math.min(i + 2, 5)}`} style={{ borderColor: accent + "44", background: `linear-gradient(to bottom, ${accent}40, ${accent}18)` }}>
-                    <p className="text-[9px] font-semibold mb-1 capitalize tracking-wide" style={{ color: accent }}>{k === "protein" ? "Proteína" : k === "carbs" ? "Carbos" : k === "fat" ? "Grasas" : "Fibra"}</p>
-                    <input type="number" value={editResult[k]}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        if (raw === "") return;
-                        const v = Number(raw);
-                        if (k === "fiber") {
-                          setEditResult({ ...editResult, fiber: v });
-                        } else {
-                          handleEditMacro(k, v);
-                        }
-                      }}
-                      className={`w-16 mx-auto text-center text-lg font-bold bg-transparent border-b-2 focus:outline-none dark:text-gray-100 transition-all duration-300 ${changed ? "ring-2 ring-offset-1" : ""}`}
-                      style={{ borderColor: accent + "88", color: accent, ...(changed ? { ringColor: accent } : {}) }} />
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">g</p>
+                <div key={k} className={`macro-control-card stagger-${Math.min(i + 2, 5)} ${changed ? "is-changed" : ""}`} style={{ "--macro-accent": accent } as React.CSSProperties}>
+                    <header><span><i/>{k === "protein" ? "Proteína" : k === "carbs" ? "Carbohidratos" : k === "fat" ? "Grasas" : "Fibra"}</span><b>{kcal == null ? (editResult.fiber >= 30 ? "Óptimo" : "Meta ≥ 30 g") : `${kcal.toLocaleString("es-MX")} kcal`}</b></header>
+                    <div><button type="button" aria-label={`Reducir ${k}`} onClick={() => stepMacroDraft(k, -1)}>−</button><input type="number" min="0" value={macroInputs[k]}
+                      onChange={(e) => updateMacroDraft(k, e.target.value)} onBlur={() => restoreEmptyMacroDraft(k)}
+                      className="macro-edit-number" /><small>g</small><button type="button" aria-label={`Aumentar ${k}`} onClick={() => stepMacroDraft(k, 1)}>+</button></div>
+                    <footer>{k === "protein" ? `${(editResult.protein / Number(calcForm.weight || 1)).toFixed(2)} g/kg de peso` : k === "carbs" ? "Combustible y rendimiento" : k === "fat" ? "Soporte hormonal" : "Saciedad y salud digestiva"}</footer>
                   </div>
                 );
               })}
@@ -1114,45 +1040,21 @@ export function ClientDetail() {
                 Restaurar macros originales
               </button>
             )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" onClick={saveCalculatedMacros} disabled={Object.values(macroInputs).some((value) => value === "")}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold bg-brand-600 text-white hover:bg-brand-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 transition-all shadow-sm">
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Guardar macros
+              </button>
+              <button type="button" onClick={cancelCalculatedMacros}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-medium bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all shadow-sm">
+                Cancelar
+              </button>
+            </div>
           </div>
         )}
 
       </div>
-
-      {weightChart.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 mt-4">
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <TrendingUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h3 className="font-semibold dark:text-white text-sm">Historial de Peso</h3>
-            </div>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={weightChart}>
-                <CartesianGrid strokeDasharray="4 4" stroke="#d1d5db" /><XAxis dataKey="date" fontSize={12} tickLine={false} stroke="#9ca3af" /><YAxis fontSize={12} tickLine={false} stroke="#9ca3af" /><Tooltip />
-                <Line type="monotone" dataKey="weight" stroke="#0ea5e9" strokeWidth={2} dot={{ r: 4 }} name="Peso (kg)" />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          {weightChart.some((m) => m.bodyFat) && (
-            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-7 h-7 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                  <Activity className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-                </div>
-                <h3 className="font-semibold dark:text-white text-sm">Historial de % Grasa</h3>
-              </div>
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={weightChart}>
-                  <CartesianGrid strokeDasharray="4 4" stroke="#d1d5db" /><XAxis dataKey="date" fontSize={12} tickLine={false} /><YAxis fontSize={12} tickLine={false} domain={["auto", "auto"]} /><Tooltip />
-                  <Line type="monotone" dataKey="bodyFat" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} name="% Grasa" />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <CheckInHistory key={checkinVersion} clientId={clientId} phase={selectedPhase} onEdit={(c) => { setEditingCheckin(c); setShowCheckin(true); }} onDelete={(id) => { db.deleteCheckIn(id); setCheckinVersion((v) => v + 1); }} />

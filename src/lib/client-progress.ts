@@ -19,12 +19,8 @@ function metricComparison(
   checkInValue: (checkin: CheckIn) => number | undefined,
   evaluationValue: (evaluation: ClientMeasurement) => number | undefined,
 ): ProgressComparison {
-  const current = checkins[0];
-  const currentValue = current ? checkInValue(current) : undefined;
-  if (!current || currentValue == null) return {};
-  const currentDate = current.date.slice(0, 10);
   const candidates = [
-    ...checkins.slice(1).flatMap((checkin) => {
+    ...checkins.flatMap((checkin) => {
       const value = checkInValue(checkin);
       return value == null ? [] : [{ id: checkin.id, date: checkin.date.slice(0, 10), value, source: "checkin" as const }];
     }),
@@ -32,22 +28,22 @@ function metricComparison(
       const value = evaluationValue(evaluation);
       return value == null ? [] : [{ id: evaluation.id, date: evaluation.date.slice(0, 10), value, source: "evaluation" as const }];
     }),
-  ]
-    .filter((candidate) => candidate.date <= currentDate)
-    .sort((a, b) =>
+  ].sort((a, b) =>
       b.date.localeCompare(a.date)
-      || Number(b.source === "evaluation") - Number(a.source === "evaluation")
+      || Number(b.source === "checkin") - Number(a.source === "checkin")
       || b.id - a.id,
-    );
-  const baseline = candidates[0];
+    )
+    .filter((candidate, index, rows) => rows.findIndex((row) => row.date === candidate.date) === index);
+  const current = candidates[0];
+  const baseline = candidates[1];
   return {
-    current: currentValue,
+    current: current?.value,
     previous: baseline?.value,
     previousSource: baseline?.source,
   };
 }
 
-/** Uses the most recent prior weight, whether it came from a check-in or an evaluation. */
+/** Compares the two most recent weight records across check-ins and evaluations. */
 export function weightComparison(
   checkins: CheckIn[],
   evaluations: ClientMeasurement[],
@@ -55,7 +51,7 @@ export function weightComparison(
   return metricComparison(checkins, evaluations, (checkin) => checkin.weight, (evaluation) => evaluation.weight);
 }
 
-/** Uses the most recent prior body-fat value, whether it came from a check-in or an evaluation. */
+/** Compares the two most recent body-fat records across check-ins and evaluations. */
 export function bodyFatComparison(
   checkins: CheckIn[],
   evaluations: ClientMeasurement[],

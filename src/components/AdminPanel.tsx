@@ -14,7 +14,9 @@ export function AdminPanel(){
  const [query,setQuery]=useState(""),[selected,setSelected]=useState<Coach|null>(null),[adding,setAdding]=useState(false);
  const [email,setEmail]=useState(""),[months,setMonths]=useState(1),[note,setNote]=useState("");
  const [confirmingDelete,setConfirmingDelete]=useState(false),[deleteConfirmation,setDeleteConfirmation]=useState("");
+ const [enteringEmail,setEnteringEmail]=useState(""),[removingEmail,setRemovingEmail]=useState("");
  const request=useRef<{payload:string;id:string}|null>(null);
+ const rowAnimationTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
  const reload=useCallback(async()=>{try{const {data,error}=await supabase.rpc("dietforge_admin_list");if(error)throw error;setCoaches(data.coaches);setHistory(data.history);}catch{setError("No pudimos cargar el panel. Vuelve a intentar.");}finally{setLoading(false);}},[]);
  useEffect(()=>{
   if(!status.isAdmin)return;
@@ -26,6 +28,7 @@ export function AdminPanel(){
   });
   return ()=>{live=false;};
  },[status.isAdmin]);
+ useEffect(()=>()=>{if(rowAnimationTimer.current)clearTimeout(rowAnimationTimer.current);},[]);
  function open(coach:Coach|null){setSelected(coach);setAdding(!coach);setEmail(coach?.email??"");setMonths(1);setNote("");setConfirmingDelete(false);setDeleteConfirmation("");setError("");setNotice("");request.current=null;}
  async function save(action:"renew"|"suspend"|"resume"){
   setBusy(true);setError("");setNotice("");
@@ -37,12 +40,14 @@ export function AdminPanel(){
     const {data:{session}}=await supabase.auth.getSession();
     const response=await fetch("/api/admin/coaches",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session?.access_token},body:JSON.stringify({email:normalized,months,note:note.trim(),requestId:request.current.id})});
     const result=await response.json();if(!response.ok)throw Error(result.error);
+    setEnteringEmail(normalized);
     setNotice(result.emailSent?`Coach activado. Enviamos a ${normalized} la invitación para validar su correo y crear su contraseña.`:"El correo ya estaba registrado. Actualizamos su periodo; puede iniciar sesión o recuperar su contraseña.");
    }else{
     const {error}=await supabase.rpc("dietforge_admin_set_access",{p_email:normalized,p_action:action,p_months:action==="renew"?months:null,p_note:note.trim(),p_request_id:request.current.id});
     if(error)throw Error("No se pudo guardar. Reintenta la misma operación.");
    }
    request.current=null;setAdding(false);setSelected(null);if(!adding)setNotice(action==="renew"?"Acceso actualizado. El coach puede iniciar sesión con su contraseña.":action==="suspend"?"Acceso suspendido. Los datos se conservan.":"Suspensión retirada. Se conserva el vencimiento del periodo.");await reload();
+   if(adding){rowAnimationTimer.current=setTimeout(()=>setEnteringEmail(""),700);}
   }catch(e){setError(e instanceof Error?e.message:"No se pudo guardar.");}finally{setBusy(false);}
  }
  async function removeCoach(){
@@ -52,7 +57,11 @@ export function AdminPanel(){
    const {data:{session}}=await supabase.auth.getSession();
    const response=await fetch("/api/admin/coaches",{method:"DELETE",headers:{"Content-Type":"application/json",Authorization:"Bearer "+session?.access_token},body:JSON.stringify({email:selected.email,requestId:crypto.randomUUID()})});
    const result=await response.json();if(!response.ok)throw Error(result.error);
-   setSelected(null);setConfirmingDelete(false);setDeleteConfirmation("");setNotice(`Eliminamos la cuenta y los datos de ${selected.email}.`);await reload();
+   const removedEmail=selected.email;
+   setRemovingEmail(removedEmail);setSelected(null);setConfirmingDelete(false);setDeleteConfirmation("");setNotice(`Eliminamos la cuenta y los datos de ${removedEmail}.`);
+   const reduceMotion=typeof window!=="undefined"&&window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+   await new Promise(resolve=>setTimeout(resolve,reduceMotion?0:480));
+   setCoaches(current=>current.filter(coach=>coach.email!==removedEmail));setRemovingEmail("");await reload();
   }catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar la cuenta.");}finally{setBusy(false);}
  }
  if(!status.isAdmin)return <section className="df-card p-8"><ShieldCheck/><h1 className="text-2xl font-semibold mt-4">Acceso exclusivo del administrador</h1><p className="df-muted mt-2">Tu cuenta no tiene permisos para administrar la plataforma.</p></section>;
@@ -75,7 +84,7 @@ export function AdminPanel(){
    </form>
   </section>}
   <section className="admin-directory"><div className="admin-directory-head"><div><p className="df-eyebrow">DIRECTORIO</p><h2>Coaches y accesos</h2></div><div className="admin-search"><Search size={17}/><input aria-label="Buscar coach" placeholder="Buscar por correo…" value={query} onChange={e=>setQuery(e.target.value)}/><button aria-label="Actualizar directorio" disabled={loading||busy} onClick={()=>void reload()}><RefreshCw size={16}/></button></div></div>
-   <div className="overflow-x-auto"><table className="df-table"><thead><tr><th>Cuenta</th><th>Estado</th><th>Vencimiento</th><th>Clientes / planes</th><th>Acceso</th></tr></thead><tbody>{coaches.filter(c=>c.email.includes(query.toLowerCase())).map(c=><tr key={c.email}><td><span className="font-medium">{c.email}</span><p className="text-xs df-muted mt-1">{!c.user_id?"Pendiente de alta":c.confirmed?"Correo confirmado":"Pendiente de primer acceso"}</p></td><td><span className={"df-badge "+(state(c)==="Activo"||c.is_admin?"df-badge-green":"")}>{state(c)}</span></td><td>{c.is_admin?"Permanente":date(c.expires_at)}</td><td>{c.clients} / {c.plans}</td><td>{!c.is_admin&&<button className="df-button-secondary" disabled={busy} onClick={()=>open(c)}>Gestionar</button>}</td></tr>)}</tbody></table></div>{loading&&<p role="status" className="p-5 df-muted">Actualizando cuentas…</p>}{!loading&&!coaches.length&&<p className="p-6 df-muted">Todavía no hay cuentas para mostrar.</p>}
+   <div className="overflow-x-auto"><table className="df-table"><thead><tr><th>Cuenta</th><th>Estado</th><th>Vencimiento</th><th>Clientes / planes</th><th>Acceso</th></tr></thead><tbody>{coaches.filter(c=>c.email.includes(query.toLowerCase())).map(c=><tr key={c.email} className={`admin-coach-row ${enteringEmail===c.email?"is-entering":""} ${removingEmail===c.email?"is-removing":""}`}><td><span className="font-medium">{c.email}</span><p className="text-xs df-muted mt-1">{!c.user_id?"Pendiente de alta":c.confirmed?"Correo confirmado":"Pendiente de primer acceso"}</p></td><td><span className={"df-badge "+(state(c)==="Activo"||c.is_admin?"df-badge-green":"")}>{state(c)}</span></td><td>{c.is_admin?"Permanente":date(c.expires_at)}</td><td>{c.clients} / {c.plans}</td><td>{!c.is_admin&&<button className="df-button-secondary" disabled={busy} onClick={()=>open(c)}>Gestionar</button>}</td></tr>)}</tbody></table></div>{loading&&<p role="status" className="p-5 df-muted">Actualizando cuentas…</p>}{!loading&&!coaches.length&&<p className="p-6 df-muted">Todavía no hay cuentas para mostrar.</p>}
   </section>
   <section className="admin-history"><div><p className="df-eyebrow">AUDITORÍA</p><h2>Historial administrativo</h2><p>Últimos 100 movimientos. Cada renovación conserva su referencia.</p></div><div className="admin-history-list">{history.map(h=><div key={h.id}><span className={`admin-history-icon ${h.action}`}>{h.action==="delete"?<Trash2 size={14}/>:<RefreshCw size={14}/>}</span><div><strong>{h.email}</strong><p>{h.action==="renew"?"Renovación · "+(h.months===12?"1 año":h.months+" mes"+(h.months===1?"":"es")):h.action==="suspend"?"Acceso suspendido":h.action==="delete"?"Coach eliminado":"Suspensión retirada"}{h.note?" · "+h.note:""}</p></div><time>{date(h.created_at)}</time></div>)}{!history.length&&<p className="df-muted text-sm py-4">Los movimientos aparecerán aquí al registrar el primer cambio.</p>}</div></section>
  </div>;

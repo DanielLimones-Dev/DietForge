@@ -41,7 +41,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `Layout.tsx` | navegación, tema y cierre de sesión | rutas, suscripción |
 | `Dashboard.tsx` | panel clínico con métricas, clientes recientes, matriz de macros y acceso | clientes, planes, check-ins y cuenta desde `db`/suscripción |
 | `ClientList.tsx` / `ClientForm.tsx` | directorio clínico, filtros, estados, alta y edición | `db.clients` |
-| `ClientDetail.tsx` | expediente clínico, acciones, evolución y salida animada al abrir planes anteriores | mediciones, competencias, check-ins, planes, Peak Week |
+| `ClientDetail.tsx` | expediente clínico, panel biométrico unificado, borrador/aceptación de macros, acciones y apertura animada de planes | mediciones, competencias, check-ins, planes, Peak Week |
 | `CalculatorPage.tsx` | captura clínica de antropometría, gasto y macros | `calculator`, `metrics`, mediciones y planes |
 | `MealPlanner.tsx` | entrada animada; edición Normal/Rest Day, alimentos, metas, PDF y plantillas | `db`, `meal-day`, `nutrition`, `pdf` |
 | `FoodDB.tsx` | explorador, filtros, alta, ficha, importación y eliminación | `db.foods`, `NutritionWheel`, `nutrition`, APIs Next |
@@ -51,7 +51,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `CompetitionPeakWeekEditor.tsx` | edición embebida desde competencia | `PeakWeekSimulator` |
 | `WeekPlanView.tsx` / `BatchAssign.tsx` | planificación semanal adaptable y asignación múltiple | planes, carb cycle, `db` |
 | `TrainingHub.tsx` | portafolio de bloques por cliente y métricas reales | clientes y `trainingPrograms` de `db` |
-| `TrainingPlanner.tsx` | editor con días y metas de volumen independientes por semana, tabla de todos los músculos, progreso, biblioteca, feedback, guardado y PDF | `training`, `training-tracking`, `training-pdf`, `db`, catálogo incluido |
+| `TrainingPlanner.tsx` | editor con filas de ejercicios, días y metas de volumen independientes por semana, tabla de músculos, progreso y feedback lateral | `training`, `training-tracking`, `training-pdf`, `db`, catálogo incluido |
 | `CheckInForm.tsx` / `CheckInHistory.tsx` | capturas y evolución | check-ins, fotos, tendencias |
 | `CoachDashboard.tsx` | panel clínico de seguimiento del portafolio | clientes, check-ins, alertas |
 | `Reports.tsx` | indicadores, gráficas y tabla operativa | tendencias, reporte, CSV |
@@ -90,7 +90,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `src/lib/progressReport.ts` | documento A4 del progreso y apertura aislada de la ventana de impresión |
 | `src/lib/csv.ts` | CSV de mediciones y descarga |
 | `src/lib/macro-evaluation.ts` | guarda evaluaciones sin crear check-ins y selecciona su historial para el carrusel |
-| `src/lib/client-progress.ts` | compara peso y grasa con el registro previo y combina evaluaciones/check-ins para las gráficas antropométricas |
+| `src/lib/client-progress.ts` | compara los dos registros más recientes de peso y grasa y combina evaluaciones/check-ins para las gráficas antropométricas |
 | `src/lib/cloud/engine.ts` | cola de persistencia, estado de sincronización y criterio para mostrar solo alertas de error |
 | `src/lib/openExternal.ts` | apertura de URLs desde el navegador |
 | `src/data/training-exercises.json` | 463 ejercicios incluidos sin videos; se muestran dentro de “Mis ejercicios” junto con los personalizados del coach |
