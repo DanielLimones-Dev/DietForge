@@ -288,8 +288,15 @@ export function ClientDetail() {
     toast("Macros guardados correctamente");
   };
 
+  const animateMacroChange = (update: () => void) => {
+    if (document.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      document.startViewTransition(() => flushSync(update));
+    } else update();
+  };
+
   const editSavedMacros = () => {
     if (!macroView) return;
+    animateMacroChange(() => {
     setEditingMeasurementId(macroView.id);
     setDraftMeasurement({ ...macroView });
     setResult({ ...macroView });
@@ -297,15 +304,17 @@ export function ClientDetail() {
     setMacroInputs({ tdee: String(macroView.tdee), protein: String(macroView.protein), carbs: String(macroView.carbs), fat: String(macroView.fat), fiber: String(macroView.fiber) });
     setChangedFields(new Set());
     setShowCalc(false);
-    requestAnimationFrame(() => document.getElementById("macro-editor")?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" }));
+    });
   };
 
   const cancelCalculatedMacros = () => {
+    animateMacroChange(() => {
     setEditingMeasurementId(null);
     setResult(null);
     setEditResult(null);
     setDraftMeasurement(null);
     setChangedFields(new Set());
+    });
   };
 
   const handleCreatePlan = () => {
@@ -765,21 +774,16 @@ export function ClientDetail() {
               </div>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-            <div className="text-center p-3 rounded-xl border shadow-sm stagger-1" style={{ borderColor: "#0ea5e944", background: "linear-gradient(to bottom, #0ea5e930, #0ea5e915)" }}>
-              <p className="text-[9px] font-semibold mb-1 uppercase tracking-wide" style={{ color: "#0ea5e9" }}>Calorías</p>
-              <p className="text-xl font-bold" style={{ color: "#0ea5e9" }}>{macroView.tdee}</p>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500">kcal</p>
-            </div>
-            {(["protein","carbs","fat","fiber"] as const).map((k, i) => {
-              const accent = k === "protein" ? "#f87171" : k === "carbs" ? "#fbbf24" : k === "fat" ? "#60a5fa" : "#a78bfa";
-              return (
-                <div key={k} className={`text-center p-3 rounded-xl border shadow-sm transition-all duration-300 stagger-${Math.min(i + 2, 5)}`} style={{ borderColor: accent + "44", background: `linear-gradient(to bottom, ${accent}40, ${accent}18)` }}>
-                  <p className="text-[9px] font-semibold mb-1 capitalize tracking-wide" style={{ color: accent }}>{k === "protein" ? "Proteína" : k === "carbs" ? "Carbos" : k === "fat" ? "Grasas" : "Fibra"}</p>
-                  <p className="text-lg font-bold" style={{ color: accent }}>{macroView[k]}</p>
-                  <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">g</p>
-                </div>
-              );
+          <div className="macro-control-grid macro-saved-grid">
+            {(["tdee", "protein", "carbs", "fat", "fiber"] as const).map((key) => {
+              const accent = { tdee: "#10b981", protein: "#f87171", carbs: "#fbbf24", fat: "#60a5fa", fiber: "#a78bfa" }[key];
+              const label = { tdee: "Calorías", protein: "Proteína", carbs: "Carbohidratos", fat: "Grasas", fiber: "Fibra" }[key];
+              const energy = key === "protein" || key === "carbs" ? macroView[key] * 4 : key === "fat" ? macroView[key] * 9 : null;
+              return <article key={key} className="macro-control-card macro-saved-card" style={{ "--macro-accent": accent } as React.CSSProperties}>
+                <header><span><i/>{label}</span><b>{energy !== null ? `${energy.toLocaleString("es-MX")} kcal` : key === "tdee" ? "Meta diaria" : "Meta de fibra"}</b></header>
+                <p className="macro-saved-value">{macroView[key].toLocaleString("es-MX")}<small>{key === "tdee" ? "kcal" : "g"}</small></p>
+                <footer>{key === "tdee" ? "Objetivo energético" : key === "fiber" ? "Cantidad diaria" : macroView.weight > 0 ? `${(macroView[key] / macroView.weight).toFixed(2)} g/kg de peso` : "Cantidad diaria"}</footer>
+              </article>;
             })}
           </div>
         </div>
