@@ -290,7 +290,9 @@ export function ClientDetail() {
 
   const animateMacroChange = (update: () => void) => {
     if (document.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      document.startViewTransition(() => flushSync(update));
+      document.documentElement.classList.add("macro-morphing");
+      const transition = document.startViewTransition(() => flushSync(update));
+      void transition.finished.catch(() => {}).finally(() => document.documentElement.classList.remove("macro-morphing"));
     } else update();
   };
 
@@ -430,7 +432,7 @@ export function ClientDetail() {
 
           <div id="macro-editor" className="px-5 pb-5 pt-4 border-t border-gray-100 dark:border-gray-800 animate-slide-down">
             <div className="macro-draft-heading"><div><span>AJUSTE DE PRESCRIPCIÓN</span><h4>{editingMeasurementId !== null ? "Editar macros guardados" : "Macros calculados"}</h4></div><p>{editingMeasurementId !== null ? "Guardar actualiza este cálculo; Cancelar conserva sus valores originales." : "Revisa, ajusta y guarda para incorporarlos al historial."}</p></div>
-            <div className="macro-control-grid">
+            <div className="macro-control-grid" style={{ viewTransitionName: "macro-cards" }}>
               <div className="macro-control-card is-calories stagger-1">
                 <header><span><i/>Calorías</span><b>Objetivo energético</b></header>
                 <div><button type="button" aria-label="Reducir calorías" onClick={() => stepMacroDraft("tdee", -1)}>−</button><input type="number" data-plain-number min="0" value={macroInputs.tdee}
@@ -751,7 +753,7 @@ export function ClientDetail() {
         </div>
       )}
 
-      {editingMeasurementId !== null && <section className="mb-6 macro-result-promoted">{macroEditor}</section>}
+      {editingMeasurementId !== null && <section className="mb-6 macro-inline-editor">{macroEditor}</section>}
       {macroView && !result && (
         <div key={macroView.id} className="mb-4 macro-result-promoted">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -775,7 +777,7 @@ export function ClientDetail() {
               </div>
             )}
           </div>
-          <div className="macro-control-grid macro-saved-grid">
+          <div className="macro-control-grid macro-saved-grid" style={{ viewTransitionName: "macro-cards" }}>
             {(["tdee", "protein", "carbs", "fat", "fiber"] as const).map((key) => {
               const accent = { tdee: "#10b981", protein: "#f87171", carbs: "#fbbf24", fat: "#60a5fa", fiber: "#a78bfa" }[key];
               const label = { tdee: "Calorías", protein: "Proteína", carbs: "Carbohidratos", fat: "Grasas", fiber: "Fibra" }[key];
