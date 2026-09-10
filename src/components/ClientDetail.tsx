@@ -455,9 +455,8 @@ export function ClientDetail() {
             </div>
             {result && (
               <div className={`macro-comparison-reveal ${changedFields.size > 0 ? "is-open" : ""}`} aria-hidden={changedFields.size === 0}><div className="macro-comparison-clip"><section className="macro-comparison">
-                <header><div><span>REVISIÓN DEL AJUSTE</span><h4>Comparación de macros</h4></div><span className="macro-comparison-status">Sin guardar</span></header>
                 <div className="macro-comparison-scroll">
-                <table className="macro-comparison-table">
+                <table className="macro-comparison-table" aria-label="Comparación de macros">
                   <thead>
                     <tr className="text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                       <th className="text-left px-2 py-1">Macro</th>
@@ -476,10 +475,10 @@ export function ClientDetail() {
                       return (
                         <tr key={k}>
                           <td className={`px-2 py-1 font-medium ${accent}`}>{k === "protein" ? "Proteína" : k === "carbs" ? "Carbohidratos" : "Grasas"}</td>
-                          <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400"><strong>{orig}<small> g</small></strong><span className="macro-energy">{orig * mult} kcal</span></td>
-                          <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400"><strong>{adj}<small> g</small></strong><span className="macro-energy">{adj * mult} kcal</span></td>
+                          <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400"><strong>{orig}<small> g</small></strong><span className="macro-energy">({orig * mult} kcal)</span></td>
+                          <td className="text-right px-2 py-1 text-gray-600 dark:text-gray-400"><strong>{adj}<small> g</small></strong><span className="macro-energy">({adj * mult} kcal)</span></td>
                           <td className={`text-right px-2 py-1 font-medium ${diff === 0 ? "text-gray-400" : diff > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-                            <span className="macro-delta">{diff > 0 ? "+" : ""}{diff} g</span><span className="macro-energy">{diff * mult > 0 ? "+" : ""}{diff * mult} kcal</span>
+                            <span className="macro-delta">{diff > 0 ? "+" : ""}{diff} g</span><span className="macro-energy">({diff * mult > 0 ? "+" : ""}{diff * mult} kcal)</span>
                           </td>
                         </tr>
                       );
