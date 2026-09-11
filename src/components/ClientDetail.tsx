@@ -708,6 +708,45 @@ export function ClientDetail() {
         </div>
       )}
 
+      {editingMeasurementId !== null && <section className="mb-6 macro-inline-editor">{macroEditor}</section>}
+      {macroView && !result && (
+        <div key={macroView.id} className="mb-4 macro-saved-summary">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              Macros • {macroView.date.slice(0, 10)}
+            </p>
+            <button type="button" className="df-button-secondary" onClick={editSavedMacros}>Ajustar macros</button>
+            {measurements.length > 1 && (
+              <div className="inline-flex items-center gap-2" aria-label="Historial de cálculos">
+                <button type="button" aria-label="Ver cálculo más reciente" disabled={macroHistoryIndex === 0}
+                  onClick={() => { setMacroHistoryIndex((index) => Math.max(0, index - 1)); setResult(null); setEditResult(null); setChangedFields(new Set()); }}
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-all hover:border-brand-400 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-35 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="min-w-24 text-center text-[11px] font-medium text-gray-500 dark:text-gray-400">Cálculo {macroHistoryIndex + 1} de {measurements.length}</span>
+                <button type="button" aria-label="Ver cálculo anterior" disabled={macroHistoryIndex >= measurements.length - 1}
+                  onClick={() => { setMacroHistoryIndex((index) => Math.min(measurements.length - 1, index + 1)); setResult(null); setEditResult(null); setChangedFields(new Set()); }}
+                  className="grid h-8 w-8 place-items-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-all hover:border-brand-400 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-35 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="macro-control-grid macro-saved-grid" style={{ viewTransitionName: "macro-cards" }}>
+            {(["tdee", "protein", "carbs", "fat", "fiber"] as const).map((key) => {
+              const accent = { tdee: "#10b981", protein: "#f87171", carbs: "#fbbf24", fat: "#60a5fa", fiber: "#a78bfa" }[key];
+              const label = { tdee: "Calorías", protein: "Proteína", carbs: "Carbohidratos", fat: "Grasas", fiber: "Fibra" }[key];
+              const energy = key === "protein" || key === "carbs" ? macroView[key] * 4 : key === "fat" ? macroView[key] * 9 : null;
+              return <article key={key} className="macro-control-card macro-saved-card" style={{ "--macro-accent": accent } as React.CSSProperties}>
+                <header><span><i/>{label}</span><b>{energy !== null ? `${energy.toLocaleString("es-MX")} kcal` : key === "tdee" ? "Meta diaria" : "Meta de fibra"}</b></header>
+                <p className="macro-saved-value">{macroView[key].toLocaleString("es-MX")}<small>{key === "tdee" ? "kcal" : "g"}</small></p>
+                <footer>{key === "tdee" ? "Objetivo energético" : key === "fiber" ? "Cantidad diaria" : macroView.weight > 0 ? `${(macroView[key] / macroView.weight).toFixed(2)} g/kg de peso` : "Cantidad diaria"}</footer>
+              </article>;
+            })}
+          </div>
+        </div>
+      )}
+
       <section className="biometric-overview mb-6" key={`biometrics-${weightChange.previous ?? "empty"}-${weightChange.current ?? "empty"}-${bodyFatChange.previous ?? "empty"}-${bodyFatChange.current ?? "empty"}-${checkinVersion}`}>
         <header className="biometric-overview-head">
           <div><span>EVOLUCIÓN DEL CLIENTE</span><h3>Progreso corporal</h3><p>Peso, grasa corporal y tendencia reunidos en una sola lectura.</p></div>
@@ -750,45 +789,6 @@ export function ClientDetail() {
           {(suggestion.carbChange !== 0 || suggestion.fatChange !== 0) && (
             <p className="text-xs mt-1">Ajuste: {suggestion.carbChange > 0 ? "+" : ""}{suggestion.carbChange}g carbos · {suggestion.fatChange > 0 ? "+" : ""}{suggestion.fatChange}g grasas</p>
           )}
-        </div>
-      )}
-
-      {editingMeasurementId !== null && <section className="mb-6 macro-inline-editor">{macroEditor}</section>}
-      {macroView && !result && (
-        <div key={macroView.id} className="mb-4 macro-saved-summary">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-              Macros • {macroView.date.slice(0, 10)}
-            </p>
-            <button type="button" className="df-button-secondary" onClick={editSavedMacros}>Ajustar macros</button>
-            {measurements.length > 1 && (
-              <div className="inline-flex items-center gap-2" aria-label="Historial de cálculos">
-                <button type="button" aria-label="Ver cálculo más reciente" disabled={macroHistoryIndex === 0}
-                  onClick={() => { setMacroHistoryIndex((index) => Math.max(0, index - 1)); setResult(null); setEditResult(null); setChangedFields(new Set()); }}
-                  className="grid h-8 w-8 place-items-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-all hover:border-brand-400 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-35 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <span className="min-w-24 text-center text-[11px] font-medium text-gray-500 dark:text-gray-400">Cálculo {macroHistoryIndex + 1} de {measurements.length}</span>
-                <button type="button" aria-label="Ver cálculo anterior" disabled={macroHistoryIndex >= measurements.length - 1}
-                  onClick={() => { setMacroHistoryIndex((index) => Math.min(measurements.length - 1, index + 1)); setResult(null); setEditResult(null); setChangedFields(new Set()); }}
-                  className="grid h-8 w-8 place-items-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-all hover:border-brand-400 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-35 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-          </div>
-          <div className="macro-control-grid macro-saved-grid" style={{ viewTransitionName: "macro-cards" }}>
-            {(["tdee", "protein", "carbs", "fat", "fiber"] as const).map((key) => {
-              const accent = { tdee: "#10b981", protein: "#f87171", carbs: "#fbbf24", fat: "#60a5fa", fiber: "#a78bfa" }[key];
-              const label = { tdee: "Calorías", protein: "Proteína", carbs: "Carbohidratos", fat: "Grasas", fiber: "Fibra" }[key];
-              const energy = key === "protein" || key === "carbs" ? macroView[key] * 4 : key === "fat" ? macroView[key] * 9 : null;
-              return <article key={key} className="macro-control-card macro-saved-card" style={{ "--macro-accent": accent } as React.CSSProperties}>
-                <header><span><i/>{label}</span><b>{energy !== null ? `${energy.toLocaleString("es-MX")} kcal` : key === "tdee" ? "Meta diaria" : "Meta de fibra"}</b></header>
-                <p className="macro-saved-value">{macroView[key].toLocaleString("es-MX")}<small>{key === "tdee" ? "kcal" : "g"}</small></p>
-                <footer>{key === "tdee" ? "Objetivo energético" : key === "fiber" ? "Cantidad diaria" : macroView.weight > 0 ? `${(macroView[key] / macroView.weight).toFixed(2)} g/kg de peso` : "Cantidad diaria"}</footer>
-              </article>;
-            })}
-          </div>
         </div>
       )}
 
