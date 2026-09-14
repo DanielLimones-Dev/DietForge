@@ -681,3 +681,8 @@ html.macro-morphing::view-transition-old(root),html.macro-morphing::view-transit
 @media(max-width:480px){.care-login.care-onboarding{padding:22px 18px}.care-onboarding-steps{gap:4px}.care-onboarding-steps li{font-size:10px;gap:4px}}
 
 .care-onboarding a{color:var(--clinical-primary);font-size:12px;font-weight:650;padding:6px;text-decoration:underline;text-underline-offset:3px}.care-onboarding a:focus-visible{outline:2px solid var(--clinical-primary);outline-offset:3px}
+
+/* Match the document canvas to the portal during overscroll and elastic scrolling. */
+html:has(.care-portal),body:has(.care-portal){background:#f7f8fc;color-scheme:light}
+html:has(.dark>.care-portal),body:has(.dark>.care-portal){background:#08130f;color-scheme:dark}
+.care-portal{min-height:100vh;min-height:100dvh}
