@@ -1,7 +1,7 @@
 import type { Client, ClientMeasurement, Food, MealPlan, MealPlanItem, DietTemplate, Competition, CheckIn, PhotoRef, WeekPlan, TrainingProgram, CustomExercise } from '@/types';
 import { classifyCarbs } from '@/lib/nutrition';
 import { readRemote, writeRemote } from './cloud/repository';
-import { emptySnapshot, readLegacy, validateSnapshot, type Snapshot, type Database, sameSnapshot } from './cloud/model';
+import { emptySnapshot, validateSnapshot, type Snapshot, type Database, sameSnapshot } from './cloud/model';
 import { SaveQueue, type SaveState } from './cloud/engine';
 const SEED_VERSION=2;
 export const QUOTA_WARNING_KEY='dietforge_quota_warned';
@@ -35,9 +35,7 @@ function persist(){
  try{queue.enqueue(snapshot());}catch{setState({phase:'error',message:'No hay espacio para el respaldo de recuperación. Descárgalo antes de continuar.'});}
 }
 function genId(table:string){const id=cache.nextId[table]||1;cache.nextId[table]=id+1;return id;}
-export interface InitializeResult { needsImport:boolean; localCounts?:Record<string,number>; }
-let legacy:Snapshot|null=null;
-export async function initializeCloud(userId:string):Promise<InitializeResult>{
+export async function initializeCloud(userId:string):Promise<void>{
  const epoch=++accountEpoch;
  const assertCurrent=()=>{if(epoch!==accountEpoch)throw new Error('La cuenta cambió durante la carga.');};
  owner=userId;queue=null;setState({phase:'ready',message:'Cargando tus datos…'});
@@ -59,23 +57,14 @@ export async function initializeCloud(userId:string):Promise<InitializeResult>{
   else if((remote?.revision??0)===saved.revision){
    const rev=await writeRemote(s,saved.revision,crypto.randomUUID(),userId);
    assertCurrent();
-   localStorage.removeItem(localKey('pending'));adopt(s);startQueue(rev);return {needsImport:false};
+   localStorage.removeItem(localKey('pending'));adopt(s);startQueue(rev);return;
   }else{
    adopt(s);throw new Error('Hay cambios locales pendientes y una versión distinta en Supabase. Descarga el respaldo antes de recargar; no se sobrescribirá ninguna versión.');
   }
  }
- if(remote){adopt(remote.snapshot);startQueue(remote.revision);return {needsImport:false};}
- legacy=readLegacy(localStorage);
- if(legacy){adopt(legacy);return {needsImport:true,localCounts:Object.fromEntries(Object.entries(legacy.database).filter(([,v])=>Array.isArray(v)).map(([k,v])=>[k,(v as unknown[]).length]))};}
- adopt(emptySnapshot());const rev=await writeRemote(snapshot(),0,crypto.randomUUID(),userId);assertCurrent();startQueue(rev);return {needsImport:false};
-}
-export async function confirmLegacyImport(importLocal:boolean){
- const epoch=accountEpoch;
- const s=importLocal&&legacy?legacy:emptySnapshot();
- // Legacy keys are never removed or rewritten.
- const rev=await writeRemote(s,0,crypto.randomUUID(),owner);
- if(epoch!==accountEpoch)throw new Error('La cuenta cambió durante la importación.');
- adopt(s);startQueue(rev);legacy=null;
+ if(remote){adopt(remote.snapshot);startQueue(remote.revision);return;}
+ // Unowned legacy browser data must never be adopted by an authenticated account.
+ adopt(emptySnapshot());const rev=await writeRemote(snapshot(),0,crypto.randomUUID(),userId);assertCurrent();startQueue(rev);return;
 }
 function startQueue(revision:number){
  const queueOwner=owner;const epoch=accountEpoch;
@@ -91,7 +80,7 @@ function startQueue(revision:number){
   if(op)localStorage.setItem(key('operation'),JSON.stringify(op));else localStorage.removeItem(key('operation'));
  });setState({phase:'ready',message:'Guardado en Supabase'});
 }
-export function disconnectCloud(){accountEpoch++;queue=null;owner='';legacy=null;adopt(emptySnapshot());}
+export function disconnectCloud(){accountEpoch++;queue=null;owner='';adopt(emptySnapshot());}
 export async function init(){/* The authenticated CloudGate initializes the data before mounting the app. */}
 const localDb = {
   init,

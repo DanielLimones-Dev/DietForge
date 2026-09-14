@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useRef, useState, useSyncExternal
 import { LoginScreen } from "./LoginScreen";
 import { supabase } from "@/lib/supabase";
 import { LoadingScreen } from "./LoadingScreen";
-import { db, initializeCloud, confirmLegacyImport, disconnectCloud, getStorageState, subscribeStorage, retryCloudSave, exportCloudBackup, hasPendingCloudWrites } from "@/lib/db";
+import { db, initializeCloud, disconnectCloud, getStorageState, subscribeStorage, retryCloudSave, exportCloudBackup, hasPendingCloudWrites } from "@/lib/db";
 import { isStorageAlert } from "@/lib/cloud/engine";
 
 const serverStorageState = { phase: "ready" as const, message: "Conectando…" };
@@ -14,53 +14,28 @@ const AccountContext = createContext<string | null>(null);
 function CloudAccount({ userId, children }: { userId: string; children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
-  const [needsImport, setNeedsImport] = useState(false);
-  const [counts, setCounts] = useState<Record<string, number>>({});
-  const [busy, setBusy] = useState(false);
   const initial = useRef<ReturnType<typeof initializeCloud> | null>(null);
   const storage = useSyncExternalStore(subscribeStorage, getStorageState, getServerStorageState);
 
   useEffect(() => {
     let live = true;
     // Share the work during StrictMode's effect replay, including seeding.
-    initial.current ??= initializeCloud(userId).then(result => {
-      if (!result.needsImport) db.seedFoods();
-      return result;
+    initial.current ??= initializeCloud(userId).then(() => {
+      db.seedFoods();
     });
-    initial.current.then(result => {
+    initial.current.then(() => {
       if (!live) return;
-      setNeedsImport(result.needsImport);
-      setCounts(result.localCounts ?? {});
-      setReady(!result.needsImport);
+      setReady(true);
     }).catch(error => { if (live) setError(error instanceof Error ? error.message : "No se pudieron cargar tus datos."); });
     return () => { live = false; };
   }, [userId]);
 
-  async function importData(useLocal: boolean) {
-    setBusy(true);
-    try {
-      await confirmLegacyImport(useLocal);
-      db.seedFoods();
-      setNeedsImport(false);
-      setReady(true);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "No se pudo importar.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  if (error || needsImport) return <div className="min-h-screen bg-gray-950 text-white p-10 space-y-5">
-    <h1 className="text-xl">{error ? "No se pudo abrir tu información" : "Datos locales encontrados"}</h1>
-    {error ? <p role="alert">{error}</p> : <>
-      <p>¿Quieres importar estos datos a la cuenta con la que acabas de iniciar sesión? Los originales se conservan.</p>
-      <p>{Object.entries(counts).map(([key, value]) => `${key}: ${value}`).join(" · ")}</p>
-      <button disabled={busy} onClick={() => void importData(true)} className="bg-brand-600 p-3 rounded">Importar a mi cuenta</button>
-      <button disabled={busy} onClick={() => void importData(false)} className="p-3">Empezar sin importar</button>
-    </>}
+  if (error) return <div className="min-h-screen bg-gray-950 text-white p-10 space-y-5">
+    <h1 className="text-xl">No se pudo abrir tu información</h1>
+    <p role="alert">{error}</p>
     <button onClick={exportCloudBackup} className="p-3">Descargar respaldo</button>
     <button onClick={() => window.location.reload()} className="p-3">Volver a intentar</button>
-    <button disabled={busy || hasPendingCloudWrites()} onClick={() => void supabase.auth.signOut()} className="p-3">Salir</button>
+    <button disabled={hasPendingCloudWrites()} onClick={() => void supabase.auth.signOut()} className="p-3">Salir</button>
   </div>;
   if (!ready) return <LoadingScreen />;
   return <>
