@@ -16,12 +16,12 @@ export function LoginScreen() {
   try {
    const account=email.trim().toLowerCase();
    if(mode==="login"){
-    const {error}=await supabase.auth.signInWithPassword({email:account,password});
+    const {data,error}=await supabase.auth.signInWithPassword({email:account,password});
     if(error)throw error;
     const role=await supabase.rpc("dietforge_is_admin");
     const destination=destinationForRole(role);
     const entries=destination==="/admin"?[]:await memberships();
-    window.location.replace(entries.some(entry=>entry.enabled)?"/portal":destination);
+    window.location.replace(entries.some(entry=>entry.enabled&&entry.owner_id!==data.user?.id)?"/portal":destination);
    }else{
     const redirectTo=window.location.origin+"/auth/callback?next=password";
     const result=await supabase.auth.resetPasswordForEmail(account,{redirectTo});
