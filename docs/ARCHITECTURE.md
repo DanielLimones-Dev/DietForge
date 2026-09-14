@@ -254,3 +254,7 @@ La sincronización consulta cada cinco segundos después de completar una lectur
 `useDietNotice` consulta cada 5 s `dietforge_diet_notice_read(o,c)` en el portal cliente. El botón Comida muestra un aviso pendiente; abrir la pestaña muestra el mensaje y cerrar ejecuta `dietforge_diet_notice_seen(o,c,v)`. La lectura se persiste por usuario y versión en tablas privadas; cerrar una versión obsoleta no descarta la nueva. El aviso cubre altas/ajustes/eliminaciones de planes, partidas y alimentos referenciados tras guardar el snapshot completo. Orden del snapshot y timestamps no generan avisos. La migración inicial establece base sin avisos retroactivos. Retirar/restaurar un expediente limpia sus lecturas previas.
 
 Agenda muestra exclusivamente Peak Week y check-ins; no crea recordatorios ni muestra entrenamientos/alimentación regular. No se borraron actividades históricas. `care-tab-panel` establece separación interna entre tarjetas y respeta `hidden`; las rejillas adaptables contienen formularios/tablas sin ensanchar el portal.
+
+
+### Portal: activación guiada (2026-09-14)
+PortalAuth separa correo autorizado, creación de contraseña y confirmación. El registro usa Supabase Auth y el callback existente; completar el formulario no concede acceso a expedientes. Login y recuperación siguen disponibles. Los mensajes viven dentro de la tarjeta, las contraseñas se limpian tras la petición y no se persisten. Consultar acceso descarta respuestas tras cambiar de identidad.

@@ -661,3 +661,21 @@ html.macro-morphing::view-transition-old(root),html.macro-morphing::view-transit
 @keyframes care-notice-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 @media(max-width:620px){.care-tabs{gap:4px}.care-tabs>button{font-size:11px;padding:9px}.care-tab-badge>span{display:none}.care-diet-plan{padding:13px}.care-portal .care-heading{align-items:flex-start}.care-diet-notice{padding:12px;gap:8px}}
 @media(prefers-reduced-motion:reduce){.care-diet-notice{animation:none}}
+
+/* Client portal: guided activation, one task per step. */
+.care-login.care-onboarding{max-width:480px;padding:32px;margin:clamp(24px,8vh,80px) auto;box-shadow:0 14px 48px #00000008}
+.care-onboarding-steps{display:flex;list-style:none;padding:0;margin:24px 0;gap:8px}
+.care-onboarding-steps li{display:flex;align-items:center;gap:6px;flex:1;font-size:11px;color:var(--clinical-muted)}
+.care-onboarding-steps li>span{display:grid;place-items:center;flex:none;width:26px;height:26px;border-radius:50%;background:var(--clinical-soft);border:1px solid var(--clinical-line)}
+.care-onboarding-steps li[aria-current=step]{color:var(--clinical-primary);font-weight:750}
+.care-onboarding-steps li[aria-current=step]>span{background:var(--clinical-primary);color:white;border-color:transparent}
+.care-onboarding .care-stack{gap:16px;margin-top:20px}
+.care-onboarding label{font-size:13px}.care-onboarding input{min-height:48px;font-size:16px;padding:12px}
+.care-onboarding input:focus-visible,.care-onboarding button:focus-visible{outline:2px solid var(--clinical-primary);outline-offset:3px}
+.care-onboarding button[type=submit]{background:var(--clinical-primary);color:white;min-height:48px;font-size:14px;border-color:transparent}
+.care-onboarding button:disabled{opacity:.55;cursor:default}
+.care-onboarding-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 12px;margin-top:22px;padding-top:16px;border-top:1px solid var(--clinical-line)}
+.care-onboarding .care-onboarding-actions button{background:transparent;border-color:transparent;padding:6px;font-size:12px}
+.care-onboarding [role=alert]{padding:12px;border:1px solid var(--clinical-line);border-radius:10px;color:var(--clinical-text);background:var(--clinical-soft)}
+.care-onboarding strong{overflow-wrap:anywhere}.care-onboarding small{color:var(--clinical-muted)}
+@media(max-width:480px){.care-login.care-onboarding{padding:22px 18px}.care-onboarding-steps{gap:4px}.care-onboarding-steps li{font-size:10px;gap:4px}}
