@@ -624,3 +624,40 @@ input[type="number"][data-plain-number]{padding-right:2px!important;background-i
 html.macro-morphing::view-transition-old(root),html.macro-morphing::view-transition-new(root){animation:none;mix-blend-mode:normal}html.macro-morphing::view-transition-old(root){display:none}::view-transition-group(macro-cards){animation-duration:850ms;animation-timing-function:cubic-bezier(.22,1,.36,1)}::view-transition-old(macro-cards){animation:macro-morph-out 850ms cubic-bezier(.22,1,.36,1) both;mix-blend-mode:normal;transform-origin:center}::view-transition-new(macro-cards){animation:macro-morph-in 850ms cubic-bezier(.22,1,.36,1) both;mix-blend-mode:normal;transform-origin:center}@keyframes macro-morph-out{0%{transform:scale(1);opacity:1}35%{transform:scale(.965);opacity:1}75%,100%{transform:scale(.965);opacity:0}}@keyframes macro-morph-in{0%,35%{transform:scale(.965);opacity:0}75%{transform:scale(.99);opacity:1}100%{transform:scale(1);opacity:1}}@media(prefers-reduced-motion:reduce){::view-transition-group(macro-cards),::view-transition-old(macro-cards),::view-transition-new(macro-cards){animation:none}}
 
 .coach-notifications{position:relative}.notification-bell{position:relative;display:grid;place-items:center;width:40px;height:40px;border:1px solid var(--clinical-line);border-radius:12px;color:var(--clinical-primary);background:var(--clinical-surface);cursor:pointer}.notification-bell b{position:absolute;right:-5px;top:-5px;min-width:18px;padding:2px 4px;background:#dc3545;color:white;border-radius:20px;font-size:10px}.notification-panel{position:absolute;right:0;top:50px;width:min(350px,calc(100vw - 32px));max-height:70vh;overflow:auto;z-index:80;background:var(--clinical-surface);border:1px solid var(--clinical-line);border-radius:16px;box-shadow:0 15px 45px #0003;color:var(--clinical-text)}.notification-panel header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--clinical-line)}.notification-panel header button{padding:6px;cursor:pointer}.notification-panel p{padding:16px;font-size:12px}.notification-panel a{display:grid;gap:4px;padding:16px;border-bottom:1px solid var(--clinical-line);font-size:13px}.notification-panel a:hover,.notification-panel a.unread{background:var(--clinical-soft)}.notification-panel time{font-size:11px;color:var(--clinical-muted)}.notification-panel small{color:var(--clinical-primary)}
+
+/* Portal: explicit flow and shrinkable grid tracks prevent nested cards overflowing. */
+.care-portal{padding:clamp(14px,3vw,32px)}
+.care-portal .care-page{width:100%;grid-template-columns:minmax(0,1fr);gap:20px}
+.care-client-picker{display:grid;gap:8px;max-width:1200px;margin:0 auto 20px;font-size:12px;color:var(--clinical-muted)}
+.care-page>.care-tab-panel:not([hidden]){display:grid;grid-template-columns:minmax(0,1fr);gap:18px;min-width:0}
+.care-tab-panel[hidden]{display:none!important}
+.care-tab-panel>*{min-width:0;max-width:100%}
+.care-page .care-card{overflow-wrap:anywhere}
+.care-tab-panel .care-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));align-items:end;gap:16px}
+.care-tab-panel .care-form>*{min-width:0;max-width:100%}
+.care-tab-panel input,.care-tab-panel select,.care-tab-panel textarea{min-width:0;box-sizing:border-box}
+.care-tab-panel fieldset>label{margin-top:18px}
+.care-tab-panel fieldset>button{margin-top:14px}
+.care-tab-panel .care-inset>summary,.care-diet-plan>summary{padding:2px 0;cursor:pointer;line-height:1.5;font-weight:650}
+.care-tab-panel .care-inset[open]>summary,.care-diet-plan[open]>summary{padding-bottom:12px;border-bottom:1px solid var(--clinical-line)}
+.care-tab-panel .care-table-wrap{max-width:100%;overscroll-behavior-x:contain}
+.care-tab-panel input[type=file]{font-size:11px;overflow:hidden}
+.care-portal .care-heading>div{min-width:0;flex:1 1 260px}
+.care-portal>.care-heading{padding-bottom:18px;border-bottom:1px solid var(--clinical-line)}
+.care-tabs{padding:6px;background:var(--clinical-soft);border:1px solid var(--clinical-line);border-radius:14px;gap:6px}
+.care-tabs>button{display:flex;flex:1 0 auto;align-items:center;justify-content:center;gap:8px;min-height:44px;border-color:transparent;white-space:nowrap}
+.care-tab-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 6px;background:var(--clinical-primary);color:white;border-radius:999px;font-size:10px}
+.care-tabs .selected .care-tab-badge{background:#fff;color:#087f59}
+.care-diet{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.care-diet>label{max-width:260px}
+.care-diet-plan{margin:0;padding:18px;background:var(--clinical-soft)}
+.care-meal{background:var(--clinical-surface);margin-top:12px}
+.care-meal h4{font-weight:700;text-transform:capitalize;font-size:14px}
+.care-meal>button{display:inline-flex;align-items:center;gap:6px;margin-top:8px}
+.care-diet-notice{display:flex;align-items:flex-start;gap:12px;padding:16px;border-radius:14px;border:1px solid color-mix(in srgb,var(--clinical-primary) 40%,var(--clinical-line));background:color-mix(in srgb,var(--clinical-primary) 8%,var(--clinical-surface));animation:care-notice-in .35s ease both}
+.care-diet-notice>svg{flex:none;color:var(--clinical-primary);margin-top:2px}
+.care-diet-notice>div{flex:1;min-width:0}.care-diet-notice strong{font-size:14px}.care-diet-notice p{margin:5px 0 0}
+.care-diet-notice>button{display:grid;place-items:center;flex:none;padding:7px}
+@keyframes care-notice-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media(max-width:620px){.care-tabs{gap:4px}.care-tabs>button{font-size:11px;padding:9px}.care-tab-badge>span{display:none}.care-diet-plan{padding:13px}.care-portal .care-heading{align-items:flex-start}.care-diet-notice{padding:12px;gap:8px}}
+@media(prefers-reduced-motion:reduce){.care-diet-notice{animation:none}}

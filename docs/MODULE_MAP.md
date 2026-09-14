@@ -185,3 +185,8 @@ El ajuste de macros guardados se monta en la sección superior, en la posición 
 - `src/components/TrainingLiveFeedback.tsx`: registros del cliente por programa/semana sin cambiar prescripción.
 - `supabase/migrations/20260914010000_checkin_notifications.sql`: validación, almacenamiento privado y notificaciones atómicas.
 - `supabase/tests/checkin-notifications.sql`: pruebas SQL multicuentas reversibles; ejecutar únicamente dentro de su transacción con ROLLBACK.
+
+- `src/lib/use-diet-notice.ts`: consulta y cierre de avisos de comida por revisión; protege contra respuestas atrasadas.
+- `20260914030000_diet_change_notices.sql`: huella de dieta por cliente, lecturas privadas y RPC de cierre condicional.
+- `supabase/tests/diet-change-notices.sql`, `tests/diet-notice.test.ts`: aislamiento, no ruido, cierre persistente y ajustes simultáneos.
+- `tests/agenda-scope.test.ts`: Agenda conserva Peak Week/check-ins y excluye las categorías retiradas.
