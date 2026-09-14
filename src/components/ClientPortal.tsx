@@ -1,16 +1,19 @@
 'use client';
 import {useEffect,useRef,useState} from 'react';
+import {useRouter} from 'next/navigation';
 import {supabase} from '@/lib/supabase';
 import {memberships,type PortalMembership} from '@/lib/client-portal';
 import {ClientCare} from './ClientCare';
 import {NumericInputNormalizer} from './NumericInputNormalizer';
 import {PortalAuth} from './PortalAuth';
 export function ClientPortal(){
+ const router=useRouter();
+ useEffect(()=>{router.prefetch('/');},[router]);
  const [user,setUser]=useState<string|null|undefined>(undefined);const [entries,setEntries]=useState<PortalMembership[]>([]);const [selected,setSelected]=useState('');const [message,setMessage]=useState('');const [dark,setDark]=useState(false);
  const [signingOut,setSigningOut]=useState(false);const logoutPending=useRef(false);
  async function logout(){
   if(logoutPending.current)return;logoutPending.current=true;setSigningOut(true);setMessage('');
-  try{const {error}=await supabase.auth.signOut();if(error)throw error;window.location.replace('/');}
+  try{const {error}=await supabase.auth.signOut();if(error)throw error;router.replace('/');}
   catch{logoutPending.current=false;setSigningOut(false);setMessage('No se pudo cerrar la sesión. Intenta de nuevo.');}
  }
  const identity=useRef<string|null|undefined>(undefined);
