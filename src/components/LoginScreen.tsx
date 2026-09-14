@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Mail, Check, Leaf, LockKeyhole } from "lucide-react";
 import { authErrorMessage } from "@/lib/auth-errors";
 import { destinationForRole } from "@/lib/auth-role";
+import { memberships } from "@/lib/client-portal";
 import { supabase } from "@/lib/supabase";
 
 export function LoginScreen() {
@@ -18,7 +19,9 @@ export function LoginScreen() {
     const {error}=await supabase.auth.signInWithPassword({email:account,password});
     if(error)throw error;
     const role=await supabase.rpc("dietforge_is_admin");
-    window.location.replace(destinationForRole(role));
+    const destination=destinationForRole(role);
+    const entries=destination==="/admin"?[]:await memberships();
+    window.location.replace(entries.some(entry=>entry.enabled)?"/portal":destination);
    }else{
     const redirectTo=window.location.origin+"/auth/callback?next=password";
     const result=await supabase.auth.resetPasswordForEmail(account,{redirectTo});
@@ -40,7 +43,7 @@ export function LoginScreen() {
    <span className="df-icon"><LockKeyhole size={25}/></span>
    <p className="df-eyebrow mt-7">BIENVENIDO A DIETFORGE</p>
    <h2 className="text-3xl font-semibold tracking-tight mt-2">{sent?"Revisa tu correo":mode==="recovery"?"Recupera tu contraseña":"Inicia sesión"}</h2>
-   <p className="df-muted mt-3 leading-relaxed">{sent?<>Si el correo <strong className="df-text">{email}</strong> está dado de alta, recibirás un enlace para restablecer tu contraseña.</>:mode==="login"?"Entra con tu correo y contraseña. La primera contraseña se crea desde la invitación enviada por el administrador.":"Te enviaremos un enlace para elegir una contraseña nueva."}</p>
+   <p className="df-muted mt-3 leading-relaxed">{sent?<>Si el correo <strong className="df-text">{email}</strong> está dado de alta, recibirás un enlace para restablecer tu contraseña.</>:mode==="login"?"Entra con tu correo y contraseña. Abriremos el espacio autorizado para tu cuenta.":"Te enviaremos un enlace para elegir una contraseña nueva."}</p>
    <form onSubmit={submit} className="mt-8 space-y-5">
     {!sent&&<label className="df-label">Correo electrónico<input className="df-input mt-2" aria-label="Correo" type="email" autoComplete="email" placeholder="tu@correo.com" required value={email} onChange={e=>setEmail(e.target.value)}/></label>}
     {!sent&&mode==="login"&&<label className="df-label">Contraseña<input className="df-input mt-2" aria-label="Contraseña" type="password" autoComplete="current-password" required value={password} onChange={e=>setPassword(e.target.value)}/></label>}
