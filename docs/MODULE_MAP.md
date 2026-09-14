@@ -176,3 +176,12 @@ BiometricChart presenta una curva de ancho completo con selector peso/grasa, per
 
 
 El ajuste de macros guardados se monta en la sección superior, en la posición del resumen, mientras la calculadora permanece cerrada. macroEditor se comparte con resultados nuevos sin duplicación. Los inputs de sus tarjetas usan data-plain-number para excluir los steppers globales visuales y de puntero; mantienen sus botones −/+.
+
+### Seguimiento automático y check-ins
+- `src/lib/auto-refresh.ts`, `use-auto-refresh.ts`: lecturas seriales y ciclo de visibilidad/reconexión.
+- `src/components/PortalCheckIn.tsx`, `src/lib/portal-checkin.ts`: formulario cliente sin grasa, historial y recuperación de envío.
+- `src/lib/checkin-media.ts`: fotos privadas y URLs firmadas.
+- `src/components/CoachNotifications.tsx`: campana global y destinos de registros.
+- `src/components/TrainingLiveFeedback.tsx`: registros del cliente por programa/semana sin cambiar prescripción.
+- `supabase/migrations/20260914010000_checkin_notifications.sql`: validación, almacenamiento privado y notificaciones atómicas.
+- `supabase/tests/checkin-notifications.sql`: pruebas SQL multicuentas reversibles; ejecutar únicamente dentro de su transacción con ROLLBACK.

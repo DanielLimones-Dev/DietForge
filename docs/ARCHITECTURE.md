@@ -238,3 +238,13 @@ BiometricChart presenta una curva de ancho completo con selector peso/grasa, per
 
 
 El ajuste de macros guardados se monta en la sección superior, en la posición del resumen, mientras la calculadora permanece cerrada. macroEditor se comparte con resultados nuevos sin duplicación. Los inputs de sus tarjetas usan data-plain-number para excluir los steppers globales visuales y de puntero; mantienen sus botones −/+.
+
+## Check-in del portal y notificaciones — 2026-09-14
+
+El cliente envía fecha/peso y opcionalmente medidas, adherencia, bienestar, notas y fotos desde Progreso. La grasa corporal no se captura ni serializa desde el cliente; el trigger SQL rechaza el campo fuera de la identidad del coach. Estos registros viven en `dietforge_client_activity`, no se importan automáticamente al snapshot ni a las gráficas del coach. La evaluación manual del coach sigue independiente.
+
+`checkin-photos` es privado, admite JPG/PNG/WebP de hasta 5 MB por archivo, máximo ocho posiciones por check-in. Las rutas están acotadas a propietario/cliente y las URLs firmadas caducan en cinco minutos. Reemplazar una foto crea otro objeto y conserva las referencias históricas.
+
+Un INSERT de check-in del cliente crea transaccionalmente una notificación única `(owner_id, client_id, activity_id)`. Los reintentos del mismo UUID actualizan el registro y no notifican de nuevo. La campana global obtiene 50 entradas y el contador total no leído mediante RPC restringido al propietario. El destino abre Progreso y el UUID; la marca de lectura se solicita solo si el registro existe. No se envían correos.
+
+La sincronización consulta cada cinco segundos después de completar una lectura, sin solicitudes superpuestas, pausa en segundo plano y reintenta con backoff hasta 60 s. No es Supabase Realtime ni garantiza latencia instantánea. Actualiza datos recibidos sin reinicializar borradores. Los formularios permanecen montados al cambiar pestañas internas. Un envío de check-in pendiente conserva borrador y UUID en sessionStorage por propietario/cliente para recuperarlo tras recargar la misma pestaña; se elimina al confirmar. Si el navegador bloquea ese almacenamiento, la recuperación queda limitada a la vista montada.

@@ -1,3 +1,3 @@
 import {ClientCare} from '@/components/ClientCare';
 import {notFound} from 'next/navigation';
-export default async function Page({params}:{params:Promise<{id:string}>}){const {id}=await params;if(!/^[1-9]\d*$/.test(id)||!Number.isSafeInteger(Number(id)))notFound();return <ClientCare key={id} clientId={Number(id)} coach/>;}
+export default async function Page({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{tab?:string;checkin?:string}>}){const {id}=await params;const query=await searchParams;if(!/^[1-9]\d*$/.test(id)||!Number.isSafeInteger(Number(id)))notFound();const target=typeof query.checkin==='string'&&/^[a-f0-9-]{36}$/.test(query.checkin)?query.checkin:undefined;return <ClientCare key={`${id}-${target??query.tab??''}`} clientId={Number(id)} coach initialTab={target||query.tab==='progress'?'progress':'training'} targetCheckIn={target}/>;}
