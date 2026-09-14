@@ -1,5 +1,6 @@
 'use client';
 import {useRef,useState,type FormEvent} from 'react';
+import Link from 'next/link';
 import {supabase} from '@/lib/supabase';
 import {authErrorMessage} from '@/lib/auth-errors';
 
@@ -37,7 +38,7 @@ export function PortalAuth(){
  return <section className="care-card care-login care-onboarding" aria-labelledby="portal-auth-title">
   <h1 id="portal-auth-title">{mode==='signup'?'Activa tu acceso':mode==='login'?'Iniciar sesión':'Recuperar contraseña'}</h1>
   {mode==='signup'&&<ol className="care-onboarding-steps" aria-label="Pasos para activar tu acceso">{['Correo','Contraseña','Confirmación'].map((label,index)=><li key={label} aria-current={step===index+1?'step':undefined}><span>{index+1}</span>{label}</li>)}</ol>}
-  {completed?<div className="care-stack" role="status"><h2>{sessionReady?'Tu sesión está lista':'Confirma tu correo y listo'}</h2><p>{sessionReady?'Tu cuenta ya tiene una sesión activa. Estamos abriendo tu portal.':<>Revisa <strong>{email}</strong>. Si tu cuenta necesita confirmación, recibirás un mensaje: pulsa su enlace para entrar a tu portal.</>}</p>{!sessionReady&&<p>Si no lo encuentras, revisa Spam o Correo no deseado. Si ese correo ya tiene cuenta, inicia sesión o recupera tu contraseña.</p>}<p>Tu coach debe autorizar ese mismo correo para que veas tu dieta y rutina.</p><div className="care-onboarding-actions"><button type="button" onClick={()=>changeMode('login')}>Ir a iniciar sesión</button></div></div>:sent?<div className="care-stack" role="status"><h2>Revisa tu correo</h2><p>Si existe una cuenta con <strong>{email}</strong>, recibirás un enlace para cambiar tu contraseña.</p><button type="button" onClick={()=>changeMode('login')}>Volver al inicio de sesión</button></div>:<>
+  {completed?<div className="care-stack" role="status"><h2>{sessionReady?'Tu sesión está lista':'Confirma tu correo y listo'}</h2><p>{sessionReady?'Tu cuenta ya tiene una sesión activa. Estamos abriendo tu portal.':<>Revisa <strong>{email}</strong>. Si tu cuenta necesita confirmación, recibirás un mensaje: pulsa su enlace para entrar a tu portal.</>}</p>{!sessionReady&&<p>Si no lo encuentras, revisa Spam o Correo no deseado. Si ese correo ya tiene cuenta, inicia sesión o recupera tu contraseña.</p>}<p>Tu coach debe autorizar ese mismo correo para que veas tu dieta y rutina.</p><div className="care-onboarding-actions"><Link href="/">Ir a iniciar sesión</Link></div></div>:sent?<div className="care-stack" role="status"><h2>Revisa tu correo</h2><p>Si existe una cuenta con <strong>{email}</strong>, recibirás un enlace para cambiar tu contraseña.</p><Link href="/">Volver al inicio de sesión</Link></div>:<>
    <p>{mode==='signup'?(step===1?'Escribe el correo validado con tu coach.':'Crea una contraseña para entrar a tu dieta, rutina y progreso.'):mode==='login'?'Entra con el correo que autorizó tu coach.':'Te enviaremos un enlace para recuperar el acceso.'}</p>
    <form className="care-stack" onSubmit={submit}>
     {(mode!=='signup'||step===1)?<label>Correo<input required type="email" autoComplete="email" value={email} disabled={busy} onChange={event=>setEmail(event.target.value)}/></label>:<p>Correo: <strong>{email}</strong></p>}
@@ -46,7 +47,7 @@ export function PortalAuth(){
     {error&&<p role="alert">{error}</p>}
     <button type="submit" disabled={busy}>{busy?'Procesando…':mode==='signup'?(step===1?'Continuar':'Crear cuenta y enviar confirmación'):mode==='login'?'Entrar':'Enviar enlace de recuperación'}</button>
    </form>
-   <div className="care-onboarding-actions">{mode==='signup'&&step===2&&<button type="button" disabled={busy} onClick={()=>{setStep(1);setPassword('');setConfirm('');setError('');}}>Cambiar correo</button>}<button type="button" disabled={busy} onClick={()=>changeMode(mode==='signup'?'login':'signup')}>{mode==='signup'?'Ya tengo cuenta':'Primera vez: activar acceso'}</button>{mode!=='recovery'&&<button type="button" disabled={busy} onClick={()=>changeMode('recovery')}>Olvidé mi contraseña</button>}{mode==='recovery'&&<button type="button" disabled={busy} onClick={()=>changeMode('login')}>Volver al inicio de sesión</button>}</div>
+   <div className="care-onboarding-actions">{mode==='signup'&&step===2&&<button type="button" disabled={busy} onClick={()=>{setStep(1);setPassword('');setConfirm('');setError('');}}>Cambiar correo</button>}{mode==='signup'?<Link href="/">Ya tengo cuenta</Link>:<button type="button" disabled={busy} onClick={()=>changeMode('signup')}>Primera vez: activar acceso</button>}{mode!=='recovery'&&<button type="button" disabled={busy} onClick={()=>changeMode('recovery')}>Olvidé mi contraseña</button>}{mode==='recovery'&&<Link href="/">Volver al inicio de sesión</Link>}</div>
   </>}
  </section>;
 }
