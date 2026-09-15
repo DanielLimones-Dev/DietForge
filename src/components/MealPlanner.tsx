@@ -502,7 +502,7 @@ function MealPlannerFields() {
         </div>
 
         <div>
-          <div className="meal-food-library bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 sticky top-6">
+          <div className="meal-food-library bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
             <h4 className="font-semibold text-sm mb-3 dark:text-white flex items-center gap-2">
               {selectedMeal ? (
                 <><span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" /> Agregar a &quot;{MEAL_LABELS[selectedMeal]}&quot; · {targetColumn === "right" ? "Rest Day" : "Plan Normal"}</>
@@ -525,7 +525,7 @@ function MealPlannerFields() {
                 </button>
               ))}
             </div>
-            <div className="space-y-1 max-h-96 overflow-y-auto">
+            <div className="meal-food-results space-y-1 max-h-96 overflow-y-auto">
               {filteredFoods.map((f) => (
                 <button
                   key={f.id}

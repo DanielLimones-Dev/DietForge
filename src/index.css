@@ -686,3 +686,12 @@ html.macro-morphing::view-transition-old(root),html.macro-morphing::view-transit
 html:has(.care-portal),body:has(.care-portal){background:#f7f8fc;color-scheme:light}
 html:has(.dark>.care-portal),body:has(.dark>.care-portal){background:#08130f;color-scheme:dark}
 .care-portal{min-height:100vh;min-height:100dvh}
+
+/* Keep food search below the sticky navigation; use normal flow on small screens. */
+.meal-food-library{position:static;min-width:0}
+.meal-food-results{overscroll-behavior:contain;scrollbar-gutter:stable}
+@media(min-width:1024px) and (min-height:600px){
+ .meal-food-library{position:sticky;top:88px;max-height:calc(100dvh - 104px);display:flex;flex-direction:column}
+ .meal-food-library>h4,.meal-food-library>input,.meal-food-library>div:not(.meal-food-results){flex-shrink:0}
+ .meal-food-library>.meal-food-results{min-height:0;flex:1 1 auto;overflow-y:auto}
+}
