@@ -4,7 +4,7 @@ import {subscribeStorage} from "@/lib/db";
 import { getPreference, setPreference } from "@/lib/db";
 import { useEffect, useState, useMemo, useRef, type CSSProperties } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Printer, Plus, Scale, X, Target, Globe, Moon, PieChart } from "lucide-react";
+import { ArrowLeft, Printer, Plus, Scale, X, Target, Globe, Moon, PieChart, Trash2 } from "lucide-react";
 import { db } from "@/lib/db";
 import { itemsForDay, mealTotals, convertQuantity, restReduction, restTargets, foodRatio as getRatio } from "@/lib/meal-day";
 import { generateDietPDF } from "@/lib/pdf";
@@ -295,7 +295,7 @@ function MealPlannerFields() {
               Vacío. {selectedMeal === key && targetColumn === column ? "Elige un alimento de la lista →" : "Selecciona esta comida."}
             </p>
           )}
-          <div className="min-h-9">{!readOnly && <button className="px-4 py-2 text-xs text-red-500 hover:underline" onClick={()=>setRemoveSection({key,rest:column==="right"})}>Eliminar {label} · {column==="right"?"Rest Day":"Normal"}</button>}</div>
+          <div className="min-h-9">{!readOnly && <button type="button" className="ml-2 mb-2 inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-500 transition-colors hover:bg-red-500/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500" aria-label={`Eliminar ${label} · ${column==="right"?"Rest Day":"Normal"}`} title={`Eliminar ${label} · ${column==="right"?"Rest Day":"Normal"}`} onClick={()=>setRemoveSection({key,rest:column==="right"})}><Trash2 size={16} aria-hidden="true" /></button>}</div>
         </div>
       );
     });
