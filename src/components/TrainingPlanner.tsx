@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { AlertTriangle, ArrowLeft, CheckCircle2, ChevronDown, ChevronUp, Copy, Dumbbell, Plus, Printer, Save, Search, Settings2, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Copy, Dumbbell, Plus, Printer, Save, Search, Settings2, Trash2 } from "lucide-react";
 import exerciseData from "@/data/training-exercises.json";
 import { mergedExerciseLibrary } from "@/lib/exercise-library";
 import { db } from "@/lib/db";
-import { copyTrainingWeek, createTrainingDraft, exerciseFromLibrary, independentTrainingProgram, replaceTrainingDays, resizeProgramWeeks, normalizeTrainingWeeks, trainingDays, trainingSaveErrors, trainingProgramIssues, weeklyMuscleVolume } from "@/lib/training";
+import { copyTrainingWeek, createTrainingDraft, exerciseFromLibrary, independentTrainingProgram, replaceTrainingDays, resizeProgramWeeks, normalizeTrainingWeeks, trainingDays, trainingSaveErrors, trainingProgramIssues } from "@/lib/training";
 import { printTrainingProgram } from "@/lib/training-pdf";
 import type { ExerciseLibraryItem, TrainingExercise, TrainingGoal, TrainingProgram } from "@/types";
 import { useToast } from "./Toast";
@@ -80,11 +80,10 @@ export function TrainingPlanner() {
   const currentDays = draft ? trainingDays(draft,week) : [];
   const library = useMemo<ExerciseLibraryItem[]>(() => mergedExerciseLibrary(db.getExercises(), baseLibrary), []);
   const selectedDay = currentDays.find(day => day.id === dayId) ?? currentDays[0];
-  const volumes = useMemo(() => draft ? weeklyMuscleVolume(draft, week) : [], [draft, week]);
   const weeklySeries = useMemo(() => draft ? detailedVolume(draft, week) : [], [draft, week]);
   const issues = useMemo(() => draft ? trainingProgramIssues(draft, week) : [], [draft, week]);
   const muscleGroups = useMemo(() => ["Todos", ...Array.from(new Set(library.map(item => item.muscle_group))).sort()], [library]);
-  const allWeeklySeries = useMemo(() => muscleGroups.filter(group=>group!=="Todos").map(muscle=>weeklySeries.find(item=>item.muscle===muscle)??{muscle,direct:0,indirect:0,total:0,frequency:0}),[muscleGroups,weeklySeries]);
+  const allWeeklySeries = useMemo(() => Array.from(new Set([...muscleGroups.filter(group=>group!=="Todos"),...weeklySeries.map(item=>item.muscle),...Object.keys(draft?.weekly_volume_targets?.[String(week)]??{})])).sort().map(muscle=>weeklySeries.find(item=>item.muscle===muscle)??{muscle,direct:0,indirect:0,total:0,frequency:0}),[muscleGroups,weeklySeries,draft,week]);
   const weeklyTargetTotal=allWeeklySeries.reduce((sum,item)=>sum+(draft?.weekly_volume_targets?.[String(week)]?.[item.muscle]??item.direct),0);
   const weeklyDirectTotal=allWeeklySeries.reduce((sum,item)=>sum+item.direct,0);
   const weeklyProgress=weeklyTargetTotal>0?Math.min(100,Math.round(weeklyDirectTotal/weeklyTargetTotal*100)):0;
@@ -188,38 +187,34 @@ export function TrainingPlanner() {
         <label className="full">Indicaciones generales<textarea rows={2} value={draft.notes ?? ""} onChange={event => mutate(program => { program.notes = event.target.value; })}/></label>
       </section>
 
-      <section className="training-volume-overview">
-        <header><div><span>VOLUMEN PROGRAMADO SEMANAL</span><h2>Distribución de series directas</h2></div><strong><i/>Total: {volumes.reduce((sum, item) => sum + item.sets, 0)} series / sem</strong></header>
-        <div className="training-volume-cards">{volumes.length ? volumes.map(item => {
-          const itemName = item.muscle_group.toLocaleLowerCase("es");
-          const priority = draft.priorities.some(value => itemName.includes(value.toLocaleLowerCase("es")) || value.toLocaleLowerCase("es").includes(itemName));
-          return <article key={item.muscle_group} className={priority ? "priority" : ""}><span>{item.muscle_group}</span><strong>{item.sets}<small>series</small></strong><p>{priority ? "Prioridad" : `Frecuencia ${item.frequency}x`}</p></article>;
-        }) : <p className="training-volume-empty">Agrega ejercicios para construir la distribución semanal.</p>}</div>
-        <div className="training-weekly-series">
-          <h3>Series semanales por grupo muscular · semana {week}</h3>
-          <p>Las series directas suman todos los ejercicios de todos los días de esta semana, agrupados por músculo principal. Edita una meta distinta en cada semana.</p>
-          <div className="training-overall-progress"><div><span>Cumplimiento general</span><strong>{weeklyDirectTotal} / {weeklyTargetTotal} series · {weeklyProgress}%</strong></div><progress aria-label={`Cumplimiento general semana ${week}`} max="100" value={weeklyProgress}/></div>
-          <div className="training-muscle-grid" role="table" aria-label={`Volumen muscular de la semana ${week}`}>
-            {allWeeklySeries.map(item => {
-              const target = draft.weekly_volume_targets?.[String(week)]?.[item.muscle] ?? item.direct;
-              const progress = target > 0 ? Math.min(100, Math.round(item.direct / target * 100)) : 0;
-              const difference = item.direct - target;
-              const setTarget = (value: number) => mutate(program => {
-                program.weekly_volume_targets ??= {};
-                program.weekly_volume_targets[String(week)] ??= {};
-                program.weekly_volume_targets[String(week)][item.muscle] = Math.min(100, Math.max(0, value));
-              });
-              return <article key={item.muscle} role="row" className={`training-muscle-card ${item.total === 0 && target === 0 ? "training-zero-row" : ""}`}>
-                <header><div><i/><strong>{item.muscle}</strong></div><span className={item.direct===target?"on-target":item.direct<target?"under-target":"over-target"}>{item.direct===target?"En meta":`${difference>0?"+":""}${difference} series`}</span></header>
-                <div className="training-muscle-target"><label htmlFor={`target-${week}-${item.muscle}`}>Meta semanal</label><div><button type="button" aria-label={`Reducir meta de ${item.muscle}`} disabled={target <= 0} onClick={()=>setTarget(target-1)}>−</button><input data-plain-number id={`target-${week}-${item.muscle}`} aria-label={`Meta de ${item.muscle} semana ${week}`} type="number" min="0" max="100" step="1" value={target} onChange={event=>setTarget(Number(event.target.value)||0)}/><button type="button" aria-label={`Aumentar meta de ${item.muscle}`} disabled={target >= 100} onClick={()=>setTarget(target+1)}>+</button></div></div>
-                <dl><div><dt>Directas</dt><dd>{item.direct}</dd></div><div><dt>Indirectas</dt><dd>{item.indirect.toFixed(1)}</dd></div><div className="effective"><dt>Efectivas</dt><dd>{item.total.toFixed(1)}</dd></div></dl>
-                <div className="training-series-progress"><div><span>Progreso</span><b>{item.frequency} días sem.</b></div><progress aria-label={`Progreso de ${item.muscle} semana ${week}`} max="100" value={progress}/><small>{target > 0 ? `${item.direct}/${target} series · ${progress}%` : "Sin meta activa"}</small></div>
+      <section className="training-volume-overview training-volume-minimal" aria-labelledby="weekly-series-title">
+        <header><div><span>SEMANA {week} · VOLUMEN PROGRAMADO</span><h2 id="weekly-series-title">Distribución de series</h2></div><div className="series-week-nav"><button type="button" aria-label="Semana anterior de volumen" disabled={week<=1} onClick={()=>{setWeek(week-1);setDayId(trainingDays(draft,week-1)[0]?.id??"");}}><ArrowLeft size={16}/></button><span>Semana {week} / {draft.duration_weeks}</span><button type="button" aria-label="Semana siguiente de volumen" disabled={week>=draft.duration_weeks} onClick={()=>{setWeek(week+1);setDayId(trainingDays(draft,week+1)[0]?.id??"");}}><ArrowRight size={16}/></button></div></header>
+        <div className="series-summary"><div><span>Series directas / meta</span><strong>{weeklyDirectTotal} <small>/ {weeklyTargetTotal}</small></strong><span>{weeklyTargetTotal>0?`${weeklyProgress}%`:"Sin meta activa"}</span></div><div className="series-summary-meta"><span>{allWeeklySeries.reduce((sum,item)=>sum+item.indirect,0).toFixed(1)} indirectas</span><span>{allWeeklySeries.reduce((sum,item)=>sum+item.total,0).toFixed(1)} efectivas</span><span>{currentDays.length} días</span></div><progress aria-label={`Cumplimiento general semana ${week}`} max="100" value={weeklyProgress}/><p>Suma todos los días de esta semana. Cada semana conserva sus propias metas.</p></div>
+        <div className="series-groups">
+          {[
+            {name:"Torso",match:/(pectoral|pecho|espalda|dorsal|trapecio|hombro|deltoide)/},
+            {name:"Brazos y core",match:/(biceps|triceps|antebrazo|abdomen|abdominal|core|oblicuo)/},
+            {name:"Pierna",match:/(cuadriceps|isquio|femoral|gluteo|aductor|abductor|pantorrilla|gemelo|soleo|tibial|pierna)/},
+            {name:"Otros",match:null},
+          ].map((group,index,groups)=>{
+            const items=allWeeklySeries.filter(item=>{const name=item.muscle.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();const matched=groups.findIndex(candidate=>candidate.match?.test(name));return matched===index||(index===groups.length-1&&matched===-1);});
+            if(!items.length)return null;
+            return <section className="series-group" key={group.name}><header><h3>{group.name}</h3><span>{items.length} grupos</span></header>{items.map(item=>{
+              const target=draft.weekly_volume_targets?.[String(week)]?.[item.muscle]??item.direct;
+              const progress=target>0?Math.min(100,Math.round(item.direct/target*100)):0;
+              const difference=item.direct-target;
+              const muscleName=item.muscle.toLocaleLowerCase("es");
+              const priority=draft.priorities.some(value=>muscleName.includes(value.toLocaleLowerCase("es"))||value.toLocaleLowerCase("es").includes(muscleName));
+              const setTarget=(value:number)=>mutate(program=>{program.weekly_volume_targets??={};program.weekly_volume_targets[String(week)]??={};program.weekly_volume_targets[String(week)][item.muscle]=Math.min(100,Math.max(0,Number.isFinite(value)?value:0));});
+              return <article className="series-row" key={item.muscle}>
+                <div className="series-row-main"><strong>{item.muscle}{priority&&<small className="series-priority" title="Grupo prioritario"> · Prioridad</small>}</strong><div className="series-target"><span title="Series directas">{item.direct}</span><span aria-hidden="true">/</span><button type="button" aria-label={`Reducir meta de ${item.muscle}`} disabled={target<=0} onClick={()=>setTarget(target-1)}>−</button><input data-plain-number aria-label={`Meta de ${item.muscle} semana ${week}`} type="number" min="0" max="100" step="1" value={target} onChange={event=>setTarget(Number(event.target.value))}/><button type="button" aria-label={`Aumentar meta de ${item.muscle}`} disabled={target>=100} onClick={()=>setTarget(target+1)}>+</button><small>{target>0?`${progress}%`:"—"}</small></div></div>
+                <progress className="series-progress" aria-label={`Progreso de ${item.muscle} semana ${week}`} max="100" value={progress}/>
+                <details className="series-detail"><summary>Detalle <span>{target===0?"Sin meta activa":difference===0?"En meta":`${difference>0?"+":""}${difference} series`}</span></summary><dl><div><dt>Directas</dt><dd>{item.direct}</dd></div><div><dt>Indirectas</dt><dd>{item.indirect.toFixed(1)}</dd></div><div><dt>Efectivas</dt><dd>{item.total.toFixed(1)}</dd></div><div><dt>Frecuencia</dt><dd>{item.frequency} días</dd></div></dl></details>
               </article>;
-            })}
-          </div>
-          <div className="training-muscle-totals"><span><b>{allWeeklySeries.length}</b> grupos</span><span><b>{weeklyDirectTotal}</b> directas</span><span><b>{allWeeklySeries.reduce((sum,item)=>sum+item.indirect,0).toFixed(1)}</b> indirectas</span><span><b>{allWeeklySeries.reduce((sum,item)=>sum+item.total,0).toFixed(1)}</b> total efectivo</span><span><b>{currentDays.length}</b> días</span></div>
-          <p>Las series indirectas se calculan aparte con el factor del icono de ajustes. Cambia las series de cada ejercicio para acercar la barra a la meta.</p>
+            })}</section>;
+          })}
         </div>
+        <p>Las indirectas se consultan en Detalle; la barra compara series directas con la meta semanal.</p>
       </section>
 
       <div className="training-workspace">

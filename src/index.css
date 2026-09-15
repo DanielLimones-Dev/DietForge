@@ -736,3 +736,46 @@ html:has(.dark>.care-portal),body:has(.dark>.care-portal){background:#08130f;col
 .food-nutrition-calories small{font-size:10px;font-weight:500;letter-spacing:0}
 .food-nutrition-table thead th{font-size:10px;color:var(--clinical-muted)}.food-nutrition-table thead th:last-child{text-align:right}
 @media(max-width:480px){.food-nutrition-label{margin:0 16px 16px;padding:12px}.food-nutrition-header{font-size:24px}}
+
+/* Weekly series: quiet rows and fine progress lines instead of stacked cards. */
+.training-volume-minimal{padding:24px;border:1px solid var(--clinical-line);border-radius:16px;background:var(--clinical-surface);color:var(--clinical-text)}
+.training-volume-minimal>header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:0;border:0;margin-bottom:22px}
+.training-volume-minimal>header h2{font-size:22px;font-weight:550;letter-spacing:-.035em;margin-top:4px}
+.training-volume-minimal>header span{font-size:9px;letter-spacing:.13em;color:var(--clinical-muted)}
+.series-summary{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;font-variant-numeric:tabular-nums;color:var(--clinical-muted)}
+.series-summary strong{color:var(--clinical-text);font-weight:700}.series-summary>div{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.training-volume-minimal progress{display:block;width:100%;height:3px;border:0;border-radius:0;appearance:none;background:var(--clinical-line);overflow:hidden}
+.training-volume-minimal progress::-webkit-progress-bar{background:var(--clinical-line)}
+.training-volume-minimal progress::-webkit-progress-value{background:var(--clinical-primary);transition:width .35s ease}
+.training-volume-minimal progress::-moz-progress-bar{background:var(--clinical-primary)}
+.series-groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;margin-top:28px}
+.series-group{min-width:0}.series-group>header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--clinical-line)}
+.series-group>header h3{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--clinical-muted)}
+.series-group>header span{font-size:10px;color:var(--clinical-muted)}
+.series-row{padding:14px 0;border-bottom:1px solid var(--clinical-line);min-width:0}
+.series-row-main{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.series-row-main>strong{font-size:12px;font-weight:550;overflow-wrap:anywhere;flex:1}
+.series-target{display:inline-flex;align-items:center;gap:3px;flex-shrink:0;font-size:11px;font-variant-numeric:tabular-nums}
+.training-volume-minimal .series-target button{display:grid;place-items:center;width:23px;height:28px;padding:0;border:0;border-radius:5px;background:transparent;color:var(--clinical-muted);font-size:15px}
+.training-volume-minimal .series-target button:hover:not(:disabled){background:var(--clinical-soft);color:var(--clinical-primary)}
+.training-volume-minimal .series-target button:disabled{opacity:.35}
+.training-volume-minimal .series-target input{width:34px;min-width:0;height:28px;padding:2px;border:1px solid transparent;border-radius:4px;background:transparent;color:var(--clinical-text);text-align:center;font-size:12px;font-variant-numeric:tabular-nums;appearance:textfield}
+.training-volume-minimal .series-target input:hover,.training-volume-minimal .series-target input:focus{border-color:var(--clinical-line);background:var(--clinical-soft)}
+.series-progress{margin-top:8px}.series-progress>span,.series-progress>small{font-size:10px;color:var(--clinical-primary)}
+.series-detail{margin-top:7px;color:var(--clinical-muted);font-size:10px}
+.series-detail summary{cursor:pointer;width:fit-content}.series-detail dl{display:flex;gap:12px;flex-wrap:wrap;margin-top:7px}.series-detail dd{color:var(--clinical-text);font-variant-numeric:tabular-nums}
+.training-volume-minimal>footer{display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid var(--clinical-line);padding-top:16px;margin-top:24px;font-size:11px;color:var(--clinical-muted)}
+@media(max-width:1100px){.series-groups{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}}
+@media(max-width:650px){.training-volume-minimal{padding:18px}.series-groups{grid-template-columns:minmax(0,1fr);gap:20px}.training-volume-minimal>header{align-items:flex-start;flex-wrap:wrap}}
+@media(prefers-reduced-motion:reduce){.training-volume-minimal progress::-webkit-progress-value{transition:none}}
+
+.series-summary>progress,.series-summary>p{flex-basis:100%}.series-summary>p{font-size:11px;margin-top:5px}
+.series-summary small{font-size:12px;color:var(--clinical-muted);font-weight:400}
+.series-summary-meta{font-size:10px}.series-target>small{font-size:10px;min-width:29px;text-align:right;color:var(--clinical-primary)}
+.series-row-main .series-priority{display:block;font-size:9px;color:var(--clinical-primary);font-weight:500}
+.training-volume-minimal>p{border-top:1px solid var(--clinical-line);padding-top:14px;margin-top:20px;font-size:10px;color:var(--clinical-muted)}
+.series-week-nav{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.training-volume-minimal .series-week-nav button{padding:7px;border:0;background:transparent;color:var(--clinical-muted);border-radius:6px}
+.training-volume-minimal .series-week-nav button:hover:not(:disabled){background:var(--clinical-soft);color:var(--clinical-primary)}
+.training-volume-minimal .series-week-nav button:disabled{opacity:.3}
+.training-volume-minimal .series-week-nav span{font-size:11px;letter-spacing:0;white-space:nowrap}
