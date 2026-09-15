@@ -54,7 +54,7 @@ body {
   opacity: 1;
   transform: translateY(0);
 }
-.meal-day-layout .rest-day-pane > * { height: 100%; }
+.meal-day-layout .rest-day-pane > [data-macro-card] { height: 100%; }
 [data-add-meal-controls] { align-items: start; }
 [data-add-meal-controls] > button { min-height: 3rem; max-height: 3rem; }
 .add-meal-button {
@@ -713,3 +713,26 @@ html:has(.dark>.care-portal),body:has(.dark>.care-portal){background:#08130f;col
 .care-diet-column .care-meal>button{width:100%;justify-content:center;min-height:40px;margin-top:12px;font-size:11px;border-radius:9px}
 .care-diet-column .care-meal>button.care-meal-completed{background:var(--clinical-primary);color:white;border-color:transparent}
 @media(max-width:700px){.care-diet-columns{grid-template-columns:minmax(0,1fr);gap:14px}.care-diet-column{padding:11px}}
+
+.meal-day-columns{align-items:start}
+.meal-day-columns[data-split="true"]>.rest-day-pane{max-height:none;overflow:visible}
+.meal-day-columns [data-meal-column]{height:auto;min-height:0}
+.food-details-modal:has(.food-nutrition-label){width:min(430px,100%);max-height:calc(100dvh - 36px);overflow-y:auto;background:var(--clinical-surface);color:var(--clinical-text);border-radius:16px}
+.food-nutrition-label{margin:0 22px 20px;padding:16px;border:1px solid var(--clinical-text);border-radius:3px}
+.food-nutrition-header{padding:0 0 10px;font-size:27px;line-height:1.08;letter-spacing:-.04em;font-weight:800;border-bottom:7px solid var(--clinical-text)}
+.food-nutrition-label .food-nutrition-header h2{font-size:28px;line-height:1.08;letter-spacing:-.04em;font-weight:800;margin:0}
+.food-nutrition-label .food-nutrition-header button{flex-shrink:0}
+.food-nutrition-serving{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--clinical-line);font-size:13px}
+.food-nutrition-calories{display:flex;align-items:end;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:5px solid var(--clinical-text)}
+.food-nutrition-calories strong{font-size:38px;line-height:1;font-weight:800;letter-spacing:-.04em}.food-nutrition-calories span{font-size:20px;font-weight:750}
+.food-nutrition-table{width:100%;border-collapse:collapse;font-size:14px}
+.food-nutrition-table caption{text-align:left;color:var(--clinical-muted);font-size:11px;padding:10px 0}
+.food-nutrition-table th,.food-nutrition-table td{padding:11px 0;border-bottom:1px solid var(--clinical-line)}
+.food-nutrition-table th{text-align:left;font-weight:650}.food-nutrition-table td{text-align:right;font-variant-numeric:tabular-nums}
+.food-nutrition-note{font-size:11px;line-height:1.5;color:var(--clinical-muted);padding-top:12px;margin-top:0;border-top:5px solid var(--clinical-text)}
+@media(max-width:480px){.food-details-modal:has(.food-nutrition-label){padding:18px}.food-nutrition-label .food-nutrition-header h2{font-size:25px}}
+
+.food-nutrition-calories>div{display:grid;gap:4px}.food-nutrition-calories>div>strong{font-size:24px;letter-spacing:-.03em}
+.food-nutrition-calories small{font-size:10px;font-weight:500;letter-spacing:0}
+.food-nutrition-table thead th{font-size:10px;color:var(--clinical-muted)}.food-nutrition-table thead th:last-child{text-align:right}
+@media(max-width:480px){.food-nutrition-label{margin:0 16px 16px;padding:12px}.food-nutrition-header{font-size:24px}}

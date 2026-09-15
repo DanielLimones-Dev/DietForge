@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Apple, ChevronDown, Database, Globe2, Plus, Search, SlidersHorizontal, Trash2, X } from "lucide-react";
 import { db } from "@/lib/db";
 import { classifyCarbs, searchFatSecret, searchOpenFoodFacts, searchUSDA } from "@/lib/nutrition";
@@ -183,18 +183,38 @@ function FoodListItem({ food, onOpen, onDelete }: { food: Food; onOpen: () => vo
 }
 
 function FoodDetails({ food, onClose }: { food: Food; onClose: () => void }) {
+  const closeButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButton.current?.focus();
+    return () => { document.body.style.overflow = overflow; previous?.focus(); };
+  }, []);
+  const amount = (value: number) => Number.isFinite(value) ? String(value) : "No registrado";
+  const nutrients = [
+    { label: "Proteína", value: food.protein },
+    { label: "Carbohidratos", value: food.carbs },
+    { label: "Grasas totales", value: food.fat },
+    { label: "Fibra", value: food.fiber },
+  ];
   return (
     <div className="food-modal-backdrop animate-fade-in" onClick={onClose}>
-      <article className="food-details-modal animate-scale-in" onClick={(event) => event.stopPropagation()}>
-        <header><div><p className="df-eyebrow">FICHA NUTRICIONAL</p><h2>{food.name}</h2><span>{food.serving_size} {food.serving_unit} · {food.source === "api" ? "Fuente externa" : "Registro manual"}</span></div><button type="button" aria-label="Cerrar" onClick={onClose}><X size={18} /></button></header>
-        <div className="food-calories"><span>Energía por porción</span><strong>{food.kcal}<small> kcal</small></strong></div>
-        <div className="food-details-macros"><MacroMetric label="Proteína" value={food.protein} className="macro-protein" /><MacroMetric label="Carbohidratos" value={food.carbs} className="macro-carbs" /><MacroMetric label="Grasas" value={food.fat} className="macro-fat" /><MacroMetric label="Fibra" value={food.fiber} className="macro-fiber" /></div>
+      <article className="food-details-modal animate-scale-in" role="dialog" aria-modal="true" aria-labelledby="food-details-title" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => {
+        if (event.key === "Escape") { event.stopPropagation(); onClose(); }
+        // The close button is this read-only dialog's only interactive control.
+        if (event.key === "Tab") { event.preventDefault(); closeButton.current?.focus(); }
+      }}>
+        <header><div><p className="df-eyebrow">FICHA DEL ALIMENTO</p><h2 id="food-details-title">{food.name}</h2><span>{food.source === "api" ? "Fuente externa" : "Registro manual"}</span></div><button ref={closeButton} type="button" aria-label="Cerrar información nutricional" onClick={onClose}><X size={18} /></button></header>
+        <section className="food-nutrition-label" aria-labelledby="food-nutrition-title">
+          <h3 id="food-nutrition-title" className="food-nutrition-header">Información nutricional</h3>
+          <div className="food-nutrition-serving"><span>Tamaño de la porción</span><strong>{amount(food.serving_size)} {food.serving_unit}</strong></div>
+          <div className="food-nutrition-calories"><div><small>Cantidad por porción</small><strong>Calorías</strong></div><strong>{amount(food.kcal)}<small> kcal</small></strong></div>
+          <table className="food-nutrition-table"><caption className="sr-only">Nutrientes por porción de {food.name}</caption><thead><tr><th scope="col">Nutriente</th><th scope="col">Por porción</th></tr></thead><tbody>{nutrients.map(({ label, value }) => <tr key={label}><th scope="row">{label}</th><td>{amount(value)}{Number.isFinite(value) ? " g" : ""}</td></tr>)}</tbody></table>
+          <p className="food-nutrition-note">Valores registrados para esta porción. No se muestran porcentajes de valor diario ni nutrientes que no estén disponibles.</p>
+        </section>
         {food.carb_type && <footer><span>Tipo de carbohidrato</span><strong>{food.carb_type === "slow" ? "Absorción lenta" : food.carb_type === "fast" ? "Absorción rápida" : "Mixto"}</strong></footer>}
       </article>
     </div>
   );
-}
-
-function MacroMetric({ label, value, className }: { label: string; value: number; className: string }) {
-  return <div className={className}><span>{label}</span><strong>{value}<small> g</small></strong></div>;
 }
