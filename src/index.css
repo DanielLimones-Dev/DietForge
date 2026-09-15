@@ -779,3 +779,14 @@ html:has(.dark>.care-portal),body:has(.dark>.care-portal){background:#08130f;col
 .training-volume-minimal .series-week-nav button:hover:not(:disabled){background:var(--clinical-soft);color:var(--clinical-primary)}
 .training-volume-minimal .series-week-nav button:disabled{opacity:.3}
 .training-volume-minimal .series-week-nav span{font-size:11px;letter-spacing:0;white-space:nowrap}
+
+.training-prescription.training-prescription-compact{grid-template-columns:repeat(4,minmax(0,1fr));align-content:start;gap:10px}
+.training-prescription-compact>button{grid-column:1/-1;justify-self:end}
+.training-exercise-main .training-media-icon{margin:4px 0 0;padding:0;border:0;background:transparent}
+.training-media-icon>summary{display:grid;place-items:center;width:34px;height:34px;padding:0!important;border:1px solid var(--clinical-line);border-radius:8px;color:var(--clinical-primary);list-style:none;cursor:pointer}
+.training-media-icon>summary::-webkit-details-marker{display:none}.training-media-icon>summary::marker{content:''}
+.training-media-icon>summary:hover{background:var(--clinical-soft)}
+.training-media-icon[open]{padding:10px!important;border:1px solid var(--clinical-line);border-radius:10px;background:var(--clinical-surface)}
+.training-prescription-compact input{min-width:0;width:100%}
+.training-range-error{display:block;color:#db5363;font-size:10px;line-height:1.3}
+@media(max-width:760px){.training-prescription.training-prescription-compact{grid-template-columns:repeat(2,minmax(0,1fr))}}
