@@ -488,15 +488,9 @@ function MealPlannerFields() {
             {restDayLayout&&<button data-meal-add="rest" onAnimationEnd={event=>{if(event.animationName==="add-meal-ripple")setAddSectionMotion(null);}} onClick={()=>{setAddSectionMotion("rest");addSection("rest");}} disabled={!restDay||!!removingSection||!Object.keys(MEAL_LABELS).some(k=>!sections.rest.includes(k)&&!k.endsWith("_workout"))} className={`rest-day-pane add-meal-button w-full h-12 self-start mt-4 px-3 rounded-xl border-2 border-dashed text-sm whitespace-nowrap disabled:opacity-40 ${addSectionMotion==="rest"?"animate-add-meal-ripple":""}`}>+ Agregar comida · Rest Day</button>}
           </div>
           <p className="sr-only" aria-live="polite">{newSection?`${MEAL_LABELS[newSection.key]} agregada a ${newSection.day==="rest"?"Rest Day":"Plan Normal"}`:removingSection?`${MEAL_LABELS[removingSection.key]} eliminándose de ${removingSection.day==="rest"?"Rest Day":"Plan Normal"}`:""}</p>
-          <div className="space-y-4">
-            {Object.keys(MEAL_LABELS).filter(key => sections.normal.includes(key) || (restDayLayout && sections.rest.includes(key))).map(key => {
-              const removingWholeRow=removingSection?.key===key&&(removingSection.day==="normal"?!(restDayLayout&&sections.rest.includes(key)):!sections.normal.includes(key));
-              return <div key={key} data-meal-row={key} data-removing-row={removingWholeRow?"true":undefined} className={`meal-day-layout ${removingWholeRow?"animate-meal-row-removed":""}`} data-split={restDay?"true":"false"}>
-                {sections.normal.includes(key) ? renderMealColumn({plan:plan.plan,items:normalItems},1,true,false,"left",selectedMeal,setSelectedMeal,6,key) : <div className="hidden lg:block" />}
-                {restDayLayout&&<div className="rest-day-pane">{!sections.rest.includes(key) ? <div className="hidden h-full lg:flex rounded-xl border border-dashed border-indigo-200 dark:border-indigo-800 items-center justify-center p-4 text-xs text-gray-400">Sin comida en Rest Day</div> :
-                  renderMealColumn({plan:plan.plan,items:restItems},1,false,false,"right",selectedMeal,setSelectedMeal,6,key)}</div>}
-              </div>;
-            })}
+          <div className="meal-day-layout items-start" data-split={restDay?"true":"false"}>
+            <div className="space-y-4 min-w-0">{Object.keys(MEAL_LABELS).filter(key=>sections.normal.includes(key)).map(key=>renderMealColumn({plan:plan.plan,items:normalItems},1,true,false,"left",selectedMeal,setSelectedMeal,6,key))}</div>
+            {restDayLayout&&<div className="rest-day-pane space-y-4 min-w-0">{Object.keys(MEAL_LABELS).filter(key=>sections.rest.includes(key)).map(key=>renderMealColumn({plan:plan.plan,items:restItems},1,false,false,"right",selectedMeal,setSelectedMeal,6,key))}</div>}
           </div>
 
         </div>

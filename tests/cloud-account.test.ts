@@ -153,7 +153,7 @@ test("account changes hide old screens and scope cloud requests to their owner",
       }
       if(Screen.name==='MealPlanner'){
         assert.ok(dom.window.document.querySelector('.animate-plan-page-enter'),'plan editor has an entrance transition');
-        const button=(text:string)=>Array.from(dom.window.document.querySelectorAll('button')).find(b=>b.textContent?.trim()===text)!;
+        const button=(text:string)=>Array.from(dom.window.document.querySelectorAll('button')).find(b=>(b.getAttribute('aria-label')??b.textContent?.trim())===text)!;
         const title=dom.window.document.querySelector<HTMLElement>('[aria-label^="Editar título:"]')!;
         await act(async()=>title.click());
         const titleInput=dom.window.document.querySelector<HTMLInputElement>('[aria-label="Nombre del plan"]')!;
@@ -191,7 +191,7 @@ test("account changes hide old screens and scope cloud requests to their owner",
         const confirm=Array.from(dom.window.document.querySelectorAll('button')).find(b=>b.textContent?.trim()==='Eliminar');
         assert.ok(confirm);await act(async()=>confirm.click());
         assert.equal(dom.window.document.querySelector('[data-meal-column="right"][data-meal-key="meal4"]')?.getAttribute('data-removing-meal'),'true');
-        assert.equal(dom.window.document.querySelector('[data-meal-row="meal4"]')?.getAttribute('data-removing-row'),'true');
+        assert.doesNotMatch(dom.window.document.body.textContent??'',/Sin comida en Rest Day/);
         assert.match(dom.window.document.querySelector('[aria-live="polite"]')!.textContent!,/Comida 4 eliminándose de Rest Day/);
         await act(async()=>{await pause(650);});
         assert.equal(dom.window.document.querySelector('[data-meal-column="right"][data-meal-key="meal4"]'),null);

@@ -695,3 +695,21 @@ html:has(.dark>.care-portal),body:has(.dark>.care-portal){background:#08130f;col
  .meal-food-library>h4,.meal-food-library>input,.meal-food-library>div:not(.meal-food-results){flex-shrink:0}
  .meal-food-library>.meal-food-results{min-height:0;flex:1 1 auto;overflow-y:auto}
 }
+
+/* Client diet: separate day plans, consistent with the planner. */
+.care-diet-plan>summary{padding:4px 0;font-size:15px;font-weight:750;cursor:pointer;color:var(--clinical-text)}
+.care-diet-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:18px;align-items:start}
+.care-diet-column{min-width:0;padding:14px;border:1px solid var(--clinical-line);border-radius:16px;background:var(--clinical-canvas)}
+.care-diet-column:only-child{grid-column:1/-1}
+.care-diet-column>header{display:flex;align-items:center;gap:9px;padding:4px 2px 14px;color:var(--clinical-primary);border-bottom:1px solid var(--clinical-line)}
+.care-diet-column>header>svg{flex-shrink:0}.care-diet-column>header>div{flex:1;min-width:0}
+.care-diet-column>header h3{margin:0;font-size:15px;color:var(--clinical-text)}
+.care-diet-column>header span,.care-diet-column>header small{font-size:10px;color:var(--clinical-muted)}
+.care-diet-column-rest>header>svg{color:#a78bfa}
+.care-diet-column .care-meal{padding:14px;border-radius:12px;box-shadow:0 3px 12px #00000004}
+.care-diet-column .care-meal h4{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--clinical-text)}
+.care-diet-column .care-meal h4 svg{color:var(--clinical-primary);flex:none}
+.care-diet-column .care-meal p{font-size:12px;padding:7px 0;margin:0;border-bottom:1px solid var(--clinical-line);overflow-wrap:anywhere}
+.care-diet-column .care-meal>button{width:100%;justify-content:center;min-height:40px;margin-top:12px;font-size:11px;border-radius:9px}
+.care-diet-column .care-meal>button.care-meal-completed{background:var(--clinical-primary);color:white;border-color:transparent}
+@media(max-width:700px){.care-diet-columns{grid-template-columns:minmax(0,1fr);gap:14px}.care-diet-column{padding:11px}}
