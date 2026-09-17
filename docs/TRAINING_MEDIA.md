@@ -2,7 +2,7 @@
 
 ## Uso
 
-Los 451 enlaces externos que venían del Excel se eliminaron del catálogo. Los 183 ejercicios base no tienen video automático ni referencia común. Cada coach decide qué demostración compartir y puede agregarla desde su base de ejercicios o directamente en una rutina.
+Los 451 enlaces externos que venían del Excel se eliminaron del catálogo. Los 134 ejercicios base no tienen video automático ni referencia común. Cada coach decide qué demostración compartir y puede agregarla desde su base de ejercicios o directamente en una rutina.
 
 En Rutina → Videos y material de apoyo, el coach puede revisar una referencia de YouTube, añadirla a la rutina o crear una explicación propia (RIR, calentamiento, uso del programa). Cada ejercicio permite reemplazar o complementar la guía con un video individual de YouTube o un archivo MP4/WebM/MOV de hasta 50 MB. Guardar la rutina publica ese video específico en el portal cuando su estado es activo.
 
@@ -22,6 +22,6 @@ Tampoco existen videos generales precargados para RIR o calentamiento. Cada recu
 
 ## Evidencia y límites
 
-`tests/exercise-catalog.test.ts` comprueba que los 183 registros no tengan video predeterminado. `tests/training-media.test.ts` comprueba URLs, marcas de tiempo, hosts falsos, límites y la selección explícita del coach. `tests/sql/training-videos.sql` prueba permisos reales con identidades sintéticas y rollback: coach inserta, cliente lee solo asignado, cliente no inserta, borrador revoca y tercero no lee. Migración `20260908060000` aplicada.
+`tests/exercise-catalog.test.ts` comprueba que los 134 registros no tengan video predeterminado. `tests/training-media.test.ts` comprueba URLs, marcas de tiempo, hosts falsos, límites y la selección explícita del coach. `tests/sql/training-videos.sql` prueba permisos reales con identidades sintéticas y rollback: coach inserta, cliente lee solo asignado, cliente no inserta, borrador revoca y tercero no lee. Migración `20260908060000` aplicada.
 
 El navegador confirmó añadir una referencia, guardar y volver a abrirla; escritorio sin desbordamiento y móvil con diferencia máxima de 1 px en rutina. No se ha completado una subida/reproducción de archivo real desde la cuenta de un coach en el dominio de producción; sigue siendo prueba de aceptación antes de beta pública. MOV depende de los códecs del dispositivo; MP4 H.264/AAC es la opción de intercambio preferida.

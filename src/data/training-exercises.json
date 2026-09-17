@@ -10,18 +10,8 @@
     "muscle_group": "Pectoral"
   },
   {
-    "id": "hb-0004",
-    "name": "Cross over largo para zona alta/clavicular (john)",
-    "muscle_group": "Pectoral"
-  },
-  {
     "id": "hb-0007",
     "name": "Cross over para zona alta",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0010",
-    "name": "Aperturas sentado en cross over largo (justin)",
     "muscle_group": "Pectoral"
   },
   {
@@ -32,11 +22,6 @@
   {
     "id": "hb-0012",
     "name": "Lagartijas con desnivel",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0015",
-    "name": "Clavicular press (steven)",
     "muscle_group": "Pectoral"
   },
   {
@@ -70,23 +55,8 @@
     "muscle_group": "Pectoral"
   },
   {
-    "id": "hb-0045",
-    "name": "Dominadas asistidas neutro (john)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0052",
-    "name": "Pull down prono modificado (FER)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0056",
     "name": "Pull down KASS",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0058",
-    "name": "Pull down prono hammer (justin)",
     "muscle_group": "Espalda"
   },
   {
@@ -105,38 +75,13 @@
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0065",
-    "name": "Pull down neutro zona media/alta (direk)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0066",
-    "name": "Pull down agarre neutro amplio modificado zona alta (justin)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0067",
     "name": "Rack chins",
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0072",
-    "name": "Pull over en polea alta con barrita (justin)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0075",
     "name": "Pull down uni lat neutro sobre banco inclinado",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0078",
-    "name": "Pull down uni lat sobre banco vertical sentado (Lewy)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0079",
-    "name": "Pull down uni lateral cruzado en polea alta (nuñez athlete)",
     "muscle_group": "Espalda"
   },
   {
@@ -150,53 +95,8 @@
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0092",
-    "name": "Remo pendlay con barra EN SMITH (Dr. Mike)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0093",
-    "name": "Remo pendlay con barra (john)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0097",
-    "name": "Remo con mancuernas (coach baxter)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0100",
-    "name": "Remo con mancuernas en banco inclinado para zona media alta (John)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0106",
-    "name": "Remo bajo supino a 2 manos en hammer (justin)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0107",
-    "name": "Remo sentado neutro agarre modificado (jack)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0111",
-    "name": "Remo sentado agarre supino cerrado en polea baja (nuñez a)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0117",
     "name": "Remo en barra T agarre Prono",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0118",
-    "name": "Remo en barra T agarre neutro (justin)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0121",
-    "name": "Remo sentado agarre neutro amplio para zona alta (dirke)",
     "muscle_group": "Espalda"
   },
   {
@@ -225,18 +125,8 @@
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0134",
-    "name": "Remo landmine para zona alta (Nick)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0138",
     "name": "Remo a 1 mano en polea media en banco vertical",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0143",
-    "name": "Remo ALTO a 1 mano prono en hammer (Kuza)",
     "muscle_group": "Espalda"
   },
   {
@@ -260,58 +150,13 @@
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0158",
-    "name": "Curl de bíceps en banco predicador (Eli)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0160",
-    "name": "Curl de biceps a 1 mano en predicador (justin)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0161",
-    "name": "Curl de biceps sentado con mancuernas ambas manos (Dirke)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0167",
-    "name": "Curl de bíceps con liga de resistencia (Eli)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0172",
-    "name": "Curl de biceps en polea baja (Jared)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0174",
-    "name": "Predicador a 1 mano con mancuerna (Justin)",
-    "muscle_group": "Bíceps"
-  },
-  {
     "id": "hb-0177",
     "name": "Curl a 1 mano en polea baja neutro",
     "muscle_group": "Bíceps"
   },
   {
-    "id": "hb-0182",
-    "name": "Martillo a 1 mano sentado (lewy)",
-    "muscle_group": "Bíceps"
-  },
-  {
     "id": "hb-0184",
     "name": "Extensión de tríceps con barrita en polea alta",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0198",
-    "name": "Extension de triceps a 1 mano en polea media (Nuñez athlete)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0201",
-    "name": "Extension de triceps uni lateral en polea alta con cable (Direk)",
     "muscle_group": "Tríceps"
   },
   {
@@ -352,21 +197,6 @@
   {
     "id": "hb-0227",
     "name": "Laterales sentado",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0232",
-    "name": "Laterales en poleas GYM (Eli)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0233",
-    "name": "Elevación frontal con cuerda en polea baja (Eli)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0234",
-    "name": "Elevación frontal con mancuerna agarre neutro (Dirke)",
     "muscle_group": "Deltoides"
   },
   {
@@ -415,11 +245,6 @@
     "muscle_group": "Deltoides"
   },
   {
-    "id": "hb-0250",
-    "name": "Lateral a 1 mano en polea media (nuñez athlete)",
-    "muscle_group": "Deltoides"
-  },
-  {
     "id": "hb-0252",
     "name": "Lateral cruzado a 1 mano en banco inclinado",
     "muscle_group": "Deltoides"
@@ -427,21 +252,6 @@
   {
     "id": "hb-0257",
     "name": "Laterales a 1 mano inclinado en polea baja Tutorial",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0259",
-    "name": "Elevación frontal a 1 mano en polea baja (Eli)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0273",
-    "name": "Laterales en cross over acortamiento (coach baxter)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0274",
-    "name": "Laterales en cross over estiramiento (coach baxter)",
     "muscle_group": "Deltoides"
   },
   {
@@ -470,23 +280,8 @@
     "muscle_group": "Cuadriceps"
   },
   {
-    "id": "hb-0295",
-    "name": "Prensa a 1 pierna (justin)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
     "id": "hb-0297",
     "name": "Sisy squat",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0300",
-    "name": "Sentadilla split (JOHN)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0303",
-    "name": "Sentadilla split para cuádriceps con mancuernas step enfrente (Coacheu)",
     "muscle_group": "Cuadriceps"
   },
   {
@@ -520,11 +315,6 @@
     "muscle_group": "Isquiosurales"
   },
   {
-    "id": "hb-0329",
-    "name": "RDL mancuernas (coach baxter)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
     "id": "hb-0332",
     "name": "RDL con pausa Direk",
     "muscle_group": "Isquiosurales"
@@ -550,11 +340,6 @@
     "muscle_group": "Isquiosurales"
   },
   {
-    "id": "hb-0345",
-    "name": "Buenos días en máquina (jared)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
     "id": "hb-0346",
     "name": "Curl nórdico",
     "muscle_group": "Isquiosurales"
@@ -567,11 +352,6 @@
   {
     "id": "hb-0352",
     "name": "Flexion de isquios acostado",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0354",
-    "name": "Flexion de isquios acostado con mancuerna (justin)",
     "muscle_group": "Isquiosurales"
   },
   {
@@ -645,11 +425,6 @@
     "muscle_group": "Glúteo"
   },
   {
-    "id": "hb-0384",
-    "name": "Prensa dominante de cadera (direk)",
-    "muscle_group": "Glúteo"
-  },
-  {
     "id": "hb-0387",
     "name": "Puente de cadera con barra libre",
     "muscle_group": "Glúteo"
@@ -660,11 +435,6 @@
     "muscle_group": "Glúteo"
   },
   {
-    "id": "hb-0402",
-    "name": "Split squat con mancuernas (Coach baxter)",
-    "muscle_group": "Glúteo"
-  },
-  {
     "id": "hb-0404",
     "name": "Sentadilla split en smith para glúteo",
     "muscle_group": "Glúteo"
@@ -672,16 +442,6 @@
   {
     "id": "hb-0405",
     "name": "Sentadilla split smith con pie de enfrente elevado",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0408",
-    "name": "Sentadilla búlgara para glúteo a 1 mano con mancuerna sobre deficit (MEG)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0410",
-    "name": "Sentadilla bulgara a 1 mano sobre deficit (coach baxter)",
     "muscle_group": "Glúteo"
   },
   {
@@ -772,11 +532,6 @@
   {
     "id": "hb-0432",
     "name": "Rueda para abs",
-    "muscle_group": "Abdomen"
-  },
-  {
-    "id": "hb-0433",
-    "name": "Crunches en polea alta (direk)",
     "muscle_group": "Abdomen"
   },
   {
