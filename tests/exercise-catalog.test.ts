@@ -4,7 +4,7 @@ import exercises from "../src/data/training-exercises.json";
 import { mergedExerciseLibrary } from "../src/lib/exercise-library";
 
 test("the complete inherited exercise catalog has no default videos", () => {
-  assert.equal(exercises.length, 463);
+  assert.equal(exercises.length, 430);
   for (const exercise of exercises) {
     assert.equal("video_url" in exercise, false, `${exercise.name} contains a default video`);
     assert.ok(exercise.name.trim());
