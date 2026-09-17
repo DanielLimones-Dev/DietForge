@@ -93,7 +93,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `src/lib/client-progress.ts` | compara los dos registros más recientes de peso y grasa y combina evaluaciones/check-ins para las gráficas antropométricas |
 | `src/lib/cloud/engine.ts` | cola de persistencia, estado de sincronización y criterio para mostrar solo alertas de error |
 | `src/lib/openExternal.ts` | apertura de URLs desde el navegador |
-| `src/data/training-exercises.json` | 430 ejercicios incluidos sin videos; se muestran dentro de “Mis ejercicios” junto con los personalizados del coach |
+| `src/data/training-exercises.json` | 183 ejercicios incluidos sin videos; se muestran dentro de “Mis ejercicios” junto con los personalizados del coach |
 | `src/app/(workspace)/exercises/page.tsx` | Entrada privada a la base de ejercicios del coach |
 | `src/components/ExerciseDB.tsx` | Alta, búsqueda, filtros, edición, eliminación y video de ejercicios persistentes |
 | `supabase/migrations/20260908090000_exercise_catalog.sql` | Colección `exercises` en las RPC de carga y guardado cloud |

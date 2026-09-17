@@ -15,18 +15,8 @@
     "muscle_group": "Pectoral"
   },
   {
-    "id": "hb-0006",
-    "name": "Cross over sentado para zona baja (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
     "id": "hb-0007",
     "name": "Cross over para zona alta",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0008",
-    "name": "Cross over uni lateral para zona alta (F)",
     "muscle_group": "Pectoral"
   },
   {
@@ -45,16 +35,6 @@
     "muscle_group": "Pectoral"
   },
   {
-    "id": "hb-0013",
-    "name": "Clavicular press polea corta (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0014",
-    "name": "Press around unilateral en polea (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
     "id": "hb-0015",
     "name": "Clavicular press (steven)",
     "muscle_group": "Pectoral"
@@ -65,18 +45,8 @@
     "muscle_group": "Pectoral"
   },
   {
-    "id": "hb-0017",
-    "name": "Clavicular cable fly (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
     "id": "hb-0018",
     "name": "Press en máquina hammer declinado family",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0019",
-    "name": "Peck deck (F)",
     "muscle_group": "Pectoral"
   },
   {
@@ -90,81 +60,6 @@
     "muscle_group": "Pectoral"
   },
   {
-    "id": "hb-0023",
-    "name": "Press inclinado con mancuerna y pausa (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0025",
-    "name": "Press vertical en maquina articulada Gym (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0026",
-    "name": "Press inclinado en hammer (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0027",
-    "name": "Press inclinado en hammer 2 (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0028",
-    "name": "Press inclinado en nautilus (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0029",
-    "name": "Press mas inclinado en hammer (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0030",
-    "name": "Press inclinado en smith (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0031",
-    "name": "Press en banco plano con barra (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0032",
-    "name": "Press en banco plano (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0033",
-    "name": "Aperturas planas con mancuerna (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0034",
-    "name": "Aperturas con mancuerna en banco plano TECNICO (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0035",
-    "name": "Press plano con mancuernas (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0036",
-    "name": "Aperturas inclinadas (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0037",
-    "name": "Fondos en paralelas cadera extendida (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0038",
-    "name": "Fondos cadera flexionada (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
     "id": "hb-0039",
     "name": "Fondos con lastre",
     "muscle_group": "Pectoral"
@@ -175,53 +70,8 @@
     "muscle_group": "Pectoral"
   },
   {
-    "id": "hb-0041",
-    "name": "Fondos libres en paralelas (F)",
-    "muscle_group": "Pectoral"
-  },
-  {
-    "id": "hb-0043",
-    "name": "Dominadas neutras con lastre (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0044",
-    "name": "Dominadas pronas (F)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0045",
     "name": "Dominadas asistidas neutro (john)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0046",
-    "name": "Dominadas agarre neutro libre (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0047",
-    "name": "Dominadas agarre supino con lastre (D)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0048",
-    "name": "Dominadas neutras con liga (L)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0049",
-    "name": "Pull down supino agarre modificado (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0050",
-    "name": "Pull down supino agarre modificado 2 (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0051",
-    "name": "Pull down supino GYM (F)",
     "muscle_group": "Espalda"
   },
   {
@@ -230,38 +80,13 @@
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0053",
-    "name": "Pull down agarre prono para zona alta (J)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0054",
-    "name": "Pull down agarre prono (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0055",
-    "name": "Pull down agarre supino (L)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0056",
     "name": "Pull down KASS",
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0057",
-    "name": "Pull down prono tecnico (F)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0058",
     "name": "Pull down prono hammer (justin)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0059",
-    "name": "Pull down agarre supino en banco inclinado barra ajustada (L)",
     "muscle_group": "Espalda"
   },
   {
@@ -271,17 +96,12 @@
   },
   {
     "id": "hb-0061",
-    "name": "Pull down agarre neutro con triangulo amplio (M)",
+    "name": "Pull down agarre neutro con triangulo amplio",
     "muscle_group": "Espalda"
   },
   {
     "id": "hb-0062",
     "name": "Pull down neutro triangulo amplio tecnico",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0064",
-    "name": "Pull down agarre neutro triángulo amplio (L)",
     "muscle_group": "Espalda"
   },
   {
@@ -300,48 +120,13 @@
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0068",
-    "name": "Pull over con cuerda (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0069",
-    "name": "Pull over a 1 mano en polea alta (A)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0070",
-    "name": "Pull over a 1 mano sobre banco inclinado (A)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0071",
-    "name": "Pull over cruzado a 1 mano en polea alta (F)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0072",
     "name": "Pull over en polea alta con barrita (justin)",
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0073",
-    "name": "Pull down iliaco en poela alta a 1 mano en banco inclinado (M)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0074",
-    "name": "Pull down uni lateral prono de perfil (F)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0075",
     "name": "Pull down uni lat neutro sobre banco inclinado",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0077",
-    "name": "Pull down uni lat sobre banco vertical de pie (F)",
     "muscle_group": "Espalda"
   },
   {
@@ -355,58 +140,13 @@
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0080",
-    "name": "Pull down uni lateral nautilus 1 (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0081",
-    "name": "Pull down uni lateral nautilus 2 (F)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0082",
     "name": "Pull down a 1 mano agarre neutro en polea alta JOHN",
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0083",
-    "name": "Pull down a 1 mano hincado con cuerda (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0084",
-    "name": "Pull down en cunclillas a 1 mano agarre neutro (M)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0085",
-    "name": "Pull down a 1 mano agarre neutro de pie en pole alta (f)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0086",
-    "name": "Pull down a 1 mano agarre neutro en máquina nautilus (L)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0087",
     "name": "Pull down supino a 1 mano en hammer",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0088",
-    "name": "Pull down a 1 mano agarre supino en polea alta (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0090",
-    "name": "Remo horizontal con barra libre (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0091",
-    "name": "Remo prono en smith (k)",
     "muscle_group": "Espalda"
   },
   {
@@ -420,63 +160,13 @@
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0094",
-    "name": "Remo con mancuernas zona media en banco inclinado (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0095",
-    "name": "Remo prono en smith estricto (J)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0096",
-    "name": "Remo con mancuernas en banco inclinado (F)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0097",
     "name": "Remo con mancuernas (coach baxter)",
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0098",
-    "name": "Remo con mancuernas zona alta (J)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0099",
-    "name": "Remo con mancuernas en banco inclinado para dorsal (F)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0100",
     "name": "Remo con mancuernas en banco inclinado para zona media alta (John)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0101",
-    "name": "Remo con mancuernas para trapecios/ posteriores (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0102",
-    "name": "Remo en máquina agarre prono (K)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0103",
-    "name": "Remo en máquina nautilus agarre neutro (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0104",
-    "name": "Remo neutro en poleas agarre abierto (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0105",
-    "name": "Remo sentado para zona media-alta poleas individuales (F)",
     "muscle_group": "Espalda"
   },
   {
@@ -490,48 +180,8 @@
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0108",
-    "name": "Remo sentado en maquina prono (p)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0109",
-    "name": "Remo sentado en máquina neutro (P)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0110",
-    "name": "Remo sentado con agarre modificado neutro cerrado (F)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0111",
     "name": "Remo sentado agarre supino cerrado en polea baja (nuñez a)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0112",
-    "name": "Remo sentado con triángulo para dorsal  (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0113",
-    "name": "Remo sentado con triangulo Gym 2 (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0114",
-    "name": "Remo sentado con triangulo Gym (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0115",
-    "name": "Remo sentado con triángulo para dorsal INCLINADO (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0116",
-    "name": "Remo neutro dorsal poleas individuales (F)",
     "muscle_group": "Espalda"
   },
   {
@@ -545,16 +195,6 @@
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0119",
-    "name": "Remo sentado con triángulo CORTO (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0120",
-    "name": "Remo sentado en polea baja agarre prono modificado (F)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0121",
     "name": "Remo sentado agarre neutro amplio para zona alta (dirke)",
     "muscle_group": "Espalda"
@@ -562,16 +202,6 @@
   {
     "id": "hb-0122",
     "name": "Remo en barra T para trapecios/ posteriores",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0124",
-    "name": "Remo sentado en polea baja agarre prono (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0125",
-    "name": "Remo helms (D)",
     "muscle_group": "Espalda"
   },
   {
@@ -595,58 +225,13 @@
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0130",
-    "name": "Remo con mancuerna a 1 mano sobre banco inclinado (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0133",
-    "name": "Remo landmine para dorsal TECNICO (F)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0134",
     "name": "Remo landmine para zona alta (Nick)",
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0135",
-    "name": "Remo uni lateral sentado agarre neutro tecnico(F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0136",
-    "name": "Remo bajo a 1 mano en polea en banco sentado (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0137",
-    "name": "Remo bajo a 1 mano en polea en banco sentado 2 (F)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0138",
-    "name": "Remo a 1 mano en polea media en banco vertical (lewy))",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0139",
-    "name": "Remo a 1 mano en polea media en banco vertical (M)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0140",
-    "name": "Remo bajo a 1 mano hammer (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0141",
-    "name": "Remo a 1 mano sentado en polea (J)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0142",
-    "name": "Remo a 1 mano neutro sentado en polea (F)",
+    "name": "Remo a 1 mano en polea media en banco vertical",
     "muscle_group": "Espalda"
   },
   {
@@ -655,38 +240,8 @@
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0144",
-    "name": "Remo a 1 mano en nautilus (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0145",
-    "name": "Remo a 1 mano articulado de pie arsenal (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0146",
-    "name": "Remo de pie a 1 mano en máquina hammer (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0147",
-    "name": "Remo a 1 mano en máquina apoyado (F)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0148",
-    "name": "Remo a 1 mano en máquina chicas (L)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0149",
     "name": "Hiperextensiones para espalda baja",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0150",
-    "name": "Dominadas asistidas agarre neutro (J)",
     "muscle_group": "Espalda"
   },
   {
@@ -705,28 +260,8 @@
     "muscle_group": "Espalda"
   },
   {
-    "id": "hb-0154",
-    "name": "Remo sentada prono agarre amplio GYM (L)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0156",
-    "name": "Remo sentada prono agarre amplio Home gym (L)",
-    "muscle_group": "Espalda"
-  },
-  {
-    "id": "hb-0157",
-    "name": "Remo horizontal con barra (L)",
-    "muscle_group": "Espalda"
-  },
-  {
     "id": "hb-0158",
     "name": "Curl de bíceps en banco predicador (Eli)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0159",
-    "name": "Curl de biceps en maquina predicador (F)",
     "muscle_group": "Bíceps"
   },
   {
@@ -740,53 +275,8 @@
     "muscle_group": "Bíceps"
   },
   {
-    "id": "hb-0162",
-    "name": "Curl de biceps sentado a 2 manos (F)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0163",
-    "name": "Curl con barra Z (F)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0164",
-    "name": "Curl de bíceps en poleas altas (F)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0165",
-    "name": "Curl Bayeisan en polea baja a 2 manos (F)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0166",
-    "name": "Curl alterno con mancuerna (F)",
-    "muscle_group": "Bíceps"
-  },
-  {
     "id": "hb-0167",
     "name": "Curl de bíceps con liga de resistencia (Eli)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0168",
-    "name": "Curl de Bayeisan unilateral hombro extendido (F)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0169",
-    "name": "Curl de bíceps a 1 mano en polea baja hombro flexionado supino(F)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0170",
-    "name": "Curl de bíceps en polea baja a 1 mano supino (F)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0171",
-    "name": "Curl de bíceps con barrita en polea baja (L)",
     "muscle_group": "Bíceps"
   },
   {
@@ -795,23 +285,8 @@
     "muscle_group": "Bíceps"
   },
   {
-    "id": "hb-0173",
-    "name": "Curl de bíceps con mancuernas en banco inclinado (F)",
-    "muscle_group": "Bíceps"
-  },
-  {
     "id": "hb-0174",
     "name": "Predicador a 1 mano con mancuerna (Justin)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0175",
-    "name": "Curl de biceps con mancuerna a 1 mano inclinado (F)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0176",
-    "name": "Curl spider mancuernas (f)",
     "muscle_group": "Bíceps"
   },
   {
@@ -820,28 +295,8 @@
     "muscle_group": "Bíceps"
   },
   {
-    "id": "hb-0179",
-    "name": "Curl de biceps con cuerda en polea baja (F)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0180",
-    "name": "Martillos a 1 mano con mancuerna (J)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0181",
-    "name": "Curl concentrado a 1 mano (M)",
-    "muscle_group": "Bíceps"
-  },
-  {
     "id": "hb-0182",
     "name": "Martillo a 1 mano sentado (lewy)",
-    "muscle_group": "Bíceps"
-  },
-  {
-    "id": "hb-0183",
-    "name": "Martillos con mancuernas (F)",
     "muscle_group": "Bíceps"
   },
   {
@@ -850,88 +305,13 @@
     "muscle_group": "Tríceps"
   },
   {
-    "id": "hb-0186",
-    "name": "Extension de triceps prono agarre modificado (J)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0187",
-    "name": "Empuje de triceps en polea alta (F)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0188",
-    "name": "Copa dos manos a 2 mancuernas (F)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0189",
-    "name": "Extensión de tríceps con triángulo (F)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0190",
-    "name": "Extensión de tríceps con liga de resistencia (T)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0191",
-    "name": "Press francés con mancuernas en banco inclinado (F)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0192",
-    "name": "Press francés con mancuernas en banco inclinado tecnica (F)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0193",
-    "name": "Press francés con mancuernas horizontal (L)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0194",
-    "name": "Copa 1 mano polea baja de frente  (F)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0195",
-    "name": "Copa 1 mano polea baja (F)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0196",
-    "name": "Copa 1 mano en polea baja de perfil (F)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0197",
-    "name": "Copa 1 mano con mancuerna (F)",
-    "muscle_group": "Tríceps"
-  },
-  {
     "id": "hb-0198",
     "name": "Extension de triceps a 1 mano en polea media (Nuñez athlete)",
     "muscle_group": "Tríceps"
   },
   {
-    "id": "hb-0199",
-    "name": "Extensión de tríceps a 1 mano horizontal en polea (F)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0200",
-    "name": "Extensión de tríceps 1 mano en polea alta con cuerda (F)",
-    "muscle_group": "Tríceps"
-  },
-  {
     "id": "hb-0201",
     "name": "Extension de triceps uni lateral en polea alta con cable (Direk)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0202",
-    "name": "Press cerrado para tríceps con barra (F)",
     "muscle_group": "Tríceps"
   },
   {
@@ -945,49 +325,9 @@
     "muscle_group": "Tríceps"
   },
   {
-    "id": "hb-0205",
-    "name": "Extension de triceps en polea baja con cuerda (F)",
-    "muscle_group": "Tríceps"
-  },
-  {
     "id": "hb-0206",
     "name": "Extension de triceps uni lateral para cabeza lateral",
     "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0208",
-    "name": "Extension de triceps cruzado en cross over corto (F)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0209",
-    "name": "Extension de triceps cruzado en polea media (J)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0210",
-    "name": "Extension de triceps cruzado con cuerda a 1 mano (k)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0211",
-    "name": "Ext de triceps unilat (L)",
-    "muscle_group": "Tríceps"
-  },
-  {
-    "id": "hb-0212",
-    "name": "Press con barra sentado (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0213",
-    "name": "Press de hombro sentado con barra GYM (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0214",
-    "name": "Press con barra de pie (L)",
-    "muscle_group": "Deltoides"
   },
   {
     "id": "hb-0215",
@@ -995,23 +335,8 @@
     "muscle_group": "Deltoides"
   },
   {
-    "id": "hb-0216",
-    "name": "Press con mancuernas sentado (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0217",
-    "name": "Press con mancuernas sentado Tecnico (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
     "id": "hb-0218",
     "name": "Press en máquina agarre neutro",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0220",
-    "name": "Press en máquina hammer (F)",
     "muscle_group": "Deltoides"
   },
   {
@@ -1025,38 +350,8 @@
     "muscle_group": "Deltoides"
   },
   {
-    "id": "hb-0224",
-    "name": "Laterales en poleas acostado gym (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0225",
-    "name": "Laterales con mancuernas de pie (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0226",
-    "name": "Laterales de pie apoyado banco vertical (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
     "id": "hb-0227",
     "name": "Laterales sentado",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0228",
-    "name": "Laterales sentado 2 (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0230",
-    "name": "Laterales con mancuernas sentado (L)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0231",
-    "name": "Laterales en máquina (F)",
     "muscle_group": "Deltoides"
   },
   {
@@ -1105,21 +400,6 @@
     "muscle_group": "Deltoides"
   },
   {
-    "id": "hb-0244",
-    "name": "Jalon al rostro con cuerda (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0245",
-    "name": "Jalón al rostro con liga de resistencia Rotacion externa (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0246",
-    "name": "Jalón al rostro con rotación externa con cuerda en polea alta (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
     "id": "hb-0247",
     "name": "Remo para posterior sentado en polea baja agarre prono",
     "muscle_group": "Deltoides"
@@ -1140,28 +420,8 @@
     "muscle_group": "Deltoides"
   },
   {
-    "id": "hb-0251",
-    "name": "Lateral a 1 mano inclinado en polea baja con grillete (L)",
-    "muscle_group": "Deltoides"
-  },
-  {
     "id": "hb-0252",
     "name": "Lateral cruzado a 1 mano en banco inclinado",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0254",
-    "name": "Latera cruzado a 1 mano en polea baja (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0255",
-    "name": "Laterales a 1 mano inclinado en polea baja (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0256",
-    "name": "Laterales a 1 mano inclinado en polea baja 2 (F)",
     "muscle_group": "Deltoides"
   },
   {
@@ -1170,78 +430,8 @@
     "muscle_group": "Deltoides"
   },
   {
-    "id": "hb-0258",
-    "name": "Laterales a 1 mano inclinado con mancuerna (L)",
-    "muscle_group": "Deltoides"
-  },
-  {
     "id": "hb-0259",
     "name": "Elevación frontal a 1 mano en polea baja (Eli)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0260",
-    "name": "Elevación lateral con mancuerna apoyado en banco inclinado (L)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0261",
-    "name": "Apertura para posterior a 1 mano en polea baja  (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0262",
-    "name": "Apertura para posterior a 1 mano en polea alta (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0263",
-    "name": "Rear swing (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0264",
-    "name": "Aperturas para posterior en banco inclinado agarre neutro tecnico (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0265",
-    "name": "Aperturas para posterior en banco inclinado agarre neutro (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0266",
-    "name": "Aperturas para posterior en banco agarre neutro (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0267",
-    "name": "Aperturas agarre neutro pecho apoyado (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0268",
-    "name": "Aperturas para posterior en banco inclinado agarre supino (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0269",
-    "name": "Aperturas para posterior sentado (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0270",
-    "name": "Aperturas para posterior en banco inclinado agarre prono (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0271",
-    "name": "Triserie aperturas para posterior (F)",
-    "muscle_group": "Deltoides"
-  },
-  {
-    "id": "hb-0272",
-    "name": "Jalon al rostro con cuerda en polea alta (L)",
     "muscle_group": "Deltoides"
   },
   {
@@ -1265,36 +455,6 @@
     "muscle_group": "Deltoides"
   },
   {
-    "id": "hb-0277",
-    "name": "Sentadilla trasera (V)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0278",
-    "name": "Sentadilla libre trasera (L)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0279",
-    "name": "Sentadilla smith (J)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0280",
-    "name": "Sentadilla trasera en smith (L)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0281",
-    "name": "Sentadilla trasera barra alta (L)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0282",
-    "name": "Sentadilla trasera con desnivel en talones (F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
     "id": "hb-0283",
     "name": "Sentadilla frontal",
     "muscle_group": "Cuadriceps"
@@ -1305,48 +465,8 @@
     "muscle_group": "Cuadriceps"
   },
   {
-    "id": "hb-0285",
-    "name": "Sentadilla goblet con desnivel en talones (L)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
     "id": "hb-0286",
     "name": "Sentadilla Hack",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0288",
-    "name": "Sentadilla péndulo (F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0289",
-    "name": "Pendulo squat (F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0290",
-    "name": "Peso muerto tradicional con barra (K)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0291",
-    "name": "Prensa para cuads en máquina (L)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0292",
-    "name": "Prensa de cuads pies abajo de la plataforma (F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0293",
-    "name": "Prensa FULL ROM (M)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0294",
-    "name": "Prensa Cuads Life fitness (F)",
     "muscle_group": "Cuadriceps"
   },
   {
@@ -1355,23 +475,8 @@
     "muscle_group": "Cuadriceps"
   },
   {
-    "id": "hb-0296",
-    "name": "GOBLET SQUAT (F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
     "id": "hb-0297",
     "name": "Sisy squat",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0298",
-    "name": "Prensa articulada para cuádriceps (F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0299",
-    "name": "Prensa de pierna para cuádriceps a 1 pierna (K)",
     "muscle_group": "Cuadriceps"
   },
   {
@@ -1380,28 +485,8 @@
     "muscle_group": "Cuadriceps"
   },
   {
-    "id": "hb-0301",
-    "name": "Sentadilla split para cuádriceps con mancuernas (F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0302",
-    "name": "Sentadilla split para cuádriceps con barra libre (M)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
     "id": "hb-0303",
     "name": "Sentadilla split para cuádriceps con mancuernas step enfrente (Coacheu)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0304",
-    "name": "Sentadilla split con desnivel en talon con mancuernas (F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0305",
-    "name": "Sentadilla split para cuads con talon elevado (M)",
     "muscle_group": "Cuadriceps"
   },
   {
@@ -1415,73 +500,8 @@
     "muscle_group": "Cuadriceps"
   },
   {
-    "id": "hb-0309",
-    "name": "Sentadilla búlgara diferencias (F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0310",
-    "name": "Sentadilla búlgara para cuádriceps con mancuernas talon elevado (M)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0311",
-    "name": "Sentadilla búlgara para cuádriceps talon elevado en smith (L)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0312",
-    "name": "Sentadilla bulgara a 2 manos con desnivel (F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0313",
-    "name": "Sentadilla bulgara a 1 mano 1(F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0314",
-    "name": "Sentadilla bulgara a 1 mano 2(F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0315",
-    "name": "Desplantes cortos caminando sin peso cuads (R)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0316",
-    "name": "Desplantes cortos caminando con mancuernas (F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0317",
-    "name": "Extensiones a 2 piernas con liga (F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0318",
-    "name": "Extensiónes de cuádriceps a 2 piernas (L)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
-    "id": "hb-0319",
-    "name": "Extensiónes de cuádriceps a 1 pierna (F)",
-    "muscle_group": "Cuadriceps"
-  },
-  {
     "id": "hb-0320",
     "name": "Peso muerto tradicional con barra",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0321",
-    "name": "Peso muerto rumano con barra (L)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0322",
-    "name": "Peso muerto rumano (F)",
     "muscle_group": "Isquiosurales"
   },
   {
@@ -1500,33 +520,8 @@
     "muscle_group": "Isquiosurales"
   },
   {
-    "id": "hb-0326",
-    "name": "SLDL block pulls (m)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0327",
-    "name": "Peso muerto rumano con mancuernas (L)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0328",
-    "name": "RDL sobre deficit con mancuernas (F)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
     "id": "hb-0329",
     "name": "RDL mancuernas (coach baxter)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0330",
-    "name": "Peso muerto Stiff con barra (L)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0331",
-    "name": "RDL con barra (F)",
     "muscle_group": "Isquiosurales"
   },
   {
@@ -1535,28 +530,8 @@
     "muscle_group": "Isquiosurales"
   },
   {
-    "id": "hb-0333",
-    "name": "RDL con pausa (F)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0334",
-    "name": "RDL en maquina (F)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
     "id": "hb-0335",
     "name": "Peso muerto stiff",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0337",
-    "name": "Peso muerto stiff tecnico (F)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0338",
-    "name": "Peso muerto stiff tencico 2 (F)",
     "muscle_group": "Isquiosurales"
   },
   {
@@ -1575,16 +550,6 @@
     "muscle_group": "Isquiosurales"
   },
   {
-    "id": "hb-0343",
-    "name": "Buenos días con barra libre (L)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0344",
-    "name": "Buenos días con safety bar (L)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
     "id": "hb-0345",
     "name": "Buenos días en máquina (jared)",
     "muscle_group": "Isquiosurales"
@@ -1595,28 +560,8 @@
     "muscle_group": "Isquiosurales"
   },
   {
-    "id": "hb-0347",
-    "name": "Buenos dias en smith (L)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0348",
-    "name": "Hipthrust invertido sin peso (L)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0349",
-    "name": "Flexión de isquiosurales acostada Gym (L)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
     "id": "hb-0350",
     "name": "Flexion de isquios acostado prime",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0351",
-    "name": "Flexión de isquiosurales acostado tecnico (F)",
     "muscle_group": "Isquiosurales"
   },
   {
@@ -1645,23 +590,8 @@
     "muscle_group": "Isquiosurales"
   },
   {
-    "id": "hb-0359",
-    "name": "Flexion de isquios sentado a 1 pierna (F)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
     "id": "hb-0360",
     "name": "Flexion de isquios sentado a 1 pierna con grillete",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0361",
-    "name": "Flexión de isquiosurales sentado HOMEGYM (F)",
-    "muscle_group": "Isquiosurales"
-  },
-  {
-    "id": "hb-0362",
-    "name": "Flexion de isquios sentado torso flexionado (F)",
     "muscle_group": "Isquiosurales"
   },
   {
@@ -1695,26 +625,6 @@
     "muscle_group": "Glúteo"
   },
   {
-    "id": "hb-0371",
-    "name": "Sumo squat con mancuerna (F)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0372",
-    "name": "Sumo squat (F)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0373",
-    "name": "Sentadilla sumo con mancuerna sobre discos (L)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0374",
-    "name": "Sentadilla sumo con landmine (L)",
-    "muscle_group": "Glúteo"
-  },
-  {
     "id": "hb-0375",
     "name": "KASS glute bridge",
     "muscle_group": "Glúteo"
@@ -1722,16 +632,6 @@
   {
     "id": "hb-0376",
     "name": "DEAD STOP hippthrust",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0377",
-    "name": "Hipthrust con barra libre (L)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0378",
-    "name": "Hipthrust en máquina (L)",
     "muscle_group": "Glúteo"
   },
   {
@@ -1745,28 +645,8 @@
     "muscle_group": "Glúteo"
   },
   {
-    "id": "hb-0381",
-    "name": "Prensa en máquina para glúteo (L)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0382",
-    "name": "Prensa de pierna para glúteo (L)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0383",
-    "name": "Prensa de pierna para aductores/glúteo (F)",
-    "muscle_group": "Glúteo"
-  },
-  {
     "id": "hb-0384",
     "name": "Prensa dominante de cadera (direk)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0385",
-    "name": "Puente de cadera libre corto (K)",
     "muscle_group": "Glúteo"
   },
   {
@@ -1775,83 +655,13 @@
     "muscle_group": "Glúteo"
   },
   {
-    "id": "hb-0388",
-    "name": "Puente de cadera con barra libre desde el suelo con elevacion (L)",
-    "muscle_group": "Glúteo"
-  },
-  {
     "id": "hb-0389",
     "name": "Puente de cadera con disco desde el suelo",
     "muscle_group": "Glúteo"
   },
   {
-    "id": "hb-0390",
-    "name": "Pullthough tecnico (F)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0391",
-    "name": "Pullthough (F)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0392",
-    "name": "Hiperextensiones a 90º para glúteo (F)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0393",
-    "name": "Hiperextensiones a 45º con barrita (L)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0394",
-    "name": "Hiperextensiones a 45º para glúteo sin peso (F)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0395",
-    "name": "Hipthrust a 1 pierna PRE ACTIVACION (L)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0396",
-    "name": "Puente de cadera a 1 pierna con mancuerna (L)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0397",
-    "name": "Hipthrust a 1 pierna (F)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0398",
-    "name": "Hipthrust a 1 pierna con mancuerna en el piso (F)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0399",
-    "name": "Hiperextensiones con disco (K)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0400",
-    "name": "Hiperextensiones con mancuerna (K)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0401",
-    "name": "Sentadilla split para glúteo con mancuernas (F)",
-    "muscle_group": "Glúteo"
-  },
-  {
     "id": "hb-0402",
     "name": "Split squat con mancuernas (Coach baxter)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0403",
-    "name": "Sentadilla split para glúteo con pie de enfrente elevado con mancuernas (F)",
     "muscle_group": "Glúteo"
   },
   {
@@ -1865,23 +675,8 @@
     "muscle_group": "Glúteo"
   },
   {
-    "id": "hb-0406",
-    "name": "Sentadilla split para glúteo con pie de atrás elevado con barra (L)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0407",
-    "name": "Sentadilla split para glúteo con pie de atrás elevado con mancuernas (L)",
-    "muscle_group": "Glúteo"
-  },
-  {
     "id": "hb-0408",
     "name": "Sentadilla búlgara para glúteo a 1 mano con mancuerna sobre deficit (MEG)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0409",
-    "name": "Sentadilla bulgara a 2 manos (M)",
     "muscle_group": "Glúteo"
   },
   {
@@ -1890,18 +685,8 @@
     "muscle_group": "Glúteo"
   },
   {
-    "id": "hb-0411",
-    "name": "Sentadilla bulgara finisher (F)",
-    "muscle_group": "Glúteo"
-  },
-  {
     "id": "hb-0412",
     "name": "Desplante reverso con mancuerna",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0413",
-    "name": "Desplante reverso con barra (F)",
     "muscle_group": "Glúteo"
   },
   {
@@ -1932,16 +717,6 @@
   {
     "id": "hb-0419",
     "name": "Extensión de cadera en banco horizontal",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0420",
-    "name": "Extensión de cadera en máquina  (L)",
-    "muscle_group": "Glúteo"
-  },
-  {
-    "id": "hb-0421",
-    "name": "Extensión de cadera en máquina péndulo de pie (L)",
     "muscle_group": "Glúteo"
   },
   {
@@ -2005,11 +780,6 @@
     "muscle_group": "Abdomen"
   },
   {
-    "id": "hb-0434",
-    "name": "Elevacion de piernas colgado (F)",
-    "muscle_group": "Abdomen"
-  },
-  {
     "id": "hb-0435",
     "name": "Crunches",
     "muscle_group": "Abdomen"
@@ -2017,11 +787,6 @@
   {
     "id": "hb-0436",
     "name": "Encogimiento de pie con mancuernas",
-    "muscle_group": "Trapecio"
-  },
-  {
-    "id": "hb-0438",
-    "name": "Encogimiento a 1 mano inclinado con mancuerna (F)",
     "muscle_group": "Trapecio"
   },
   {
