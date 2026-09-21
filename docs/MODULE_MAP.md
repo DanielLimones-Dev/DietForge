@@ -190,3 +190,7 @@ El ajuste de macros guardados se monta en la sección superior, en la posición 
 - `20260914030000_diet_change_notices.sql`: huella de dieta por cliente, lecturas privadas y RPC de cierre condicional.
 - `supabase/tests/diet-change-notices.sql`, `tests/diet-notice.test.ts`: aislamiento, no ruido, cierre persistente y ajustes simultáneos.
 - `tests/agenda-scope.test.ts`: Agenda conserva Peak Week/check-ins y excluye las categorías retiradas.
+
+## Entrada progresiva del workspace
+
+`src/lib/page-cascade.ts` mantiene visibles los bloques al recibir foco. Dashboard, ClientList, TrainingHub, TrainingPlanner, Reports, FoodDB y AgendaHub declaran `data-page-cascade` y ordenan bloques reales con `data-cascade`; CSS inicia su entrada al montarse. Layout excluye esas páginas de su animación genérica para evitar solapamientos.

@@ -1,5 +1,5 @@
-import { CoachDashboard } from "@/components/CoachDashboard";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <CoachDashboard />;
+  redirect("/");
 }

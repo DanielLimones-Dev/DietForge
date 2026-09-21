@@ -85,7 +85,7 @@ try {
   assert.match(await page.$eval('main h2', node => node.textContent), /Cliente de prueba A/);
 
   const routes = [
-    ['/', 'Panel de control nutricional'], ['/coach', 'Panel Coach'], ['/clients', 'Clientes'], ['/clients/new', 'Nuevo Cliente'],
+    ['/', 'Panel de control nutricional'], ['/coach', 'Panel de control nutricional'], ['/clients', 'Clientes'], ['/clients/new', 'Nuevo Cliente'],
     ['/clients/1', 'Cliente de prueba A'], ['/clients/1/edit', 'Editar Cliente'], ['/clients/1/plan/week', 'Plan Semanal'],
     ['/plans/1', 'Plan de prueba'], ['/foods', 'Alimentos'], ['/exercises', 'Base de ejercicios'], ['/calculator', 'Calculadora'], ['/reports', 'Reportes'],
   ];

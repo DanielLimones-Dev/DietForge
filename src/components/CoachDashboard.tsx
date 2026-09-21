@@ -8,7 +8,7 @@ import { Users, TrendingUp, AlertTriangle, Calendar, FileText, Tags, X, Check, S
 import type { Client } from "@/types";
 import { TAGS_LIST } from "@/types";
 
-export function CoachDashboard() {
+export function CoachDashboard({ embedded = false, onClientsChange }: { embedded?: boolean; onClientsChange?: (clients: Client[]) => void }) {
   const router = useRouter();
   const [now] = useState(() => Date.now());
   const [clients, setClients] = useState<Client[]>(() => db.getClients());
@@ -39,7 +39,9 @@ export function CoachDashboard() {
     if (idx >= 0) tags.splice(idx, 1);
     else tags.push(tag);
     db.updateClient(client.id, { tags });
-    setClients(db.getClients());
+    const nextClients = db.getClients();
+    setClients(nextClients);
+    onClientsChange?.(nextClients);
     setPanelKey(n => n + 1);
   };
 
@@ -53,8 +55,8 @@ export function CoachDashboard() {
     : allClients;
 
   return (
-    <div className="coach-page">
-      <div className="coach-hero">
+    <section className={`coach-page${embedded ? " coach-page-embedded" : ""}`} aria-label={embedded ? "Seguimiento de clientes" : undefined}>
+      {!embedded && <div className="coach-hero">
         <div>
           <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
             Panel de Coach
@@ -72,9 +74,9 @@ export function CoachDashboard() {
           <Tags className="w-4 h-4" />
           Etiquetas
         </button>
-      </div>
+      </div>}
 
-      <div className="coach-metrics">
+      {!embedded && <div className="coach-metrics">
         {[
           { label: "Total Clientes", value: stats.clients, icon: Users, color: "bg-blue-100 dark:bg-blue-900/30 text-blue-600" },
           { label: "Activos", value: stats.activeClients, icon: TrendingUp, color: "bg-green-100 dark:bg-green-900/30 text-green-600" },
@@ -94,7 +96,9 @@ export function CoachDashboard() {
             </div>
           </div>
         ))}
-      </div>
+      </div>}
+
+      {embedded && <div className="dashboard-card-heading coach-embedded-heading"><div><p className="df-eyebrow">SEGUIMIENTO DEL COACH</p><h2>Atención y organización de clientes</h2><p>Revisa alertas, etiquetas y el estado reciente sin salir del Dashboard.</p></div><button onClick={() => { setShowTagPanel(!showTagPanel); setActiveTag(false); setTagSearch(""); if (!showTagPanel) setPanelKey(n => n + 1); }}><Tags className="w-4 h-4" /> Etiquetas</button></div>}
 
       {atRiskClients.length > 0 && (
         <div className="coach-alert-card">
@@ -280,6 +284,6 @@ export function CoachDashboard() {
           )}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

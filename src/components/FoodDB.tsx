@@ -1,12 +1,14 @@
 "use client";
+import {revealFocusedCascade} from "@/lib/page-cascade";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Apple, ChevronDown, Database, Globe2, Plus, Search, SlidersHorizontal, Trash2, X } from "lucide-react";
+import { Apple, ChevronDown, Database, Globe2, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import { db } from "@/lib/db";
 import { classifyCarbs, searchFatSecret, searchOpenFoodFacts, searchUSDA } from "@/lib/nutrition";
 import type { Food, FoodCategory } from "@/types";
 import { NutritionWheel, dominantMacro, type MacroKey } from "./NutritionWheel";
 import { ConfirmDialog } from "./ui";
+import { DeleteIconButton } from "./ui/delete-icon-button";
 import { useToast } from "./Toast";
 
 const CATEGORIES: { value: FoodCategory; label: string }[] = [
@@ -102,8 +104,8 @@ export function FoodDB() {
   };
 
   return (
-    <div className="food-explorer-page">
-      <header className="food-explorer-header">
+    <div className="food-explorer-page" data-page-cascade onFocusCapture={revealFocusedCascade}>
+      <header className="food-explorer-header" data-cascade="0">
         <div><p className="df-eyebrow">BIBLIOTECA NUTRICIONAL</p><h1>Explorador de alimentos</h1><p>Analiza la composición de tu catálogo y encuentra mejores opciones para cada plan.</p></div>
         <div className="food-header-actions">
           <span className="food-count"><Database size={14} /> {foods.length} registrados</span>
@@ -121,7 +123,7 @@ export function FoodDB() {
 
       <div className="food-explorer-grid">
         <NutritionWheel foods={foods} active={wheelMacro} onChange={selectMacro} onClear={() => setMacroFilter(null)} />
-        <section className="food-library-card" aria-labelledby="food-library-title">
+        <section className="food-library-card" data-cascade="2" aria-labelledby="food-library-title">
           <div className="food-library-heading"><div><p className="df-eyebrow">CATÁLOGO</p><h2 id="food-library-title">Alimentos disponibles</h2></div><span>{filtered.length} de {foods.length}</span></div>
           <div className="food-filter-row">
             <label className="food-search"><Search size={16} /><input aria-label="Buscar alimentos" placeholder="Buscar alimento..." value={search} onChange={(event) => setSearch(event.target.value)} />{search && <button type="button" onClick={() => setSearch("")} aria-label="Limpiar búsqueda"><X size={14} /></button>}</label>
@@ -177,7 +179,7 @@ function FoodListItem({ food, onOpen, onDelete }: { food: Food; onOpen: () => vo
       <div className="food-avatar">{food.name.charAt(0).toLocaleUpperCase("es")}</div>
       <div className="food-main"><div><h3>{food.name}</h3><span className={`food-chip ${categoryStyles[food.category] || "food-chip-neutral"}`}>{categoryLabel}</span></div><p>{food.serving_size} {food.serving_unit} · {food.source === "api" ? "Fuente externa" : "Registro manual"}</p></div>
       <div className="food-macros"><span className="macro-protein"><small>PROTEÍNA</small>{food.protein}g</span><span className="macro-carbs"><small>CARBOS</small>{food.carbs}g</span><span className="macro-fat"><small>GRASAS</small>{food.fat}g</span><strong><small>ENERGÍA</small>{food.kcal}<em> kcal</em></strong></div>
-      <button type="button" className="food-delete" aria-label={`Eliminar ${food.name}`} onClick={(event) => { event.stopPropagation(); onDelete(); }}><Trash2 size={16} /></button>
+      <DeleteIconButton className="food-delete" label={`Eliminar ${food.name}`} stopPropagation onClick={onDelete} />
     </article>
   );
 }

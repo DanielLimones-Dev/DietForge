@@ -258,3 +258,9 @@ Agenda muestra exclusivamente Peak Week y check-ins; no crea recordatorios ni mu
 
 ### Portal: activación guiada (2026-09-14)
 PortalAuth separa correo autorizado, creación de contraseña y confirmación. El registro usa Supabase Auth y el callback existente; completar el formulario no concede acceso a expedientes. Login y recuperación siguen disponibles. Los mensajes viven dentro de la tarjeta, las contraseñas se limpian tras la petición y no se persisten. Consultar acceso descarta respuestas tras cambiar de identidad.
+
+## Animación de entrada
+
+Dashboard, Clientes y Rutinas controlan su secuencia desde los bloques reales de cada página, para iniciar también cuando la ruta termina de cargar después del layout. La entrada no remonta formularios ni depende de cambios de datos. Recibir foco revela el bloque de forma permanente; movimiento reducido e impresión desactivan la animación.
+
+Agenda monta la cuadrícula del mes antes de recibir el expediente remoto. Mientras `CareAgenda.data` es null, permite navegar por fechas y muestra actividades pendientes de carga; no informa «Día libre» ni ceros que puedan confundirse con datos reales. Al llegar los datos conserva mes y fecha seleccionados. Cambiar de cliente remonta la agenda y evita mezclar expedientes. La autorización sigue pasando por `readPortal`.

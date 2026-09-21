@@ -16,3 +16,13 @@ test('agenda limits events and monthly counts to Peak Week and check-ins without
  assert.match(html,/<strong>2<\/strong><span>Pendientes<\/span>/);
  assert.deepEqual(data,before,'legacy reminders and planning data remain untouched');
 });
+
+
+test('agenda renders its real month before remote data without reporting a free day',()=>{
+ const html=renderToStaticMarkup(createElement(CareAgenda,{owner:'',data:null,clientName:'Ejemplo',coach:true,onSaved:()=>{},entrance:true}));
+ assert.match(html,/Calendario de Ejemplo/);
+ assert.equal((html.match(/actividades pendientes de cargar/g)??[]).length,42);
+ assert.match(html,/Cargando actividades/);
+ assert.match(html,/<strong>—<\/strong><span>Pendientes<\/span>/);
+ assert.doesNotMatch(html,/Día libre|sin actividades/);
+});

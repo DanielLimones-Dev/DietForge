@@ -1,4 +1,5 @@
 "use client";
+import {revealFocusedCascade} from "@/lib/page-cascade";
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -50,8 +51,8 @@ export function Reports() {
   const compliancePct = clients.length ? Math.round((checkinCompliance / clients.length) * 100) : 0;
 
   return (
-    <div className="reports-page">
-      <div className="reports-hero">
+    <div className="reports-page" data-page-cascade onFocusCapture={revealFocusedCascade}>
+      <div className="reports-hero" data-cascade="0">
         <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
           Reportes
         </h2>
@@ -62,7 +63,7 @@ export function Reports() {
 
       <div className="reports-metrics">
         <div className="relative group active:scale-[0.98] transition-transform duration-150">
-          <div className="reports-metric">
+          <div className="reports-metric" data-cascade="1">
             <div className="flex items-start justify-between mb-3">
               <div className="p-2.5 rounded-xl bg-blue-100 dark:bg-blue-900/30">
                 <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -73,7 +74,7 @@ export function Reports() {
           </div>
         </div>
         <div className="relative group active:scale-[0.98] transition-transform duration-150">
-          <div className="reports-metric">
+          <div className="reports-metric" data-cascade="2">
             <div className="flex items-start justify-between mb-3">
               <div className="p-2.5 rounded-xl bg-green-100 dark:bg-green-900/30">
                 <UserPlus className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -84,7 +85,7 @@ export function Reports() {
           </div>
         </div>
         <div className="relative group active:scale-[0.98] transition-transform duration-150">
-          <div className="reports-metric">
+          <div className="reports-metric" data-cascade="3">
             <div className="flex items-start justify-between mb-3">
               <div className="p-2.5 rounded-xl bg-emerald-100 dark:bg-emerald-900/30">
                 <CheckCircle className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
@@ -95,7 +96,7 @@ export function Reports() {
           </div>
         </div>
         <div className="relative group active:scale-[0.98] transition-transform duration-150">
-          <div className="reports-metric">
+          <div className="reports-metric" data-cascade="4">
             <div className="flex items-start justify-between mb-3">
               <div className="p-2.5 rounded-xl bg-red-100 dark:bg-red-900/30">
                 <Clock className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -108,7 +109,7 @@ export function Reports() {
       </div>
 
       <div className="reports-grid">
-        <div className="reports-card">
+        <div className="reports-card" data-cascade="5">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-cyan-500" />
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -145,7 +146,7 @@ export function Reports() {
           )}
         </div>
 
-        <div className="reports-card">
+        <div className="reports-card" data-cascade="6">
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 to-green-500" />
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -203,7 +204,7 @@ export function Reports() {
         </div>
       </div>
 
-      <div className="reports-table-card">
+      <div className="reports-table-card" data-cascade="6">
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-500 to-amber-500" />
         <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-800">
           <h3 className="font-semibold text-gray-900 dark:text-white">Estado de Clientes</h3>

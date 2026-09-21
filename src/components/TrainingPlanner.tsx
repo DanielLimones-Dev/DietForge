@@ -1,5 +1,7 @@
 "use client";
 
+import { revealFocusedCascade } from "@/lib/page-cascade";
+
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, ChevronDown, ChevronUp, Copy, Dumbbell, Plus, Printer, Save, Search, Trash2 } from "lucide-react";
@@ -11,6 +13,7 @@ import { printTrainingProgram } from "@/lib/training-pdf";
 import type { ExerciseLibraryItem, TrainingExercise, TrainingGoal, TrainingProgram } from "@/types";
 import { useToast } from "./Toast";
 import { ConfirmDialog } from "./ui";
+import { DeleteIconButton } from "./ui/delete-icon-button";
 import {TrainingRepRange} from "./TrainingRepRange";
 import {TrainingLiveFeedback} from "./TrainingLiveFeedback";
 import {TrainingTools} from "./TrainingTools";
@@ -93,7 +96,7 @@ export function TrainingPlanner() {
     return library.filter(item => (muscle === "Todos" || item.muscle_group === muscle) && (!query || `${item.name} ${item.muscle_group}`.toLocaleLowerCase("es").includes(query))).slice(0, 80);
   }, [search, muscle, library]);
 
-  if (!client) return <div className="training-page"><button className="training-back" onClick={() => router.push("/clients")}><ArrowLeft size={16}/>Volver a clientes</button><div className="training-empty"><h1>Cliente no encontrado</h1></div></div>;
+  if (!client) return <div className="training-page" data-page-cascade onFocusCapture={revealFocusedCascade}><button className="training-back" onClick={() => router.push("/clients")}><ArrowLeft size={16}/>Volver a clientes</button><div className="training-empty" data-cascade="1"><h1>Cliente no encontrado</h1></div></div>;
 
   const startNew = () => {
     if(dirty&&!window.confirm("Hay cambios sin guardar. ¿Abrir una rutina nueva y descartarlos?"))return;
@@ -163,19 +166,19 @@ export function TrainingPlanner() {
     mutate(program => { replaceTrainingDays(program,week,trainingDays(program,week).filter(day => day.id !== selectedDay.id).map((day, index) => ({ ...day, day_number: index + 1 }))); }); setDayId(fallback);
   };
 
-  return <div className="training-page">
-    <header className="training-hero">
+  return <div className="training-page" data-page-cascade onFocusCapture={revealFocusedCascade}>
+    <header className="training-hero" data-cascade="0">
       <div><button className="training-back" onClick={() => router.push(`/clients/${clientId}`)}><ArrowLeft size={16}/>Expediente</button><span className="training-kicker"><Dumbbell size={14}/> PROGRAMACIÓN DE ENTRENAMIENTO</span><h1>{client.name}</h1><p>Rutinas por bloques, progresión semanal, volumen por músculo y videos técnicos.</p></div>
       <div className="training-hero-actions"><button onClick={startNew}><Plus size={16}/>Nueva rutina</button>{draft&&<><button onClick={() => { try { printTrainingProgram(draft, client); } catch (error) { toast(error instanceof Error ? error.message : "No se pudo imprimir.", "error"); } }}><Printer size={16}/>PDF</button><button className="primary" onClick={save}><Save size={16}/>{dirty ? "Guardar cambios" : "Guardado"}</button></>}</div>
     </header>
 
     {draft&&<section className="training-media-section" aria-label="Material de apoyo"><h2>Videos y material de apoyo</h2><p>Agrega tus propias explicaciones de RIR, calentamiento o uso del programa para mostrarlas en el portal.</p>{(draft.resources??[]).map(resource=><div className="training-media-resource" key={resource.id}><input aria-label="Título del material" value={resource.title} onChange={e=>mutate(p=>{const r=p.resources?.find(r=>r.id===resource.id);if(r)r.title=e.target.value;})}/><TrainingVideoEditor value={resource.url} label={`Video de ${resource.title||'apoyo'}`} onChange={url=>mutate(p=>{const r=p.resources?.find(r=>r.id===resource.id);if(r)r.url=url;})}/><button onClick={()=>mutate(p=>{p.resources=p.resources?.filter(r=>r.id!==resource.id);})}>Eliminar material</button></div>)}<button onClick={()=>mutate(p=>{p.resources=[...(p.resources??[]),{id:crypto.randomUUID(),title:'Mi explicación',url:''}];})}>+ Agregar mi explicación</button></section>}
 
-    {programs.length > 0 && <nav className="training-program-tabs" aria-label="Rutinas del cliente">{programs.map(program => <button key={program.id} className={draft?.id === program.id ? "active" : ""} onClick={() => chooseProgram(program)}><span>{program.name}</span><small>{program.duration_weeks} sem · {program.status === "active" ? "Activa" : program.status === "draft" ? "Borrador" : "Archivada"}</small></button>)}</nav>}
+    {programs.length > 0 && <nav className="training-program-tabs" data-cascade="1" aria-label="Rutinas del cliente">{programs.map(program => <button key={program.id} className={draft?.id === program.id ? "active" : ""} onClick={() => chooseProgram(program)}><span>{program.name}</span><small>{program.duration_weeks} sem · {program.status === "active" ? "Activa" : program.status === "draft" ? "Borrador" : "Archivada"}</small></button>)}</nav>}
 
-    {!draft ? <section className="training-empty"><span><Dumbbell size={28}/></span><h2>Crea la primera rutina personalizada</h2><p>Empieza con cinco días y cinco semanas. Puedes adaptar cada ejercicio, serie, rango de repeticiones y RIR.</p><button onClick={startNew}><Plus size={16}/>Crear rutina</button></section> : <>
+    {!draft ? <section className="training-empty" data-cascade="1"><span><Dumbbell size={28}/></span><h2>Crea la primera rutina personalizada</h2><p>Empieza con cinco días y cinco semanas. Puedes adaptar cada ejercicio, serie, rango de repeticiones y RIR.</p><button onClick={startNew}><Plus size={16}/>Crear rutina</button></section> : <>
       <TrainingTools program={draft} week={week} onChange={p=>{setDraft(independentTrainingProgram(p));setDirty(true);}} onOpen={p=>{if(dirty&&!window.confirm("¿Cargar esta rutina y descartar los cambios sin guardar?"))return;const next=independentTrainingProgram(p);setDraft(next);setDayId(trainingDays(next,1)[0]?.id??"");setWeek(1);setDirty(p.id===0);setPrograms(db.getTrainingPrograms(clientId));}}/>
-      <section className="training-setup">
+      <section className="training-setup" data-cascade="2">
         <label className="wide">Nombre del bloque<input value={draft.name} onChange={event => mutate(program => { program.name = event.target.value; })}/></label>
         <label>Objetivo<select value={draft.objective} onChange={event => mutate(program => { program.objective = event.target.value as TrainingGoal; })}>{goals.map(goal => <option key={goal.value} value={goal.value}>{goal.label}</option>)}</select></label>
         <label>Inicio<input type="date" value={draft.start_date} onChange={event => mutate(program => { program.start_date = event.target.value; })}/></label>
@@ -188,7 +191,7 @@ export function TrainingPlanner() {
         <label className="full">Indicaciones generales<textarea rows={2} value={draft.notes ?? ""} onChange={event => mutate(program => { program.notes = event.target.value; })}/></label>
       </section>
 
-      <section className="training-volume-overview training-volume-minimal" aria-labelledby="weekly-series-title">
+      <section className="training-volume-overview training-volume-minimal" data-cascade="3" aria-labelledby="weekly-series-title">
         <header><div><span>SEMANA {week} · VOLUMEN PROGRAMADO</span><h2 id="weekly-series-title">Distribución de series</h2></div><div className="series-week-nav"><button type="button" aria-label="Semana anterior de volumen" disabled={week<=1} onClick={()=>{setWeek(week-1);setDayId(trainingDays(draft,week-1)[0]?.id??"");}}><ArrowLeft size={16}/></button><span>Semana {week} / {draft.duration_weeks}</span><button type="button" aria-label="Semana siguiente de volumen" disabled={week>=draft.duration_weeks} onClick={()=>{setWeek(week+1);setDayId(trainingDays(draft,week+1)[0]?.id??"");}}><ArrowRight size={16}/></button></div></header>
         <div className="series-summary"><div><span>Series directas / meta</span><strong>{weeklyDirectTotal} <small>/ {weeklyTargetTotal}</small></strong><span>{weeklyTargetTotal>0?`${weeklyProgress}%`:"Sin meta activa"}</span></div><div className="series-summary-meta"><span>{allWeeklySeries.reduce((sum,item)=>sum+item.indirect,0).toFixed(1)} indirectas</span><span>{allWeeklySeries.reduce((sum,item)=>sum+item.total,0).toFixed(1)} efectivas</span><span>{currentDays.length} días</span></div><progress aria-label={`Cumplimiento general semana ${week}`} max="100" value={weeklyProgress}/><p>Suma todos los días de esta semana. Cada semana conserva sus propias metas.</p></div>
         <div className="series-groups">
@@ -230,7 +233,7 @@ export function TrainingPlanner() {
                 <div className="training-order"><strong>{String(index + 1).padStart(2, "0")}</strong><button aria-label={`Subir ${exercise.name}`} disabled={index === 0} onClick={() => moveExercise(exercise.id, -1)}><ChevronUp size={14}/></button><button aria-label={`Bajar ${exercise.name}`} disabled={index === selectedDay.exercises.length - 1} onClick={() => moveExercise(exercise.id, 1)}><ChevronDown size={14}/></button></div>
                 <div className="training-exercise-main"><button onClick={()=>{setAddedExerciseCount(0);setReplacing(exercise.id);setLibraryOpen(true);}}>Sustituir ejercicio</button><span>{exercise.muscle_group}</span><input aria-label="Nombre del ejercicio" value={exercise.name} onChange={event => updateExercise(exercise.id, item => { item.name = event.target.value; })}/><TrainingVideoEditor iconOnly key={`${draft.id}-${exercise.id}`} label={`Agregar mi video · ${exercise.name}`} value={exerciseVideo(exercise)} onChange={url=>updateExercise(exercise.id,item=>{item.video_url=url;item.video_custom=true;})}/></div>
                 <div className="training-prescription training-prescription-compact"><label>Carga (kg)<input type="number" min="0" step="0.5" value={prescription.load_kg??""} onChange={event=>updateExercise(exercise.id,item=>{item.prescriptions[week-1].load_kg=event.target.value===""?undefined:Number(event.target.value);})}/></label><label>Series<input aria-label={`Series de ${exercise.name}`} type="number" min="0" max="20" value={prescription.sets} onChange={event => updateExercise(exercise.id, item => { item.prescriptions[week - 1].sets = Number(event.target.value) || 0; })}/></label><TrainingRepRange key={`${exercise.id}-${week}`} label={`Repeticiones de ${exercise.name}`} min={prescription.reps_min} max={prescription.reps_max} onCommit={(min,max)=>updateExercise(exercise.id,item=>{item.prescriptions[week-1].reps_min=min;item.prescriptions[week-1].reps_max=max;})}/><label>RIR<input aria-label={`RIR de ${exercise.name}`} title={prescription.rir_start!==prescription.rir_end?`Este ejercicio conservaba RIR inicial ${prescription.rir_start} y final ${prescription.rir_end}. Se muestra el final; al editar se aplicará el nuevo RIR a ambos.`:"Repeticiones en reserva"} type="number" min="0" max="10" value={prescription.rir_end} onChange={event=>updateExercise(exercise.id,item=>{const value=Math.min(10,Math.max(0,Number(event.target.value)||0));item.prescriptions[week-1].rir_start=value;item.prescriptions[week-1].rir_end=value;})}/></label><button title="Aplicar esta prescripción a las apariciones del ejercicio en todas las semanas" onClick={() => applyPrescriptionToAllWeeks(exercise.id, prescription)}><Copy size={14}/><span>Aplicar a todas</span></button></div>
-                <button className="training-remove-exercise" aria-label={`Eliminar ${exercise.name}`} onClick={() => removeExercise(exercise.id)}><Trash2 size={15}/></button>
+                <DeleteIconButton className="training-remove-exercise" label={`Eliminar ${exercise.name}`} onClick={() => removeExercise(exercise.id)}/>
               </article>;
             })}</div></>}
           </section>}

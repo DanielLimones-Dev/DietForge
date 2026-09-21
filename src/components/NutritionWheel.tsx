@@ -82,17 +82,18 @@ export function NutritionWheel({
     .slice(0, 3);
   const activeIndex = KEYS.indexOf(active);
   const activeData = MACROS[active];
-  const radius = 126;
+  const radius = 124;
   const circumference = 2 * Math.PI * radius;
-  const gap = 9;
+  const gap = 15;
   const segments = KEYS.map((key, index) => ({
     key,
     length: (percentages[index] / 100) * circumference,
+    visibleLength: percentages[index] > 0 ? Math.max(0.75, (percentages[index] / 100) * circumference - Math.min(gap, (percentages[index] / 100) * circumference * 0.28)) : 0,
     offset: percentages.slice(0, index).reduce((sum, percentage) => sum + (percentage / 100) * circumference, 0),
   }));
 
   return (
-    <section className="nutrition-wheel-card" aria-labelledby="nutrition-wheel-title">
+    <section className="nutrition-wheel-card" data-cascade="1" aria-labelledby="nutrition-wheel-title">
       <div className="nutrition-wheel-heading">
         <div>
           <p className="df-eyebrow">MATRIZ NUTRICIONAL</p>
@@ -104,8 +105,9 @@ export function NutritionWheel({
       <div className="nutrition-wheel-stage">
         <div className="nutrition-wheel-wrap">
           <svg viewBox="0 0 320 320" className="nutrition-wheel" aria-label="Selecciona un macronutriente">
-            <circle cx="160" cy="160" r={radius} fill="none" stroke="currentColor" strokeWidth="30" className="nutrition-wheel-track" />
-            {segments.map(({ key, length, offset: currentOffset }) => {
+            <circle cx="160" cy="160" r={radius} fill="none" stroke="currentColor" strokeWidth="24" className="nutrition-wheel-track" />
+            {segments.map(({ key, visibleLength, offset: currentOffset }) => {
+              if (visibleLength <= 0) return null;
               return (
                 <circle
                   key={key}
@@ -114,9 +116,9 @@ export function NutritionWheel({
                   r={radius}
                   fill="none"
                   stroke={MACROS[key].color}
-                  strokeWidth={active === key ? 38 : 30}
-                  strokeLinecap="round"
-                  strokeDasharray={`${Math.max(0, length - gap)} ${circumference - Math.max(0, length - gap)}`}
+                  strokeWidth={active === key ? 30 : 24}
+                  strokeLinecap="butt"
+                  strokeDasharray={`${visibleLength} ${circumference - visibleLength}`}
                   strokeDashoffset={-currentOffset}
                   pathLength={circumference}
                   className="nutrition-wheel-segment"

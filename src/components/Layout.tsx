@@ -12,7 +12,6 @@ import {
   Home,
   Moon,
   Sun,
-  LayoutDashboard,
   LogOut, ShieldCheck, Leaf, Menu, X, Dumbbell, Library, ChevronDown, FolderKanban, Activity,
 } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -28,7 +27,6 @@ const baseGroups = [
     label: "Seguimiento",
     icon: Activity,
     links: [
-      { to: "/coach", label: "Panel Coach", icon: LayoutDashboard },
       { to: "/agenda", label: "Agenda", icon: ClipboardList },
       { to: "/reports", label: "Reportes", icon: BarChart3 },
     ],
@@ -68,7 +66,75 @@ export function Layout({ children }: { children: ReactNode }) {
 
   const toggleGroup = (id: string) => setOpenGroups(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
 
-  useEffect(() => { mainRef.current?.scrollTo(0, 0); }, [pathname]);
+  useEffect(() => {
+    const main = mainRef.current;
+    main?.scrollTo(0, 0);
+    if (!main || typeof window.matchMedia !== "function") return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let frame = 0;
+    let animations: Animation[] = [];
+    const animationByTarget = new Map<HTMLElement, Animation>();
+    const revealFocusedBlock = (event: FocusEvent) => {
+      const focused = event.target;
+      if (!(focused instanceof Node)) return;
+      for (const [target, animation] of animationByTarget) {
+        if (target.contains(focused)) animation.cancel();
+      }
+    };
+    const cancelAnimations = () => {
+      if (frame && typeof window.cancelAnimationFrame === "function") window.cancelAnimationFrame(frame);
+      animations.forEach(animation => animation.cancel());
+      animations = [];
+      animationByTarget.clear();
+    };
+    const animateRoute = () => {
+      if (reducedMotion.matches) return;
+      const isSafeTarget = (node: Element): node is HTMLElement => {
+        if (!(node instanceof HTMLElement) || node.hidden || node.getAttribute("aria-hidden") === "true") return false;
+        if (node.matches("[data-page-cascade]") || node.querySelector("[data-page-cascade]")) return false;
+        const style = window.getComputedStyle(node);
+        if (style.display === "none" || style.visibility === "hidden" || style.position === "fixed") return false;
+        const overlaySelector = '[role="dialog"], [class~="fixed"], [class*="modal"], [class*="backdrop"]';
+        return !node.matches(overlaySelector) && !node.querySelector(overlaySelector);
+      };
+      const roots = Array.from(main.children).filter(isSafeTarget);
+      const revealChildren = (root: HTMLElement) => {
+        let level = [root];
+        for (let depth = 0; depth < 3; depth += 1) {
+          const children = level.flatMap(node => Array.from(node.children).filter(isSafeTarget));
+          if (children.length > 1) return children;
+          if (children.length !== 1) break;
+          level = children;
+        }
+        return level;
+      };
+      const blocks = roots.flatMap(revealChildren);
+      const activeElement = document.activeElement;
+      const targets = (blocks.length > 1 ? blocks : roots)
+        .filter(target => !(activeElement instanceof Node) || !target.contains(activeElement))
+        .slice(0, 8);
+      animations = targets.flatMap((target, index) => {
+        if (typeof target.animate !== "function") return [];
+        const animation = target.animate([
+          { opacity: 0, transform: "translateY(18px) scale(.98)" },
+          { opacity: 1, transform: "translateY(0) scale(1)" },
+        ], { duration: 500, delay: index * 75, easing: "cubic-bezier(.16,1,.3,1)", fill: "backwards" });
+        animationByTarget.set(target, animation);
+        animation.finished.finally(() => animationByTarget.delete(target)).catch(() => {});
+        return [animation];
+      });
+    };
+    if (typeof window.requestAnimationFrame === "function") frame = window.requestAnimationFrame(animateRoute);
+    else animateRoute();
+    main.addEventListener("focusin", revealFocusedBlock);
+    reducedMotion.addEventListener?.("change", cancelAnimations);
+    return () => {
+      main.removeEventListener("focusin", revealFocusedBlock);
+      reducedMotion.removeEventListener?.("change", cancelAnimations);
+      cancelAnimations();
+    };
+  }, [pathname]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);

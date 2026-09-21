@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
-import { Database, Dumbbell, Film, Pencil, Plus, Search, Trash2, X } from "lucide-react";
+import { Database, Dumbbell, Film, Pencil, Plus, Search, X } from "lucide-react";
 import exerciseData from "@/data/training-exercises.json";
 import { db } from "@/lib/db";
 import { exerciseLibraryKey, mergedExerciseLibrary } from "@/lib/exercise-library";
 import type { CustomExercise, ExerciseLibraryItem } from "@/types";
 import { TrainingVideo, TrainingVideoEditor } from "./TrainingMedia";
 import { ConfirmDialog } from "./ui";
+import { DeleteIconButton } from "./ui/delete-icon-button";
 import { useToast } from "./Toast";
 
 const baseExercises = exerciseData as ExerciseLibraryItem[];
@@ -104,7 +105,7 @@ export function ExerciseDB() {
           <div className="exercise-db-avatar"><Dumbbell size={18}/></div>
           <div className="exercise-db-main"><div><h3>{item.name}</h3>{item.source === "mine" && <span>PERSONALIZADO</span>}</div><p>{item.muscle_group}{item.video_url ? " · Video incluido" : ""}</p>{item.source === "mine" && item.custom.notes && <small>{item.custom.notes}</small>}</div>
           {item.video_url && <div className="exercise-db-video"><Film size={14}/><TrainingVideo value={item.video_url} label="Video del coach"/></div>}
-          {item.source === "mine" && <div className="exercise-db-row-actions"><button aria-label={`Editar ${item.name}`} onClick={() => startEdit(item.custom)}><Pencil size={15}/></button><button className="danger" aria-label={`Eliminar ${item.name}`} onClick={() => setDeleteId(item.custom.id)}><Trash2 size={15}/></button></div>}
+          {item.source === "mine" && <div className="exercise-db-row-actions"><button aria-label={`Editar ${item.name}`} onClick={() => startEdit(item.custom)}><Pencil size={15}/></button><DeleteIconButton className="danger" label={`Eliminar ${item.name}`} onClick={() => setDeleteId(item.custom.id)}/></div>}
           {item.source === "included" && <div className="exercise-db-row-actions"><button className="exercise-personalize" aria-label={`Agregar video o personalizar ${item.name}`} title="Agregar video o personalizar" onClick={() => personalize(item)}><Film size={14}/><span>Video</span></button></div>}
         </article>)}
         {!rows.length && <div className="exercise-db-empty"><Dumbbell size={30}/><h3>No hay coincidencias</h3><p>Cambia los filtros o crea un ejercicio propio.</p><button className="df-button" onClick={startNew}><Plus size={15}/>Nuevo ejercicio</button></div>}

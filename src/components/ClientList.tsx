@@ -1,5 +1,7 @@
 "use client";
 
+import { revealFocusedCascade } from "@/lib/page-cascade";
+
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -66,8 +68,8 @@ export function ClientList() {
   };
 
   return (
-    <div className="clients-page">
-      <div className="clients-hero">
+    <div className="clients-page" data-page-cascade onFocusCapture={revealFocusedCascade}>
+      <div className="clients-hero" data-cascade="0">
         <div>
           <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
             Clientes
@@ -91,7 +93,7 @@ export function ClientList() {
         </div>
       </div>
 
-      <div className="clients-tabs">
+      <div className="clients-tabs" data-cascade="1">
         <button onClick={() => { setTab("todos"); setSelectedTag(null); }}
           className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-all uppercase tracking-wider ${
             tab === "todos" ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white shadow-sm" : "bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700 hover:border-gray-300"
@@ -108,7 +110,7 @@ export function ClientList() {
         </button>
       </div>
 
-      <div className="clients-search">
+      <div className="clients-search" data-cascade="2">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
         <input
           className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all duration-200 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
@@ -142,7 +144,7 @@ export function ClientList() {
         </div>
       )}
 
-      <div className="clients-directory">
+      <div className="clients-directory" data-cascade="3">
         {filtered.map((c) => {
           const overdue = overdueIds.has(c.id);
           return (
