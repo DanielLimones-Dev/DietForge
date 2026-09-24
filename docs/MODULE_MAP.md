@@ -178,7 +178,10 @@ BiometricChart presenta una curva de ancho completo con selector peso/grasa, per
 El ajuste de macros guardados se monta en la sección superior, en la posición del resumen, mientras la calculadora permanece cerrada. macroEditor se comparte con resultados nuevos sin duplicación. Los inputs de sus tarjetas usan data-plain-number para excluir los steppers globales visuales y de puntero; mantienen sus botones −/+.
 
 ### Seguimiento automático y check-ins
-- `src/lib/auto-refresh.ts`, `use-auto-refresh.ts`: lecturas seriales y ciclo de visibilidad/reconexión.
+- `src/lib/auto-refresh.ts`, `use-auto-refresh.ts`: lecturas seriales, invalidación/cola de recargas tras guardar y ciclo de visibilidad/reconexión.
+- `src/lib/use-portal-sync.ts`: estado del expediente, recuperación, descarte de respuestas anteriores y pausa ante errores terminales.
+- `src/lib/portal-errors.ts`: clasificación segura de errores Auth/RPC con causa interna conservada.
+- `tests/portal-sync-browser.test.ts`, `portal-errors.test.ts`, `auto-refresh.test.ts`: regresiones de concurrencia, identidad, offline y categorías de error (datos simulados y DOM JSDOM).
 - `src/components/PortalCheckIn.tsx`, `src/lib/portal-checkin.ts`: formulario cliente sin grasa, historial y recuperación de envío.
 - `src/lib/checkin-media.ts`: fotos privadas y URLs firmadas.
 - `src/components/CoachNotifications.tsx`: campana global y destinos de registros.
@@ -194,3 +197,14 @@ El ajuste de macros guardados se monta en la sección superior, en la posición 
 ## Entrada progresiva del workspace
 
 `src/lib/page-cascade.ts` mantiene visibles los bloques al recibir foco. Dashboard, ClientList, TrainingHub, TrainingPlanner, Reports, FoodDB y AgendaHub declaran `data-page-cascade` y ordenan bloques reales con `data-cascade`; CSS inicia su entrada al montarse. Layout excluye esas páginas de su animación genérica para evitar solapamientos.
+
+- `tests/portal-sync-smoke.mjs`: integración en Brave con RPC interceptadas; carga única, correo en edición, recuperación, revocación y Agenda. Ejecutar después de build; no realiza escrituras reales.
+
+
+## Menús y recetas
+- `src/components/diet-menus/`: pestañas, editor de menús, biblioteca/recetas, imágenes privadas, vista del portal y demostración local.
+- `src/types/diet-menus.ts`, `src/lib/diet-menus.ts`: contratos, validación, nutrición y duplicación.
+- `src/lib/portal-menus.ts`, `src/lib/recipe-photos.ts`: RPC diaria y Storage privado.
+- Menús y recetas: integrado en las subpestañas de Planificación, sin página de demostración.
+- `supabase/migrations/20260924010000_diet_menus.sql`: persistencia, privacidad por coach/cliente, diarios y fotos. Preparada localmente, no aplicada remotamente.
+- `tests/diet-menus.test.ts`, `tests/diet-menu-ui.test.ts`, `tests/sql/diet-menus.sql`: dominio/compatibilidad, guardados y autorización SQL.

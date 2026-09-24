@@ -1,14 +1,17 @@
+import type {Recipe,ClientMenu} from '@/types/diet-menus';
+import {recipeIssues,menuIssues} from '../diet-menus';
 import type { Client, ClientMeasurement, Competition, CheckIn, PhotoRef, WeekPlan, Food, MealPlan, MealPlanItem, DietTemplate, TrainingProgram, CustomExercise } from '@/types';
 export interface Database {
+  recipes: Recipe[]; clientMenus: ClientMenu[];
   seed_version?: number;
   clients: Client[]; measurements: ClientMeasurement[]; competitions: Competition[];
   checkins: CheckIn[]; photos: PhotoRef[]; weekPlans: WeekPlan[]; foods: Food[];
   mealPlans: MealPlan[]; mealPlanItems: MealPlanItem[]; trainingPrograms: TrainingProgram[]; exercises: CustomExercise[]; nextId: Record<string, number>;
 }
 export interface Snapshot { database: Database; templates: DietTemplate[]; preferences: Record<string, string>; }
-export const collections = ['clients','measurements','competitions','checkins','photos','weekPlans','foods','mealPlans','mealPlanItems','trainingPrograms','exercises'] as const;
+export const collections = ['clients','measurements','competitions','checkins','photos','weekPlans','foods','mealPlans','mealPlanItems','trainingPrograms','exercises','recipes','clientMenus'] as const;
 export function emptySnapshot(): Snapshot {
-  return { database: {clients:[],measurements:[],competitions:[],checkins:[],photos:[],weekPlans:[],foods:[],mealPlans:[],mealPlanItems:[],trainingPrograms:[],exercises:[],nextId:{}},templates:[],preferences:{} };
+  return { database: {clients:[],measurements:[],competitions:[],checkins:[],photos:[],weekPlans:[],foods:[],mealPlans:[],mealPlanItems:[],trainingPrograms:[],exercises:[],recipes:[],clientMenus:[],nextId:{}},templates:[],preferences:{} };
 }
 export function validateSnapshot(value: unknown): Snapshot {
   if (!value || typeof value !== 'object') throw new Error('Respaldo inválido.');
@@ -17,6 +20,7 @@ export function validateSnapshot(value: unknown): Snapshot {
   for (const key of collections) {
     // Training was added after the first cloud snapshots; older accounts upgrade in place.
     if ((key === 'trainingPrograms' || key === 'exercises') && !Array.isArray(s.database[key])) s.database[key] = [];
+    if ((key === 'recipes' || key === 'clientMenus') && s.database[key] === undefined) s.database[key] = [];
     if (!Array.isArray(s.database[key])) throw new Error(`Falta la colección ${key}.`);
     const ids = new Set<number>();
     for (const row of s.database[key]) {
@@ -24,6 +28,9 @@ export function validateSnapshot(value: unknown): Snapshot {
       ids.add(row.id);
     }
   }
+  for (const recipe of s.database.recipes) { const issues=recipeIssues(recipe); if(issues.length)throw new Error('Receta inválida: '+issues.join(' ')); }
+  const clientIds=new Set(s.database.clients.map(client=>client.id));
+  for(const menu of s.database.clientMenus){const issues=menuIssues(menu);if(!clientIds.has(menu.client_id))issues.push('El cliente del menú no existe.');if(issues.length)throw new Error('Menú inválido: '+issues.join(' '));}
   const templateIds = new Set<number>();
   for (const t of s.templates) { if (!Number.isSafeInteger(t.id) || templateIds.has(t.id)) throw new Error('Plantilla con ID inválido o repetido.'); templateIds.add(t.id); }
   s.database.nextId = Object.fromEntries(collections.map(key => [key, Math.max(0,...s.database[key].map(r => r.id)) + 1]));

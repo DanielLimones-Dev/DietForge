@@ -264,3 +264,19 @@ PortalAuth separa correo autorizado, creación de contraseña y confirmación. E
 Dashboard, Clientes y Rutinas controlan su secuencia desde los bloques reales de cada página, para iniciar también cuando la ruta termina de cargar después del layout. La entrada no remonta formularios ni depende de cambios de datos. Recibir foco revela el bloque de forma permanente; movimiento reducido e impresión desactivan la animación.
 
 Agenda monta la cuadrícula del mes antes de recibir el expediente remoto. Mientras `CareAgenda.data` es null, permite navegar por fechas y muestra actividades pendientes de carga; no informa «Día libre» ni ceros que puedan confundirse con datos reales. Al llegar los datos conserva mes y fecha seleccionados. Cambiar de cliente remonta la agenda y evita mezclar expedientes. La autorización sigue pasando por `readPortal`.
+
+## Lecturas del expediente — 2026-09-24
+
+`ClientCare` usa `usePortalSync` y un único carril `startAutoRefresh` para carga inicial, polling y recargas después de guardar. `reload()` invalida la respuesta en vuelo y agrupa las solicitudes pendientes en una lectura nueva; `stop()` descarta respuestas tardías. La identidad owner/client y rol determina el montaje del contenido, para no mostrar el expediente anterior al cambiar de cliente. Las membresías se consultan por separado y nunca reemplazan el correo que el coach está editando.
+
+`portalFailure` conserva la causa interna de errores RPC y clasifica sesión, acceso, transporte, validación y desconocidos. Los transitorios reintentan con espera creciente hasta 60 s; errores terminales pausan las lecturas automáticas hasta un reintento explícito. Offline conserva datos y borradores y vuelve a leer al reconectar. Sesión ausente o acceso denegado ocultan los datos del expediente; la autorización sigue siendo responsabilidad del servidor. Agenda comparte los mismos avisos que el portal. No se reintentan escrituras automáticamente ni se cambian RLS/RPC.
+
+
+## Menús y recetas independientes (24/09/2026, local)
+`DietWorkspace` mantiene montado el plan existente al cambiar de pestaña. Las colecciones `recipes` y `clientMenus` contienen copias de ingredientes y recetas para no alterar prescripciones al editar la biblioteca. Los nutrientes se calculan desde ingredientes y rendimiento por porción. El coach guarda borradores o asigna explícitamente menús. No hay límite fijo de seis menús.
+
+La migración `20260924010000_diet_menus.sql` prepara la persistencia, autorización de menús asignados, fotos privadas y selección/comidas diarias del portal. **No aplicada a Supabase real**. Antes de activar fuera de la demostración local, aplicar y verificar la migración en un entorno autorizado, incluyendo JWT reales y Storage HTTP. La página de demostración `/dev/menus` se retiró; el acceso se mantiene dentro de Planificación.
+
+Las recetas y menús participan en los snapshots. Los registros diarios se archivan al retirar clientes o cambiar de menú; la restauración antigua de backups no restaura esos diarios automáticamente. Las fotos son inmutables para conservar las copias de menús. No se elimina el objeto al borrar una receta de biblioteca.
+
+Validación: dominio con datos legacy y copias independientes; JSDOM para bloqueo durante guardado lento y retención del borrador ante fallo; migraciones y suite SQL en PGlite con autenticación/Storage simulados (sin verificar HTTP ni concurrencia real). Prueba manual en Brave con siete menús, receta de dos porciones y foto sintética.

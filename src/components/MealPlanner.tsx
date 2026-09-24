@@ -1,4 +1,5 @@
 "use client";
+import {DietWorkspace} from "./diet-menus/DietWorkspace";
 import {subscribeStorage} from "@/lib/db";
 
 import { getPreference, setPreference } from "@/lib/db";
@@ -47,7 +48,7 @@ function MealPlannerFields() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
-  const [editItemQty, setEditItemQty] = useState(0);
+  const [editItemQty, setEditItemQty] = useState("");
   const [selectedMeal, setSelectedMeal] = useState<string | null>(null);
   const [targetColumn, setTargetColumn] = useState<"left" | "right">("left");
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
@@ -249,8 +250,8 @@ function MealPlannerFields() {
               <span className={`w-2 h-2 rounded-full ${items.length > 0 ? "bg-green-400" : "bg-gray-300"}`} />
               <h4 className="font-semibold text-sm dark:text-white">{label}{restDay && <span className="ml-2 text-xs font-normal text-gray-400">{column==="right"?"Rest Day":"Normal"}</span>}</h4>
             </div>
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-              {Math.round(total.kcal * mult)} kcal · P:{Math.round(total.protein * mult)}g · C:{Math.round(total.carbs * mult)}g · G:{Math.round(total.fat * mult)}g
+            <span className="mp-meal-macros">
+              <span className="mp-kcal">{Math.round(total.kcal * mult)} kcal</span><span aria-hidden="true">·</span><span className="mp-protein">P: {Math.round(total.protein * mult)} g</span><span aria-hidden="true">·</span><span className="mp-carbs">C: {Math.round(total.carbs * mult)} g</span><span aria-hidden="true">·</span><span className="mp-fat">G: {Math.round(total.fat * mult)} g</span>
             </span>
           </div>
           {items.length > 0 ? (
@@ -260,30 +261,53 @@ function MealPlannerFields() {
                 if (!f) return null;
                 const ratio = getRatio(item.quantity, item.serving_unit, f.serving_size);
                 return (
-                  <div key={item.id} className={`meal-food-row text-sm rounded-lg px-3 py-2 group ${readOnly ? "bg-indigo-50/50 dark:bg-indigo-950/10" : "bg-gray-50 dark:bg-gray-800"}`}>
-                    <span className="font-medium dark:text-white min-w-0 break-words">{f.name}</span>
-                    <span className="text-gray-400 dark:text-gray-500 text-xs tabular-nums text-right whitespace-nowrap">
-                      ({(f.protein * ratio * mult).toFixed(1)}p / {(f.carbs * ratio * mult).toFixed(1)}c / {(f.fat * ratio * mult).toFixed(1)}g)
-                    </span>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {!readOnly && editingItemId === item.id ? (
-                        <div className="flex items-center gap-1">
-                          <input type="number" min={0.001} step="any" value={editItemQty}
-                            onChange={(e) => setEditItemQty(Number(e.target.value))}
-                            onBlur={() => handleUpdateItemQty(item.id)}
-                            onKeyDown={(e) => e.key === "Enter" && handleUpdateItemQty(item.id)}
-                            className="w-16 text-xs text-right px-1 py-0.5 border border-brand-500 rounded outline-none focus:ring-1 focus:ring-brand-500" autoFocus />
-                          <span className="text-xs text-gray-400 dark:text-gray-500">{item.serving_unit}</span>
-                        </div>
-                      ) : (
-                        <button type="button" disabled={readOnly} aria-label={`Editar cantidad de ${f.name}`} onClick={() => { setEditingItemId(item.id); setEditItemQty(item.quantity); }}
-                          className="text-xs text-gray-500 dark:text-gray-400 cursor-pointer hover:text-brand-600 hover:underline">
-                          {item.quantity}{item.serving_unit}
-                        </button>
-                      )}
-                      <button disabled={readOnly} aria-label={`Quitar ${f.name}`} onClick={(e) => { e.stopPropagation(); setRemoveItemId(item.id); }}
-                        className="p-1 text-gray-300 dark:text-gray-600 hover:text-red-500 transition-colors">
-                        <X className="w-3.5 h-3.5" />
+                  <div key={item.id} className="mp-food-entry">
+                    <div className="mp-food-summary">
+                      <strong>{f.name}</strong>
+                      <small>{Number(item.quantity.toFixed(3))} {item.serving_unit}</small>
+                      <div className="mp-food-nutrients">
+                        <b>{Math.round(f.kcal * ratio * mult)} kcal</b>
+                        <span>P <b>{(f.protein * ratio * mult).toFixed(1)} g</b></span>
+                        <span>C <b>{(f.carbs * ratio * mult).toFixed(1)} g</b></span>
+                        <span>G <b>{(f.fat * ratio * mult).toFixed(1)} g</b></span>
+                      </div>
+                    </div>
+                    <div className="mp-food-controls">
+                      <label>Cantidad
+                        <input data-plain-number type="number" min={0.001} step="any" disabled={readOnly}
+                          aria-label={`Cantidad de ${f.name}`}
+                          value={editingItemId === item.id ? editItemQty : item.quantity}
+                          onFocus={() => {setEditingItemId(item.id);setEditItemQty(String(item.quantity));}}
+                          onChange={e => {
+                            const draft=e.target.value;
+                            setEditingItemId(item.id);setEditItemQty(draft);
+                            const quantity=Number(draft);
+                            if(!draft.trim()||!Number.isFinite(quantity)||quantity<=0)return;
+                            const current=db.getMealPlan(planId)?.items.find(i=>i.id===item.id);
+                            if(!current||current.quantity===quantity)return;
+                            db.updateMealPlanItem(item.id,{quantity});
+                            setPlan(db.getMealPlan(planId));
+                          }}
+                          onBlur={() => {if(editingItemId === item.id)setEditingItemId(null);}}
+                          onKeyDown={e => {if(e.key === "Enter"){e.preventDefault();e.currentTarget.blur();}}} />
+                      </label>
+                      <label>Unidad
+                        <select disabled={readOnly} aria-label={`Unidad de ${f.name}`} value={item.serving_unit}
+                          onChange={e => {
+                            // Convert the latest saved quantity, including valid edits from the current render.
+                            const current=db.getMealPlan(planId)?.items.find(i=>i.id===item.id);
+                            if(!current)return;
+                            const unit=e.target.value;
+                            const quantity=convertQuantity(current.quantity,current.serving_unit,unit,f.serving_size);
+                            if(!Number.isFinite(quantity)||quantity<=0)return;
+                            db.updateMealPlanItem(item.id,{quantity,serving_unit:unit});
+                            setEditingItemId(null);setPlan(db.getMealPlan(planId));
+                          }}>
+                          {Array.from(new Set([item.serving_unit,...(f.serving_unit === "ml" ? ["ml"] : ["g","lb",...(f.serving_size>0?["pieza"]:[])])])).map(unit=><option key={unit} value={unit}>{unit}</option>)}
+                        </select>
+                      </label>
+                      <button type="button" disabled={readOnly} aria-label={`Quitar ${f.name}`} onClick={e=>{e.stopPropagation();setRemoveItemId(item.id);}} className="mp-food-remove">
+                        <Trash2 size={16} aria-hidden="true" />
                       </button>
                     </div>
                   </div>
@@ -321,14 +345,6 @@ function MealPlannerFields() {
     setRemoveItemId(null);
   };
 
-
-  const handleUpdateItemQty = (itemId: number) => {
-    if (Number.isFinite(editItemQty) && editItemQty > 0) {
-      db.updateMealPlanItem(itemId, { quantity: editItemQty });
-      setPlan(db.getMealPlan(planId));
-    }
-    setEditingItemId(null);
-  };
 
   const handleExportPDF = () => {
     const meas = db.getLatestMeasurement(plan.plan.client_id);
@@ -440,6 +456,7 @@ function MealPlannerFields() {
         </div>
       </section>
 
+      <DietWorkspace clientId={client.id}>
       {restDay && <section className="rest-reduction-control" aria-labelledby="rest-reduction-title">
         <span className="rest-reduction-icon"><PieChart size={17}/></span>
         <div className="rest-reduction-copy"><div><h3 id="rest-reduction-title">Reducción Rest Day</h3><span>Automático</span></div><p>Ajusta solo las metas; las porciones conservan su valor real.</p></div>
@@ -662,6 +679,8 @@ function MealPlannerFields() {
           </div>
         </div>
       )}
+
+      </DietWorkspace>
 
       <ConfirmDialog open={removeSection!==null} title="Eliminar comida" message={`¿Eliminar ${removeSection?MEAL_LABELS[removeSection.key]:""} y sus alimentos únicamente de ${removeSection?.rest?"Rest Day":"Plan Normal"}?`} onConfirm={deleteSection} onCancel={()=>setRemoveSection(null)}/>
       <ConfirmDialog

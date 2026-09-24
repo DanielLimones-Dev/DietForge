@@ -83,3 +83,7 @@ Aplicar en orden las cinco migraciones `20260908*`. Las RPC públicas conservan 
 ## Healthcheck y pausa por inactividad
 
 `20260908050000_healthcheck.sql` está aplicada y registrada. `npm run health:supabase` comprueba la base real con la clave anon. El workflow programado requiere `SUPABASE_HEALTH_URL` y `SUPABASE_HEALTH_ANON_KEY` como secretos de GitHub. Esta señal no es una garantía contractual contra la pausa del plan Free; usar una organización Pro antes de una beta externa.
+
+
+## Menús y recetas — septiembre 2026
+Aplicar `migrations/20260924010000_diet_menus.sql` después de las migraciones anteriores. El frontend comprueba `dietforge_menus_read` antes de habilitar el editor en producción; sin migración muestra disponibilidad pendiente y mantiene el plan habitual. Tras aplicar, verificar acceso por coach/cliente y Storage privado `recipe-photos` con datos de prueba. Subir código a GitHub no aplica esta migración.

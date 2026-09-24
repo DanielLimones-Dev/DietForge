@@ -1,3 +1,5 @@
+import type {Recipe,ClientMenu} from '@/types/diet-menus';
+import {recipeIssues,menuIssues} from './diet-menus';
 import type { Client, ClientMeasurement, Food, MealPlan, MealPlanItem, DietTemplate, Competition, CheckIn, PhotoRef, WeekPlan, TrainingProgram, CustomExercise } from '@/types';
 import { classifyCarbs } from '@/lib/nutrition';
 import { readRemote, writeRemote } from './cloud/repository';
@@ -82,7 +84,33 @@ function startQueue(revision:number){
 }
 export function disconnectCloud(){accountEpoch++;queue=null;owner='';adopt(emptySnapshot());}
 export async function init(){/* The authenticated CloudGate initializes the data before mounting the app. */}
+function validateMenuForAccount(menu:ClientMenu|Omit<ClientMenu,'id'>){
+ const issues=menuIssues(menu);
+ if(!cache.clients.some(client=>client.id===menu.client_id))issues.push('El cliente del menú no existe.');
+ if(issues.length)throw new Error(issues.join(' '));
+}
 const localDb = {
+  getRecipes: ():Recipe[] => structuredClone(cache.recipes),
+  getClientMenus: (clientId:number):ClientMenu[] => structuredClone(cache.clientMenus.filter(menu=>menu.client_id===clientId)),
+  saveRecipe: (data:Omit<Recipe,'id'>):Recipe => {
+    assertWritable();const issues=recipeIssues(data);if(issues.length)throw new Error(issues.join(' '));
+    const recipe:Recipe={...structuredClone(data),id:genId('recipes')};cache.recipes.push(recipe);persist();return structuredClone(recipe);
+  },
+  updateRecipe: (id:number,data:Partial<Omit<Recipe,'id'>>):Recipe|undefined => {
+    assertWritable();const index=cache.recipes.findIndex(recipe=>recipe.id===id);if(index<0)return undefined;
+    const recipe={...cache.recipes[index],...structuredClone(data),id,updated_at:new Date().toISOString()};const issues=recipeIssues(recipe);if(issues.length)throw new Error(issues.join(' '));
+    cache.recipes[index]=recipe;persist();return structuredClone(recipe);
+  },
+  deleteRecipe: (id:number):void => {assertWritable();cache.recipes=cache.recipes.filter(recipe=>recipe.id!==id);persist();},
+  saveClientMenu: (data:Omit<ClientMenu,'id'>):ClientMenu => {
+    assertWritable();validateMenuForAccount(data);const menu:ClientMenu={...structuredClone(data),id:genId('clientMenus')};cache.clientMenus.push(menu);persist();return structuredClone(menu);
+  },
+  updateClientMenu: (id:number,data:Partial<Omit<ClientMenu,'id'>>):ClientMenu|undefined => {
+    assertWritable();const index=cache.clientMenus.findIndex(menu=>menu.id===id);if(index<0)return undefined;
+    const menu={...cache.clientMenus[index],...structuredClone(data),id,updated_at:new Date().toISOString()};validateMenuForAccount(menu);cache.clientMenus[index]=menu;persist();return structuredClone(menu);
+  },
+  deleteClientMenu: (id:number):void => {assertWritable();cache.clientMenus=cache.clientMenus.filter(menu=>menu.id!==id);persist();},
+
   init,
 
   getClients: (): Client[] => cache.clients,
@@ -124,6 +152,7 @@ const localDb = {
     cache.mealPlans=cache.mealPlans.filter(p=>p.client_id!==id);
     cache.mealPlanItems=cache.mealPlanItems.filter(p=>!planIds.has(p.meal_plan_id));
     cache.trainingPrograms=cache.trainingPrograms.filter(p=>p.client_id!==id);
+    cache.clientMenus=cache.clientMenus.filter(menu=>menu.client_id!==id);
     persist();
   },
 
