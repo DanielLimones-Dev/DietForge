@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {printDocumentHtml} from '../src/lib/print-document';
+import {openPrintDocument, printDocumentHtml} from '../src/lib/print-document';
 
 test('print documents disconnect the opener and trigger printing once loaded', () => {
   const html = printDocumentHtml('<html><body><p>Plan</p></body></html>');
@@ -14,7 +14,7 @@ test('print documents that already trigger printing are left untouched', () => {
   assert.equal(printDocumentHtml(existing), existing);
 });
 
-test('openPrintDocument opens a blob window, disconnects the opener and reports blocked popups', async () => {
+test('openPrintDocument opens a blob window, disconnects the opener and reports blocked popups', () => {
   const descriptors = new Map(['window', 'URL', 'Blob'].map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
   const opened = {opener: {} as unknown};
   const urls: string[] = [];
@@ -25,7 +25,6 @@ test('openPrintDocument opens a blob window, disconnects the opener and reports 
     Blob: {configurable: true, value: class {}},
   });
   try {
-    const {openPrintDocument} = await import('../src/lib/print-document');
     assert.equal(openPrintDocument('<html><body>Plan</body></html>'), opened);
     assert.deepEqual(urls, ['blob:test']);
     assert.equal(opened.opener, null);
