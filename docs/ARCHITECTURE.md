@@ -193,7 +193,7 @@ La calculadora separa borrador y persistencia. `handleCalc` calcula y conserva t
 
 - `calculator.ts`, `metrics.ts`, `phases.ts` y `carbCycle.ts` producen metas y análisis sin depender de React.
 - `CheckInForm`, `CheckInHistory`, `trends.ts`, `progression.ts` y `alerts.ts` conectan seguimiento con recomendaciones.
-- `pdf.ts` genera el plan imprimible; `progressReport.ts` genera el reporte; `csv.ts` exporta mediciones.
+- `pdf.ts` genera el plan imprimible; `progressReport.ts` genera el reporte; `print-document.ts` abre ambos (y el PDF de rutina) desde un Blob con `noopener`, inyecta la impresión si falta y propaga el error cuando el navegador bloquea la ventana; `csv.ts` exporta mediciones.
 - `WeekPlanView` organiza una semana; `BatchAssign` aplica planes a varios días.
 
 ## Entrada numérica
@@ -237,7 +237,7 @@ Los macros guardados mantienen la acción Ajustar macros en ClientDetail. El edi
 BiometricChart presenta una curva de ancho completo con selector peso/grasa, periodos relativos al último registro, área degradada, tooltip y media de registros de los últimos siete días. La media es visual y no modifica el seguimiento. Los valores ausentes no se convierten a cero.
 
 
-El ajuste de macros guardados se monta en la sección superior, en la posición del resumen, mientras la calculadora permanece cerrada. macroEditor se comparte con resultados nuevos sin duplicación. Los inputs de sus tarjetas usan data-plain-number para excluir los steppers globales visuales y de puntero; mantienen sus botones −/+.
+El ajuste de macros guardados se monta en la sección superior, en la posición del resumen, mientras la calculadora permanece cerrada. macroEditor se comparte con resultados nuevos sin duplicación. Los inputs de sus tarjetas usan data-plain-number para excluir los steppers globales visuales y de puntero; mantienen sus botones −/+. Editar proteína, carbohidratos o grasas recalcula las calorías como proteína×4 + carbohidratos×4 + grasas×9 y refleja el nuevo total en el campo de calorías; editar calorías redistribuye P/C/G con el reparto 23/50/27. Los campos conservan el texto temporal para permitir decimales y vaciarlos. La comparación por fase muestra la diferencia real de kcal, sin un cero fijo.
 
 ## Check-in del portal y notificaciones — 2026-09-14
 
@@ -275,7 +275,7 @@ Agenda monta la cuadrícula del mes antes de recibir el expediente remoto. Mient
 ## Menús y recetas independientes (24/09/2026, local)
 `DietWorkspace` mantiene montado el plan existente al cambiar de pestaña. Las colecciones `recipes` y `clientMenus` contienen copias de ingredientes y recetas para no alterar prescripciones al editar la biblioteca. Los nutrientes se calculan desde ingredientes y rendimiento por porción. El coach guarda borradores o asigna explícitamente menús. No hay límite fijo de seis menús.
 
-La migración `20260924010000_diet_menus.sql` prepara la persistencia, autorización de menús asignados, fotos privadas y selección/comidas diarias del portal. **No aplicada a Supabase real**. Antes de activar fuera de la demostración local, aplicar y verificar la migración en un entorno autorizado, incluyendo JWT reales y Storage HTTP. La página de demostración `/dev/menus` se retiró; el acceso se mantiene dentro de Planificación.
+La migración `20260924010000_diet_menus.sql` prepara la persistencia, autorización de menús asignados, fotos privadas y selección/comidas diarias del portal. Está aplicada en Supabase (verificada con `supabase migration list --linked` el 2026-10-29). Antes de considerarla validada de extremo a extremo faltan JWT reales y Storage HTTP. La página de demostración `/dev/menus` se retiró; el acceso se mantiene dentro de Planificación.
 
 Las recetas y menús participan en los snapshots. Los registros diarios se archivan al retirar clientes o cambiar de menú; la restauración antigua de backups no restaura esos diarios automáticamente. Las fotos son inmutables para conservar las copias de menús. No se elimina el objeto al borrar una receta de biblioteca.
 

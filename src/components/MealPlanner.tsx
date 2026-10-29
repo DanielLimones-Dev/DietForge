@@ -9,9 +9,11 @@ import { ArrowLeft, Printer, Plus, Scale, X, Target, Globe, Moon, PieChart, Tras
 import { db } from "@/lib/db";
 import { itemsForDay, mealTotals, convertQuantity, restReduction, restTargets, foodRatio as getRatio } from "@/lib/meal-day";
 import { generateDietPDF } from "@/lib/pdf";
+import { openPrintDocument } from "@/lib/print-document";
 import { searchFatSecret, classifyCarbs } from "@/lib/nutrition";
 import type { Food, MealPlan, MealPlanItem, MealTime } from "@/types";
 import { ConfirmDialog, PromptDialog } from "./ui";
+import { useToast } from "./Toast";
 
 const MEAL_LABELS: Record<string, string> = {
   pre_workout: "Pre-Entreno",
@@ -40,6 +42,7 @@ export function MealPlanner(){const {id}=useParams<{id?:string}>();return <MealP
 function MealPlannerFields() {
   const { id } = useParams<{ id?: string }>();
   const router = useRouter();
+  const { toast } = useToast();
   const planId = Number(id);
 
   const [plan, setPlan] = useState(() => db.getMealPlan(planId));
@@ -348,14 +351,14 @@ function MealPlannerFields() {
 
   const handleExportPDF = () => {
     const meas = db.getLatestMeasurement(plan.plan.client_id);
-    if (!meas) return;
+    if (!meas) { toast("Registra una medición del cliente antes de generar el PDF.", "error"); return; }
     const items = itemsForDay(plan.items, restDay).map((i) => {
       const food = db.getFood(i.food_id);
       return { ...i, food: food || emptyFood };
     });
     const html = generateDietPDF({ client, measurement: meas, plan: restDay ? {...plan.plan, ...restDayTarget, name: plan.plan.name + " — Rest Day"} : plan.plan, items });
-    const win = window.open("", "_blank");
-    if (win) { win.opener = null; win.document.write(html); win.document.close(); setTimeout(() => win.print(), 300); }
+    try { openPrintDocument(html); }
+    catch (error) { toast(error instanceof Error ? error.message : "No se pudo abrir el PDF.", "error"); }
   };
 
   const handleSaveTemplate = (name: string) => {

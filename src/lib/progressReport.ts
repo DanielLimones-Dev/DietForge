@@ -2,6 +2,7 @@ import type { Client, ClientMeasurement, CheckIn, Competition, CompetitionPhase 
 import { calculateWeightTrend } from "./trends";
 import { calculateFFMI, calculateLeanBodyMass, calculateFatMass, calculateBmi } from "./metrics";
 import { getPhaseLabel } from "./phases";
+import { openPrintDocument } from "./print-document";
 const escapeHTML = (value: string | number) => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 
 export function generateProgressReportHTML(
@@ -110,6 +111,5 @@ export function openProgressReport(options: {
   phase?: CompetitionPhase;
 }): void {
   const html = generateProgressReportHTML(options.client, options.measurements, options.checkins, options.competition, options.phase);
-  const win = window.open("", "_blank");
-  if (win) { win.opener = null; win.document.write(html); win.document.close(); setTimeout(() => win.print(), 300); }
+  openPrintDocument(html);
 }

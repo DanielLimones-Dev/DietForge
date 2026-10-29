@@ -1,6 +1,7 @@
 import type { Client, TrainingProgram } from "@/types";
 import {exerciseVideo} from './training-media';
 import {trainingDays} from './training';
+import {openPrintDocument} from './print-document';
 
 const escapeHtml = (value: unknown) => String(value ?? "").replace(/[&<>'"]/g, character => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;",
@@ -14,7 +15,7 @@ const safeUrl = (value?: string) => {
 
 export function trainingProgramHtml(program: TrainingProgram, client: Client): string {
   const weeks = Array.from({ length: program.duration_weeks }, (_, index) => index + 1);
-  const priorities = program.priorities.filter(Boolean).join(" · ") || "Sin prioridades indicadas";
+  const priorities = (program.priorities ?? []).filter(Boolean).join(" · ") || "Sin prioridades indicadas";
   const pages = weeks.map(week => `<section class="week-page">
     <div class="week-title"><div><span>ROTACIÓN ${program.rotation_number}</span><h2>Semana ${week}</h2></div><p>${escapeHtml(program.split || `${trainingDays(program,week).length} días de entrenamiento`)}</p></div>
     ${trainingDays(program,week).map(day => `<article class="day">
@@ -35,10 +36,5 @@ export function trainingProgramHtml(program: TrainingProgram, client: Client): s
 }
 
 export function printTrainingProgram(program: TrainingProgram, client: Client): void {
-  const popup = window.open("", "_blank");
-  if (!popup) throw new Error("El navegador bloqueó la ventana de impresión.");
-  popup.opener = null;
-  popup.document.open();
-  popup.document.write(trainingProgramHtml(program, client));
-  popup.document.close();
+  openPrintDocument(trainingProgramHtml(program, client));
 }

@@ -88,6 +88,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `src/lib/nutrition.ts` | búsqueda y normalización USDA, FatSecret y OpenFoodFacts |
 | `src/lib/pdf.ts` | documento A4 imprimible del plan, totales, tablas y escape de contenido |
 | `src/lib/progressReport.ts` | documento A4 del progreso y apertura aislada de la ventana de impresión |
+| `src/lib/print-document.ts` | apertura compartida de documentos imprimibles con Blob, `noopener`, impresión automática y error si el navegador bloquea la ventana |
 | `src/lib/csv.ts` | CSV de mediciones y descarga |
 | `src/lib/macro-evaluation.ts` | guarda evaluaciones sin crear check-ins y selecciona su historial para el carrusel |
 | `src/lib/client-progress.ts` | compara los dos registros más recientes de peso y grasa y combina evaluaciones/check-ins para las gráficas antropométricas |
@@ -206,5 +207,5 @@ El ajuste de macros guardados se monta en la sección superior, en la posición 
 - `src/types/diet-menus.ts`, `src/lib/diet-menus.ts`: contratos, validación, nutrición y duplicación.
 - `src/lib/portal-menus.ts`, `src/lib/recipe-photos.ts`: RPC diaria y Storage privado.
 - Menús y recetas: integrado en las subpestañas de Planificación, sin página de demostración.
-- `supabase/migrations/20260924010000_diet_menus.sql`: persistencia, privacidad por coach/cliente, diarios y fotos. Preparada localmente, no aplicada remotamente.
+- `supabase/migrations/20260924010000_diet_menus.sql`: persistencia, privacidad por coach/cliente, diarios y fotos. Aplicada en Supabase; falta validación real de JWT y Storage.
 - `tests/diet-menus.test.ts`, `tests/diet-menu-ui.test.ts`, `tests/sql/diet-menus.sql`: dominio/compatibilidad, guardados y autorización SQL.

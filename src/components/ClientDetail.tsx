@@ -5,10 +5,11 @@ import { flushSync } from "react-dom";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { db } from "@/lib/db";
-import { calculateMacros, calculateBodyFatFromSkinfolds } from "@/lib/calculator";
+import { calculateMacros, calculateBodyFatFromSkinfolds, macroKcal } from "@/lib/calculator";
 import { itemsForDay, restTargets, restReduction } from "@/lib/meal-day";
 import { getPreference } from "@/lib/db";
 import { generateDietPDF } from "@/lib/pdf";
+import { openPrintDocument } from "@/lib/print-document";
 import { openProgressReport } from "@/lib/progressReport";
 import { calculateWeightTrend, getRateLabel } from "@/lib/trends";
 import { macroEvaluationAt, saveMacroEvaluation } from "@/lib/macro-evaluation";
@@ -79,37 +80,32 @@ export function ClientDetail() {
   const [compEditorData, setCompEditorData] = useState<{ name: string; date: string; category: string; weight: string; placement: string; config: PeakWeekDayConfig[] } | null>(null);
 
 
-  const handleEditMacro = (field: string, value: number) => {
-    if (!editResult) return;
-    if (field === "tdee") {
-      const next = {
-        ...editResult,
-        tdee: value,
-        protein: Math.round(value * 0.23 / 4),
-        carbs: Math.round(value * 0.50 / 4),
-        fat: Math.round(value * 0.27 / 9),
-      };
-      setEditResult(next);
-      setMacroInputs((current) => ({ ...current, tdee: String(value), protein: String(next.protein), carbs: String(next.carbs), fat: String(next.fat) }));
-      setChangedFields((prev) => new Set(prev).add("tdee"));
-      return;
-    }
-    setEditResult({ ...editResult, [field]: value });
-    setMacroInputs((current) => ({ ...current, [field]: String(value) }));
-    setChangedFields((prev) => new Set(prev).add(field));
-  };
-
   const updateMacroDraft = (field: "tdee" | "protein" | "carbs" | "fat" | "fiber", raw: string) => {
     setMacroInputs((current) => ({ ...current, [field]: raw }));
     if (raw === "") return;
     const value = Number(raw);
     if (!Number.isFinite(value) || value < 0) return;
+    setChangedFields((current) => new Set(current).add(field));
     if (field === "fiber") {
       setEditResult((current) => current ? { ...current, fiber: value } : current);
-      setChangedFields((current) => new Set(current).add(field));
       return;
     }
-    handleEditMacro(field, value);
+    const current = editResult;
+    if (!current) return;
+    if (field === "tdee") {
+      const protein = Math.round(value * 0.23 / 4);
+      const carbs = Math.round(value * 0.50 / 4);
+      const fat = Math.round(value * 0.27 / 9);
+      setEditResult({ ...current, tdee: Math.round(value), protein, carbs, fat });
+      setMacroInputs((inputs) => ({ ...inputs, protein: String(protein), carbs: String(carbs), fat: String(fat) }));
+      return;
+    }
+    const protein = field === "protein" ? value : current.protein;
+    const carbs = field === "carbs" ? value : current.carbs;
+    const fat = field === "fat" ? value : current.fat;
+    const tdee = Math.round(macroKcal({ protein, carbs, fat }));
+    setEditResult({ ...current, protein, carbs, fat, tdee });
+    setMacroInputs((inputs) => ({ ...inputs, tdee: String(tdee) }));
   };
 
   const restoreEmptyMacroDraft = (field: "tdee" | "protein" | "carbs" | "fat" | "fiber") => {
@@ -412,7 +408,7 @@ export function ClientDetail() {
     const data = db.getMealPlan(planId);
     if (!data || !client) return;
     const meas = db.getLatestMeasurement(data.plan.client_id);
-    if (!meas) return;
+    if (!meas) { toast("Registra una medición del cliente antes de generar el PDF.", "error"); return; }
     const restDay = getPreference(`rd_${data.plan.id}`) === "true";
     const items = itemsForDay(data.items, restDay).map((i) => {
       const food = db.getFood(i.food_id);
@@ -420,12 +416,13 @@ export function ClientDetail() {
     });
     const exportedPlan = restDay ? {...restTargets(data.plan,restReduction(getPreference(`rd_percent_${data.plan.id}`))), name:data.plan.name+" — Rest Day"} : data.plan;
     const html = generateDietPDF({ client, measurement: meas, plan: exportedPlan, items });
-    const win = window.open("", "_blank");
-    if (win) { win.document.write(html); win.document.close(); setTimeout(() => win.print(), 300); }
+    try { openPrintDocument(html); }
+    catch (error) { toast(error instanceof Error ? error.message : "No se pudo abrir el PDF.", "error"); }
   };
 
   const handleProgressReport = () => {
-    openProgressReport({ client, measurements, checkins, competition: competitions[0], phase: selectedPhase });
+    try { openProgressReport({ client, measurements, checkins, competition: competitions[0], phase: selectedPhase }); }
+    catch (error) { toast(error instanceof Error ? error.message : "No se pudo abrir el reporte.", "error"); }
   };
 
   const macroEditor = editResult && (
@@ -630,6 +627,7 @@ export function ClientDetail() {
             </div>
             {latest && (() => {
               const phaseMacros = calculatePhaseMacros({ tmb: latest.tmb, tdee: latest.tdee, protein: latest.protein, carbs: latest.carbs, fat: latest.fat, fiber: latest.fiber, antioxidants: latest.antioxidants }, latest.weight, selectedPhase);
+              const kcalDiff = phaseMacros.tdee - latest.tdee;
               return (
               <div className="mt-4 text-xs animate-slide-up">
                 <p className="font-semibold text-gray-700 dark:text-gray-300 mb-2">Macros ajustados por fase</p>
@@ -663,7 +661,9 @@ export function ClientDetail() {
                       <td className="px-2 py-1 font-medium text-gray-800 dark:text-gray-200">Total kcal</td>
                       <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{latest.tdee}</td>
                       <td className="text-right px-2 py-1 font-semibold text-gray-800 dark:text-gray-200">{phaseMacros.tdee}</td>
-                      <td className="text-right px-2 py-1 font-medium text-emerald-600 dark:text-emerald-400">0</td>
+                      <td className={`text-right px-2 py-1 font-medium ${kcalDiff === 0 ? "text-gray-400" : kcalDiff > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                        {kcalDiff > 0 ? "+" : ""}{kcalDiff}
+                      </td>
                     </tr>
                   </tbody>
                 </table>
