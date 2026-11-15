@@ -21,12 +21,22 @@ serve(async (req) => {
     return new Response("Method not allowed", { status: 405, headers: CORS_HEADERS });
   }
 
-  const url = new URL(req.url);
-  const email = url.searchParams.get("email");
+  // The legacy endpoint is kept for the old client flow, but it may only
+  // reveal the caller's own subscription. The email is derived from the JWT,
+  // never from a query parameter.
+  const token = req.headers.get("authorization")?.match(/^Bearer\s+(\S+)$/i)?.[1];
+  if (!token) {
+    return new Response(JSON.stringify({ error: "Authentication required" }), {
+      status: 401,
+      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    });
+  }
 
-  if (!email) {
-    return new Response(JSON.stringify({ error: "Missing email" }), {
-      status: 400,
+  const { data: userData, error: userError } = await supabase.auth.getUser(token);
+  const email = userData.user?.email?.trim().toLowerCase();
+  if (userError || !email) {
+    return new Response(JSON.stringify({ error: "Authentication required" }), {
+      status: 401,
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
     });
   }

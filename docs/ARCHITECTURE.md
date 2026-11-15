@@ -170,6 +170,8 @@ Next.js publica encabezados para evitar interpretación MIME, iframes, filtraci�
 
 Supabase combina periodos manuales y pagos Stripe. La fecha efectiva es el vencimiento más lejano permitido. La existencia de un periodo pagado prevalece sobre cualquier prueba histórica: cuando vence, `dietforge_my_access` devuelve `expired` hasta una renovación. Suspender bloquea el acceso sin borrar datos. Reanudar elimina la suspensión sin sumar tiempo. Renovaciones, suspensiones, reanudaciones y eliminaciones quedan en `dietforge_access_audit`.
 
+La función heredada `check_subscription(p_email)` queda restringida a `service_role` por `20261029010000_security_portal_subscription_hardening.sql`; `anon` y `authenticated` no pueden ejecutarla. La Edge Function `check-subscription` ya no acepta un correo por query: exige un JWT, deriva el correo de la identidad verificada y solo devuelve el estado del propio llamante. La aplicación web actual usa `dietforge_my_access` y no depende de esta función heredada.
+
 ## Búsqueda de alimentos
 
 `src/lib/nutrition.ts` llama `/api/nutrition/usda` o `/api/nutrition/fatsecret` con la sesión actual. El Route Handler comprueba `dietforge_has_access`, conserva las credenciales en servidor, aplica límites a la búsqueda y no devuelve errores internos del proveedor. La base de alimentos propia sigue disponible cuando un proveedor externo falla.
@@ -247,7 +249,7 @@ El cliente envía fecha/peso y opcionalmente medidas, adherencia, bienestar, not
 
 Un INSERT de check-in del cliente crea transaccionalmente una notificación única `(owner_id, client_id, activity_id)`. Los reintentos del mismo UUID actualizan el registro y no notifican de nuevo. La campana global obtiene 50 entradas y el contador total no leído mediante RPC restringido al propietario. El destino abre Progreso y el UUID; la marca de lectura se solicita solo si el registro existe. No se envían correos.
 
-La sincronización consulta cada cinco segundos después de completar una lectura, sin solicitudes superpuestas, pausa en segundo plano y reintenta con backoff hasta 60 s. No es Supabase Realtime ni garantiza latencia instantánea. Actualiza datos recibidos sin reinicializar borradores. Los formularios permanecen montados al cambiar pestañas internas. Un envío de check-in pendiente conserva borrador y UUID en sessionStorage por propietario/cliente para recuperarlo tras recargar la misma pestaña; se elimina al confirmar. Si el navegador bloquea ese almacenamiento, la recuperación queda limitada a la vista montada.
+El modal de alta y edición de check-in bloquea el desplazamiento del fondo mientras está montado y restaura `overflow` y el relleno del scrollbar al cerrarse. La sincronización consulta cada cinco segundos después de completar una lectura, sin solicitudes superpuestas, pausa en segundo plano y reintenta con backoff hasta 60 s. No es Supabase Realtime ni garantiza latencia instantánea. Actualiza datos recibidos sin reinicializar borradores. Los formularios permanecen montados al cambiar pestañas internas. Un envío de check-in pendiente conserva borrador y UUID en sessionStorage por propietario/cliente para recuperarlo tras recargar la misma pestaña; se elimina al confirmar. Si el navegador bloquea ese almacenamiento, la recuperación queda limitada a la vista montada.
 
 ## Avisos de alimentación y portal — 2026-09-14
 
@@ -267,7 +269,7 @@ Agenda monta la cuadrícula del mes antes de recibir el expediente remoto. Mient
 
 ## Lecturas del expediente — 2026-09-24
 
-`ClientCare` usa `usePortalSync` y un único carril `startAutoRefresh` para carga inicial, polling y recargas después de guardar. `reload()` invalida la respuesta en vuelo y agrupa las solicitudes pendientes en una lectura nueva; `stop()` descarta respuestas tardías. La identidad owner/client y rol determina el montaje del contenido, para no mostrar el expediente anterior al cambiar de cliente. Las membresías se consultan por separado y nunca reemplazan el correo que el coach está editando.
+`ClientCare` usa `usePortalSync` y un único carril `startAutoRefresh` para carga inicial, polling y recargas después de guardar. La autorización del portal distingue propietario y cliente: `dietforge_client_allowed` solo acepta la rama de correo cuando `o <> auth.uid()`, y `dietforge_portal_memberships` no lista el workspace del propio llamante. Un coach vencido o suspendido no puede auto-concederse el portal de sus clientes. `reload()` invalida la respuesta en vuelo y agrupa las solicitudes pendientes en una lectura nueva; `stop()` descarta respuestas tardías. La identidad owner/client y rol determina el montaje del contenido, para no mostrar el expediente anterior al cambiar de cliente. Las membresías se consultan por separado y nunca reemplazan el correo que el coach está editando.
 
 `portalFailure` conserva la causa interna de errores RPC y clasifica sesión, acceso, transporte, validación y desconocidos. Los transitorios reintentan con espera creciente hasta 60 s; errores terminales pausan las lecturas automáticas hasta un reintento explícito. Offline conserva datos y borradores y vuelve a leer al reconectar. Sesión ausente o acceso denegado ocultan los datos del expediente; la autorización sigue siendo responsabilidad del servidor. Agenda comparte los mismos avisos que el portal. No se reintentan escrituras automáticamente ni se cambian RLS/RPC.
 

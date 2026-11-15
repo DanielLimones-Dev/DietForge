@@ -27,6 +27,11 @@ DO $$ DECLARE s jsonb; rev bigint; b bigint; failed boolean:=false; BEGIN
  ASSERT NOT has_function_privilege('authenticated','public._dietforge_save_storage(jsonb,bigint,uuid)','EXECUTE');
 END $$;
 RESET ROLE;
+-- Restoring a backup revokes portal access by design; re-grant for the remaining checks.
+SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+SET LOCAL ROLE authenticated;
+SELECT public.dietforge_portal_grant(1,'client@dietforge.invalid',true);
+RESET ROLE;
 SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000002","role":"authenticated"}',true);
 SET LOCAL ROLE authenticated;
 DO $$ DECLARE failed boolean:=false;BEGIN
@@ -64,5 +69,29 @@ UPDATE public.dietforge_access SET expires_at=now()-interval '1 day' WHERE email
 SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
 SET LOCAL ROLE authenticated;
 DO $$ DECLARE failed boolean:=false;BEGIN BEGIN PERFORM public.dietforge_load();EXCEPTION WHEN insufficient_privilege THEN failed:=true;END;ASSERT failed;failed:=false;BEGIN PERFORM public.dietforge_save('{}',2,gen_random_uuid());EXCEPTION WHEN insufficient_privilege THEN failed:=true;END;ASSERT failed;END $$;
+RESET ROLE;
+
+-- Self-grant regression: a workspace owner cannot use the portal email branch
+-- to retain access after the license expires or is suspended.
+UPDATE public.dietforge_access SET expires_at=now()+interval '1 day' WHERE email='coach-a@dietforge.invalid';
+SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE failed boolean:=false; BEGIN
+ BEGIN PERFORM public.dietforge_portal_grant(1,'coach-a@dietforge.invalid',true); EXCEPTION WHEN insufficient_privilege THEN failed:=true; END; ASSERT failed;
+END $$;
+RESET ROLE;
+INSERT INTO public.dietforge_client_portals(owner_id,client_id,email,enabled)
+VALUES('10000000-0000-4000-8000-000000000001',1,'coach-a@dietforge.invalid',true)
+ON CONFLICT(owner_id,client_id) DO UPDATE SET email=EXCLUDED.email,enabled=EXCLUDED.enabled;
+UPDATE public.dietforge_access SET expires_at=now()-interval '1 day' WHERE email='coach-a@dietforge.invalid';
+SELECT set_config('request.jwt.claims','{"sub":"10000000-0000-4000-8000-000000000001","role":"authenticated"}',true);
+SET LOCAL ROLE authenticated;
+DO $$ DECLARE failed boolean:=false; memberships jsonb; BEGIN
+ BEGIN PERFORM public.dietforge_portal_read('10000000-0000-4000-8000-000000000001',1); EXCEPTION WHEN insufficient_privilege THEN failed:=true; END; ASSERT failed;
+ failed:=false;
+ BEGIN PERFORM public.dietforge_activity_save('10000000-0000-4000-8000-000000000001',1,gen_random_uuid(),'checkin','{"date":"2026-10-29","weight":80}'); EXCEPTION WHEN insufficient_privilege THEN failed:=true; END; ASSERT failed;
+ memberships:=public.dietforge_portal_memberships();
+ ASSERT NOT EXISTS (SELECT 1 FROM jsonb_array_elements(memberships) m WHERE m->>'owner_id'='10000000-0000-4000-8000-000000000001' AND (m->>'client_id')::int=1);
+END $$;
 RESET ROLE;
 ROLLBACK;

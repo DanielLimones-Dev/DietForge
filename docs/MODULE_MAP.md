@@ -89,6 +89,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `src/lib/pdf.ts` | documento A4 imprimible del plan, totales, tablas y escape de contenido |
 | `src/lib/progressReport.ts` | documento A4 del progreso y apertura aislada de la ventana de impresión |
 | `src/lib/print-document.ts` | apertura compartida de documentos imprimibles con Blob, `noopener`, impresión automática y error si el navegador bloquea la ventana |
+| `src/lib/use-body-scroll-lock.ts` | bloqueo y restauración del scroll del fondo para modales, con compensación del scrollbar |
 | `src/lib/csv.ts` | CSV de mediciones y descarga |
 | `src/lib/macro-evaluation.ts` | guarda evaluaciones sin crear check-ins y selecciona su historial para el carrusel |
 | `src/lib/client-progress.ts` | compara los dos registros más recientes de peso y grasa y combina evaluaciones/check-ins para las gráficas antropométricas |
@@ -108,7 +109,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `supabase/migrations/20260909010000_admin_delete_and_strict_expiry.sql` | vencimiento estricto y eliminación administrativa idempotente |
 | `supabase/migrations/20260907030000_training_programs.sql` | colección `trainingPrograms` en snapshot, RPC y restricción de colecciones |
 | `supabase/schema.sql` | esquema histórico/consolidado de suscripciones y funciones |
-| `supabase/functions/check-subscription/index.ts` | función heredada de consulta de suscripción |
+| `supabase/functions/check-subscription/index.ts` | función heredada de consulta de suscripción; exige JWT y devuelve solo el estado del llamante |
 | `supabase/functions/stripe-webhook/index.ts` | eventos Stripe y actualización de suscripciones |
 | `supabase/DEPLOY.md` | pasos operativos de Supabase |
 
@@ -150,8 +151,9 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `QualityPanel.tsx`, `/quality` | Listado, descarga, captura y restauración |
 | `ErrorMonitor.tsx`, `error-monitor.ts` | Categorías de error en memoria de sesión |
 | Migraciones `20260908*` | Autorización, portal, respaldos, versiones, videos privados y validación de agendas independientes por semana |
+| `20261029010000_security_portal_subscription_hardening.sql` | Bloquea el auto-portal del coach y limita `check_subscription` a `service_role` |
 | `docs/TRAINING_WEEKS.md` | Contrato de semanas independientes, metas musculares y barras de cumplimiento |
-| `tests/sql/client-portal.sql` | Regresiones reales de autorización y recuperación con rollback |
+| `tests/sql/client-portal.sql` | Regresiones reales de autorización, auto-portal y recuperación con rollback |
 | `scripts/supabase-healthcheck.mjs` | Comprobación externa de disponibilidad sin datos privados |
 | `.github/workflows/supabase-health.yml` | Programación cada tres días cuando el repositorio y sus secretos estén configurados |
 | `vercel.json` | Cron diario de producción para `/api/cron/supabase-health` |

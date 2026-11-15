@@ -52,8 +52,13 @@ supabase secrets set SUPABASE_SERVICE_ROLE_KEY=sr_...
 
 # Deploy Edge Functions
 supabase functions deploy stripe-webhook
+# check-subscription ahora exige JWT y solo devuelve el estado del llamante.
 supabase functions deploy check-subscription
 ```
+
+## 2.1 Migración de seguridad 2026-10-29
+
+Aplicar `migrations/20261029010000_security_portal_subscription_hardening.sql`. Revoca `check_subscription` de `anon`/`authenticated`, la deja solo para `service_role`, impide que el coach se auto-conceda el portal y elimina las políticas RLS heredadas de `subscriptions`/`stripe_events`. Si la Edge Function `check-subscription` ya no se usa, eliminarla con `supabase functions delete check-subscription`.
 
 ## 3. Stripe Webhook Config
 1. Ve a Stripe Dashboard → Developers → Webhooks
@@ -86,4 +91,4 @@ Aplicar en orden las cinco migraciones `20260908*`. Las RPC públicas conservan 
 
 
 ## Menús y recetas — septiembre 2026
-Aplicar `migrations/20260924010000_diet_menus.sql` después de las migraciones anteriores. El frontend comprueba `dietforge_menus_read` antes de habilitar el editor en producción; sin migración muestra disponibilidad pendiente y mantiene el plan habitual. Tras aplicar, verificar acceso por coach/cliente y Storage privado `recipe-photos` con datos de prueba. Subir código a GitHub no aplica esta migración.
+Aplicar `migrations/20261029010000_security_portal_subscription_hardening.sql` después de `20260924010000_diet_menus.sql`. El frontend comprueba `dietforge_menus_read` antes de habilitar el editor en producción; sin migración muestra disponibilidad pendiente y mantiene el plan habitual. Tras aplicar, verificar acceso por coach/cliente y Storage privado `recipe-photos` con datos de prueba. Subir código a GitHub no aplica esta migración.

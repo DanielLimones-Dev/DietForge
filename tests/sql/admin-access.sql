@@ -25,6 +25,9 @@ DO $$ DECLARE a jsonb; b jsonb; failed boolean; BEGIN
  failed:=false; BEGIN PERFORM public.dietforge_admin_list(); EXCEPTION WHEN insufficient_privilege THEN failed:=true; END; ASSERT failed;
  failed:=false; BEGIN PERFORM public.dietforge_admin_set_access('fixture-admin-test@example.invalid','renew',12,'fixture',gen_random_uuid()); EXCEPTION WHEN insufficient_privilege THEN failed:=true; END; ASSERT failed;
  ASSERT NOT has_function_privilege('anon','public.upsert_subscription(text,text,text,text,text,text,timestamp with time zone,timestamp with time zone)','EXECUTE');
+ ASSERT NOT has_function_privilege('anon','public.check_subscription(text)','EXECUTE');
+ ASSERT NOT has_function_privilege('authenticated','public.check_subscription(text)','EXECUTE');
+ ASSERT has_function_privilege('service_role','public.check_subscription(text)','EXECUTE');
  ASSERT NOT has_function_privilege('authenticated','public._dietforge_load_storage()','EXECUTE');
  ASSERT NOT has_table_privilege('authenticated','public.dietforge_access','UPDATE');
 END $$;
@@ -46,5 +49,8 @@ DO $$ DECLARE failed boolean:=false; BEGIN
  failed:=false;
  BEGIN PERFORM public.dietforge_save('{}',0,gen_random_uuid()); EXCEPTION WHEN insufficient_privilege THEN failed:=true; END; ASSERT failed;
 END $$;
+RESET ROLE;
+SET LOCAL ROLE anon;
+DO $$ DECLARE failed boolean:=false; BEGIN BEGIN PERFORM public.check_subscription('fixture-anon@example.invalid'); EXCEPTION WHEN insufficient_privilege THEN failed:=true; END; ASSERT failed; END $$;
 RESET ROLE;
 ROLLBACK;
