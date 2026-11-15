@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { db } from "@/lib/db";
+import { useBodyScrollLock } from "@/lib/use-body-scroll-lock";
 import { Camera, Save, X } from "lucide-react";
 import { useToast } from "./Toast";
 import type { CheckIn, PhotoAngle } from "@/types";
@@ -33,6 +34,7 @@ export function CheckInForm(props:Props){return <CheckInFields key={`${props.cli
 
 function CheckInFields({ clientId, existing, onSave, onCancel }: Props) {
   const { toast } = useToast();
+  useBodyScrollLock();
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const [date, setDate] = useState(existing?.date.slice(0,10)??todayStr);
