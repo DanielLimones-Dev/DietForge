@@ -9,10 +9,14 @@ export function startAutoRefresh<T>(options: {
  let timer:ReturnType<typeof setTimeout>|undefined;
  let pending:Promise<void>=Promise.resolve();
  const clear=()=>{if(timer!==undefined){options.cancel(timer);timer=undefined;}};
+ // A paused lane (hidden tab or offline) must schedule itself again: a missed
+ // visibility/focus event cannot be allowed to stop automatic refresh for good.
+ const scheduleNext=(delay:number)=>{if(!stopped&&!blocked)timer=options.schedule(()=>void refresh(),delay);};
  const refresh=():Promise<void>=>{
-  if(stopped||running||blocked)return Promise.resolve();
+  if(stopped||blocked)return Promise.resolve();
+  if(running)return Promise.resolve();
   clear();
-  if(!options.active())return Promise.resolve();
+  if(!options.active()){scheduleNext(5000);return Promise.resolve();}
   running=true;
   pending=(async()=>{
    try {
@@ -28,7 +32,7 @@ export function startAutoRefresh<T>(options: {
     } while(queued&&!stopped&&!blocked&&options.active());
    } finally {
     running=false;
-    if(!stopped&&!blocked)timer=options.schedule(()=>void refresh(),Math.min(60000,5000*2**failures));
+    scheduleNext(Math.min(60000,5000*2**failures));
    }
   })();
   return pending;
@@ -38,7 +42,7 @@ export function startAutoRefresh<T>(options: {
   // Invalidate a pre-save response, then coalesce concurrent reloads into one fresh read.
   reload(){
    if(stopped)return Promise.resolve();
-   generation++;blocked=false;
+   generation++;blocked=false;failures=0;
    if(running){queued=true;return pending;}
    return refresh();
   },

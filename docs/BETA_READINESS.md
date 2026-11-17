@@ -20,7 +20,7 @@ DietForge está listo para una **beta interna controlada** con el administrador 
 3. Pasar la organización de Supabase a Pro para eliminar de forma garantizada la pausa por baja actividad y obtener las prestaciones de respaldo del plan.
 4. Aplicar rate limiting distribuido en rutas administrativas y proveedores de alimentos.
 5. Hacer una prueba de aceptación en móvil y escritorio: coach, cliente, Rest Day, Peak Week, rutina, impresión y restauración.
-6. Definir privacidad, consentimiento, retención y eliminación/exportación de datos personales antes de invitar clientes reales.
+6. ~~Definir privacidad, consentimiento, retención y eliminación/exportación de datos personales antes de invitar clientes reales.~~ **Hecho en local el 2026-11-16**: aviso en `/privacidad`, consentimiento obligatorio en el registro, exportación y eliminación con doble confirmación. Falta aplicar la migración `20261116010000_privacy_consent_and_deletion.sql` y una prueba real con SMTP. Ver `docs/PRIVACIDAD.md`.
 7. Conectar alertas remotas de errores; el monitor actual solo vive durante la sesión del navegador.
 
 ## Comprobación de disponibilidad de Supabase
@@ -44,3 +44,35 @@ Esta comprobación es útil para detectar caídas y genera actividad real, pero 
 ## Criterio de salida
 
 La beta externa puede comenzar cuando los siete bloqueos estén cerrados y exista evidencia de una ejecución completa con una cuenta de coach y otra de cliente. Un script de disponibilidad no sustituye el SLA, los respaldos ni el soporte de un plan de producción.
+
+## Privacidad y consentimiento — 2026-11-16 (local, sin desplegar)
+
+Se implementó el bloqueo 6 en código local, pendiente de aprobación del Patrón
+Daniel para migrar y desplegar:
+
+- Aviso de privacidad integral en `/privacidad` (versión 1.0, 16/11/2026, LFPDPPP,
+  contacto `hola@dietforge.com.mx`), enlazado en la app, el login, el registro y el
+  portal del cliente.
+- Consentimiento obligatorio con fecha/hora y versión en Supabase
+  (`dietforge_privacy_consents`, con RLS) al crear la cuenta del portal y al
+  activar la cuenta de un coach invitado.
+- **Mi cuenta** y el portal permiten exportar un JSON con los datos del titular y
+  eliminar la cuenta con doble confirmación, con purga de `dietforge_backups`,
+  registros, archivos privados e identidad de Auth.
+- Validación local: `npm test` (121 pruebas), `npm run typecheck`, `npm run lint` y
+  `npm run build` aprobados; `/privacidad` responde 200 (13 secciones) y el
+  registro sin aceptar queda bloqueado sin enviar la petición de alta.
+- Pendiente: aplicar `supabase/migrations/20261116010000_privacy_consent_and_deletion.sql`
+  (primero local, luego producción con autorización), confirmar
+  `SUPABASE_SERVICE_ROLE_KEY` en Vercel y repetir la aceptación real con SMTP.
+  Detalle en `docs/PRIVACIDAD.md`.
+
+## Check-ins del portal en la vista del coach — 2026-11-16 (local, sin desplegar)
+
+Se simplificó la bandeja de Progreso y se agregó la importación manual al
+check-in del cliente, con confirmación e idempotencia por UUID. No hubo cambios
+de RLS ni migraciones: la lectura sigue en `dietforge_portal_read` y la escritura
+local usa `SaveQueue`. Validación local: 9 pruebas nuevas, typecheck, lint, build
+y smoke con Brave sobre RPC interceptadas (`tests/checkin-inbox-smoke.mjs`);
+cero escrituras reales en Supabase. Detalle en `docs/ARCHITECTURE.md` y
+`docs/PRIVACIDAD.md`.

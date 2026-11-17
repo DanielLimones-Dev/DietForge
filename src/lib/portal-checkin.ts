@@ -5,6 +5,8 @@ export const measurementFields = { neck:'Cuello', shoulders:'Hombros', chest:'Pe
 export const adherenceFields = { meals:'Alimentación', supplements:'Suplementos', training:'Entrenamiento', cardio:'Cardio' } as const;
 export const wellbeingFields = { energy:'Energía', sleep:'Sueño', hunger:'Hambre', libido:'Libido', digestion:'Digestión' } as const;
 export const photoAngles: Record<PhotoAngle,string> = { front_relaxed:'Frente relajado', back_relaxed:'Espalda relajada', front_double_biceps:'Doble bíceps frontal', back_lat_spread:'Expansión dorsal posterior', side_chest:'Pecho lateral', side_triceps:'Tríceps lateral', ab_thigh:'Abdomen y muslo', most_muscular:'Más muscular' };
+// Private bucket paths are stored by reference; signed URLs are resolved only when a photo is shown.
+export const portalCheckInPhotoPath = /^[a-f0-9-]{36}\/\d+\/[a-f0-9-]{36}\.(jpg|png|webp)$/;
 export interface PortalCheckInPhoto { angle:PhotoAngle; path:string }
 export interface PortalCheckInDraft { date:string; weight:string; measurements:Record<string,string>; adherence:Record<string,string>; notes:string; photos:PortalCheckInPhoto[] }
 export interface PortalCheckInData extends Record<string,unknown> { date:string; weight:number; measurements?:Record<string,number>; adherence?:Record<string,number>; notes:string; photos:PortalCheckInPhoto[] }

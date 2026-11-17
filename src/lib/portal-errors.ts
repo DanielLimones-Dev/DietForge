@@ -19,3 +19,14 @@ export function portalFailure(error:unknown, status?:number):PortalFailure {
   return new PortalFailure('validation','La solicitud no pudo completarse. Revisa los datos; tus cambios siguen en pantalla.',error);
  return new PortalFailure('unknown','No pudimos actualizar el expediente. Inténtalo de nuevo; si persiste, contacta a soporte.',error);
 }
+
+/**
+ * Only a lost session or a denied expediente stop the automatic read lane.
+ * Validation or unexpected errors are usually momentary (schema cache, a save
+ * in flight); they must keep polling so a coach edit still arrives without a
+ * manual reload.
+ */
+export function shouldRetryPortalRead(error:unknown):boolean {
+ const kind=portalFailure(error).kind;
+ return kind!=='session'&&kind!=='forbidden';
+}

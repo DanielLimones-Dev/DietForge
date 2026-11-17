@@ -126,6 +126,8 @@ El editor adopta la referencia visual minimalista verde: recursos educativos com
 
 `MealPlanner` obtiene plan, cliente, última medición y alimentos por medio de `db`. `itemsForDay` separa elementos normales y de descanso según `day_type`. Las listas de cuadros visibles también se guardan por separado en `preferences.meal_sections_{planId}`.
 
+Cada alimento ya agregado expone `Editar macros`, que abre un formulario con los valores actuales del registro `Food` (calorías, proteína, carbohidratos y grasas) sin quitar la partida del plan. `parseFoodMacroDraft` exige los cuatro campos, acepta cero y decimales y rechaza vacíos, negativos o valores no finitos; `db.updateFood` repite la validación del lado de los datos, recalcula `carb_type`, conserva ID y porción, y encola el snapshot con la identidad propietaria. Al guardar, la lista de alimentos, la partida y los totales consumidos del plan se recalculan en la misma vista. La edición modifica el alimento del catálogo del coach, por lo que se refleja en todos los planes que lo usan; el portal del cliente no obtiene esta acción y las escrituras siguen sujetas al aislamiento por `auth.uid()` y a las RPC de guardado.
+
 Desde `Planes anteriores`, la acción `Ver` precarga la ruta, marca la fila como `Abriendo…` y reproduce una salida breve de 280 ms antes de navegar. `MealPlanner` entra con una transición de opacidad y desplazamiento de 500 ms. Con movimiento reducido, la navegación ocurre inmediatamente.
 
 Al activar Rest Day:
@@ -245,6 +247,14 @@ El ajuste de macros guardados se monta en la sección superior, en la posición 
 
 El cliente envía fecha/peso y opcionalmente medidas, adherencia, bienestar, notas y fotos desde Progreso. La grasa corporal no se captura ni serializa desde el cliente; el trigger SQL rechaza el campo fuera de la identidad del coach. Estos registros viven en `dietforge_client_activity`, no se importan automáticamente al snapshot ni a las gráficas del coach. La evaluación manual del coach sigue independiente.
 
+### Importación manual al check-in del cliente — 2026-11-16
+
+El coach asignado ve los envíos en Progreso dentro de `CoachCheckInInbox`: una lista por fecha descendente con peso, variación contra el envío anterior, notas, adherencia resumida, número de medidas y miniaturas de fotos. El detalle de medidas y bienestar queda plegado para no repetir información en cada fila. El modo cliente del portal conserva su propio historial y nunca monta esta bandeja.
+
+`src/lib/checkin-import.ts` normaliza el registro y decide el destino: si el UUID del portal ya está en `CheckIn.portal_activity_id` no escribe nada; si existe un check-in local de la misma fecha lo actualiza; si no, crea uno. La importación copia peso, notas, medidas, adherencia y fotos, conserva grasa corporal, feedback y notas previas del coach y no modifica la actividad remota. La adherencia solo se copia cuando llega completa, para no inventar respuestas. Las fotos se guardan en `db.photos` como ruta privada (`data`), y `CheckInPhoto` resuelve la URL firmada al mostrarlas; por eso no se persisten URLs caducas. Cada escritura pasa por `persist()` y `SaveQueue`, igual que el resto del snapshot. El check-in importado y sus fotos aparecen después en `CheckInHistory` dentro del expediente.
+
+La visibilidad sigue dependiendo de `dietforge_portal_read`, que exige al coach propietario con acceso vigente o al cliente autorizado por correo verificado; no se agregaron rutas ni permisos nuevos. Borrar el check-in local elimina la referencia y sus fotos del snapshot, pero no el archivo original del portal.
+
 `checkin-photos` es privado, admite JPG/PNG/WebP de hasta 5 MB por archivo, máximo ocho posiciones por check-in. Las rutas están acotadas a propietario/cliente y las URLs firmadas caducan en cinco minutos. Reemplazar una foto crea otro objeto y conserva las referencias históricas.
 
 Un INSERT de check-in del cliente crea transaccionalmente una notificación única `(owner_id, client_id, activity_id)`. Los reintentos del mismo UUID actualizan el registro y no notifican de nuevo. La campana global obtiene 50 entradas y el contador total no leído mediante RPC restringido al propietario. El destino abre Progreso y el UUID; la marca de lectura se solicita solo si el registro existe. No se envían correos.
@@ -255,7 +265,7 @@ El modal de alta y edición de check-in bloquea el desplazamiento del fondo mien
 
 `useDietNotice` consulta cada 5 s `dietforge_diet_notice_read(o,c)` en el portal cliente. El botón Comida muestra un aviso pendiente; abrir la pestaña muestra el mensaje y cerrar ejecuta `dietforge_diet_notice_seen(o,c,v)`. La lectura se persiste por usuario y versión en tablas privadas; cerrar una versión obsoleta no descarta la nueva. El aviso cubre altas/ajustes/eliminaciones de planes, partidas y alimentos referenciados tras guardar el snapshot completo. Orden del snapshot y timestamps no generan avisos. La migración inicial establece base sin avisos retroactivos. Retirar/restaurar un expediente limpia sus lecturas previas.
 
-Agenda muestra exclusivamente Peak Week y check-ins; no crea recordatorios ni muestra entrenamientos/alimentación regular. No se borraron actividades históricas. `care-tab-panel` establece separación interna entre tarjetas y respeta `hidden`; las rejillas adaptables contienen formularios/tablas sin ensanchar el portal.
+Agenda muestra Peak Week, check-ins y las citas que el cliente solicita desde su portal; no crea recordatorios ni muestra entrenamientos/alimentación regular. Las citas son actividad `appointment` (`date`, `time` civil local HH:MM, `note`, `status`); el cliente solo solicita o cancela y el coach confirma. El servidor rechaza horas fuera de 07:00–21:00 en intervalos de 15 minutos, notas mayores a 300 caracteres y dos citas activas del mismo coach en el mismo día y hora. La cita conserva su ID al confirmar o cancelar y aparece tanto en el portal como en `/agenda`. Requiere `20261116020000_agenda_appointments.sql`, pendiente de aplicar en local y producción con aprobación del Patrón. No se borraron actividades históricas. `care-tab-panel` establece separación interna entre tarjetas y respeta `hidden`; las rejillas adaptables contienen formularios/tablas sin ensanchar el portal.
 
 
 ### Portal: activación guiada (2026-09-14)
@@ -273,6 +283,12 @@ Agenda monta la cuadrícula del mes antes de recibir el expediente remoto. Mient
 
 `portalFailure` conserva la causa interna de errores RPC y clasifica sesión, acceso, transporte, validación y desconocidos. Los transitorios reintentan con espera creciente hasta 60 s; errores terminales pausan las lecturas automáticas hasta un reintento explícito. Offline conserva datos y borradores y vuelve a leer al reconectar. Sesión ausente o acceso denegado ocultan los datos del expediente; la autorización sigue siendo responsabilidad del servidor. Agenda comparte los mismos avisos que el portal. No se reintentan escrituras automáticamente ni se cambian RLS/RPC.
 
+### Actualización automática del plan y de los alimentos del portal — 2026-11-16
+
+`PortalMenus` debe comparar el menú del día solo cuando existen ambos lados: antes de la primera lectura (o cuando el cliente no tiene menús) `day` y `selected` son `undefined`, y `day?.menu_id === selected?.id` es `true`, lo que intentaba leer `day.completed_meals` y desmontaba todo el portal al límite de error. La comparación conserva `completed_meals` aunque falte.
+
+La revalidación no depende de un solo carril: `usePortalSync` sondea cada 5 s y revalida en `focus`, `online`, `visibilitychange` y `pageshow` restaurado desde la bfcache; `ClientCare` ejecuta `load()` al entrar a la pestaña Comida para que el plan y `Mis menús` reflejen los alimentos que el coach acaba de guardar sin recargar. No se agregó Realtime, no se cambió el RPC ni el intervalo.
+
 
 ## Menús y recetas independientes (24/09/2026, local)
 `DietWorkspace` mantiene montado el plan existente al cambiar de pestaña. Las colecciones `recipes` y `clientMenus` contienen copias de ingredientes y recetas para no alterar prescripciones al editar la biblioteca. Los nutrientes se calculan desde ingredientes y rendimiento por porción. El coach guarda borradores o asigna explícitamente menús. No hay límite fijo de seis menús.
@@ -282,3 +298,72 @@ La migración `20260924010000_diet_menus.sql` prepara la persistencia, autorizac
 Las recetas y menús participan en los snapshots. Los registros diarios se archivan al retirar clientes o cambiar de menú; la restauración antigua de backups no restaura esos diarios automáticamente. Las fotos son inmutables para conservar las copias de menús. No se elimina el objeto al borrar una receta de biblioteca.
 
 Validación: dominio con datos legacy y copias independientes; JSDOM para bloqueo durante guardado lento y retención del borrador ante fallo; migraciones y suite SQL en PGlite con autenticación/Storage simulados (sin verificar HTTP ni concurrencia real). Prueba manual en Brave con siete menús, receta de dos porciones y foto sintética.
+
+## Privacidad, consentimiento y derechos del titular — 2026-11-16 (local)
+
+El aviso integral vive en `/privacidad` (`src/app/privacidad/page.tsx`) y su
+contrato en `src/lib/privacy.ts`: `PRIVACY_NOTICE_VERSION = "1.0"`, vigencia
+16/11/2026 y contacto `hola@dietforge.com.mx`. La página es pública: no importa el
+cliente de Supabase ni pasa por `CloudGate`, y queda enlazada desde la barra
+lateral, el login, el registro del portal y su encabezado.
+
+El alta del portal (`PortalAuth`) exige el checkbox de `PrivacyConsentField` antes
+de llamar `supabase.auth.signUp`; la validación es la misma función pura que
+prueba `tests/privacy.test.ts` y el botón permanece deshabilitado sin aceptación.
+La versión y la fecha viajan también en `user_metadata` para el caso de correo
+pendiente de confirmar; al entrar con sesión se replica en la tabla
+`dietforge_privacy_consents` mediante `dietforge_privacy_record_consent`, que fija
+la fecha del servidor y solo acepta versiones publicadas en
+`dietforge_privacy_notices`. El coach invitado por el administrador acepta el
+mismo aviso al crear su contraseña en `/auth/password`, con origen
+`coach_activation`.
+
+`dietforge_privacy_consents` y `dietforge_privacy_requests` tienen RLS por
+`user_id = auth.uid()`; las escrituras solo ocurren dentro de RPC `SECURITY
+DEFINER`. La bitácora de solicitudes no referencia `auth.users` para sobrevivir a
+la eliminación de la cuenta.
+
+**Mi cuenta** (`/cuenta`) y el portal del cliente montan `AccountPrivacy`:
+`dietforge_privacy_export` devuelve cuenta, consentimiento, snapshot, actividad y
+accesos del portal en JSON, y registra la solicitud. La eliminación exige correo y
+la palabra `ELIMINAR`; el navegador llama `/api/account/delete` y el servidor
+verifica la sesión con la anon key, ejecuta `dietforge_privacy_delete_account`
+(purga `dietforge_backups`, historial, notificaciones, vínculos del portal,
+registros, mutaciones y workspace) y completa con la service role: elimina
+`training-videos`, `checkin-photos` y `recipe-photos` bajo el prefijo del titular y
+la identidad de Auth. La cuenta administradora no puede autodestruirse desde la
+app. Si la migración no está aplicada, la app funciona pero el consentimiento solo
+queda en `user_metadata` y las acciones de privacidad muestran error de función.
+
+Validación local: `npm test`, `npm run typecheck`, `npm run lint` y `npm run build`
+aprobados; `/privacidad` responde 200 con 13 secciones en el build de producción, y
+el registro sin aceptar no emite petición de alta. Pendiente aplicar la migración y
+repetir con SMTP real. Ver `docs/PRIVACIDAD.md`.
+
+## Rediseño del portal del cliente y navegación del coach — 2026-11-16
+
+El portal conserva exactamente los mismos flujos (activación guiada con consentimiento, dieta, menús, rutina, check-in, fotos, agenda y privacidad) pero cambia la capa de presentación y el orden de lectura. La autorización no se toca: sigue pasando por `dietforge_portal_memberships`, `dietforge_portal_read` y las RPC de actividad, y `ClientCare` mantiene `usePortalSync` como único carril de lectura.
+
+### Jerarquía
+
+1. **Barra superior** (`PortalTopBar`): marca, contexto, aviso de privacidad, tema y salida. En móvil queda en iconos con nombre accesible; nunca desaparece la acción de cerrar sesión.
+2. **Portada** (`portal-hero`): nombre del cliente, una frase de propósito y, solo en el modo cliente, tres datos accionables (`Dieta de hoy`, `Último check-in`, `Próxima cita`) que también funcionan como atajo a su pestaña. Los datos se calculan en `ClientCare` a partir de la actividad ya leída; no agregan RPC ni estado nuevo.
+3. **Cuatro destinos** (`PortalTabs`): Dieta, Rutina, Progreso y Agenda, con icono y etiqueta, sin submenús. El modo cliente abre en Dieta; el coach conserva las pestañas que recibe por `initialTab`.
+4. **Una tarea por tarjeta**: `PortalDietCard` muestra el plan abierto, separa Plan Normal y Rest Day, y cada comida expone un botón grande de completada con progreso por día.
+
+### Archivos
+
+- `src/components/portal/PortalParts.tsx`: `PortalTopBar`, `PortalTabs`, `PortalDietCard`, `PortalEmpty` y la lista canónica de pestañas. Presentacional puro: recibe datos y callbacks, no lee Supabase.
+- `src/components/ClientCare.tsx`: conserva lectura, acceso del cliente, avisos de dieta, marcado de comidas y montaje de pestañas; ahora compone esas piezas y calcula los tres datos de la portada.
+- `src/components/PortalAuth.tsx`: mismo contrato de tres pasos, misma validación (`signupPrivacyError`) y mismo registro de consentimiento; solo cambia la presentación.
+- `src/components/PortalCheckIn.tsx`: mismo borrador, mismas validaciones y misma recuperación por `sessionStorage`; agrupa los campos opcionales en tres bloques plegables y deja fecha y peso como únicos obligatorios visibles.
+- `src/components/CareAgenda.tsx`: mismos eventos y estados; encabezado y resumen más legibles y acciones con icono.
+- `src/components/Layout.tsx`: la navegación del coach pasa de grupos plegables a dos secciones visibles (`Espacio de trabajo`, `Sistema`). Se conservan las mismas rutas, etiquetas y `aria-current`; solo se elimina el clic extra para abrir un grupo.
+
+### Diseño
+
+`src/index.css` agrega al final un bloque con alcance `.portal-app`, por lo que no modifica los estilos clínicos existentes de Dashboard, Alimentos, Administración ni Planificación. Define variables propias (`--p-canvas`, `--p-surface`, `--p-brand`…) con equivalentes en `.dark`, tarjetas de radio 20 px con sombra suave, botones de 44–50 px, foco visible de 3 px y `prefers-reduced-motion`. En modo oscuro los rellenos verdes usan un degradado profundo en lugar del verde claro de acento para conservar contraste AA con texto blanco.
+
+### Verificación visual local
+
+`/dev/portal` (solo `NODE_ENV=development`, igual que `/dev/orb`) monta los componentes reales con datos de ejemplo: `?coach=1` muestra el modo coach y `?dark=1` el tema oscuro. `portal-captura.mjs` recorre `/portal` y `/dev/portal` con Brave headless y guarda `capturas/portal-<fase>-*.png` en escritorio (1440) y móvil (390). Es una herramienta local: no escribe en Supabase ni requiere sesión.

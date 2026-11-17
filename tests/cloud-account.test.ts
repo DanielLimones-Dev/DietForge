@@ -7,7 +7,7 @@ import { emptySnapshot } from "../src/lib/cloud/model";
 import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { PathParamsContext, PathnameContext, SearchParamsContext } from 'next/dist/shared/lib/hooks-client-context.shared-runtime';
 
-test("account changes hide old screens and scope cloud requests to their owner", { timeout: 15_000 }, async () => {
+test("account changes hide old screens and scope cloud requests to their owner", { timeout: 25_000 }, async () => {
   const dom = new JSDOM('<div id="root"></div>', { url: "http://localhost:3000" });
   const keys = ["self", "window", "document", "navigator", "localStorage", "WebSocket", "BroadcastChannel"] as const;
   const original = new Map(keys.map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
@@ -182,7 +182,22 @@ test("account changes hide old screens and scope cloud requests to their owner",
         assert.equal(saved.items.filter(i=>i.day_type!=='rest').length,1);
         assert.match(dom.window.document.querySelector('[aria-label="Macros — Rest Day"]')!.textContent!,/17/,'rest day accumulates actual calories, not 75% of them');
         assert.equal(dom.window.document.querySelectorAll('[data-meal-column="left"] [aria-label="Quitar Alimento de prueba"]:disabled').length,0);
-        assert.equal(button('Editar macros'),undefined);
+        assert.ok(button('Editar macros'),'each added food exposes a macro editor');
+        await act(async()=>button('Editar macros').click());
+        const macroDialog=dom.window.document.querySelector<HTMLElement>('[role="dialog"][aria-labelledby="food-macro-editor-title"]')!;
+        assert.ok(macroDialog,'the macro editor opens over the plan');
+        const proteinField=Array.from(macroDialog.querySelectorAll('label')).find(label=>label.textContent?.startsWith('Proteína'))!.querySelector('input')!;
+        assert.equal(proteinField.value,'1','the form starts with the saved macros');
+        await act(async()=>{
+          Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!.call(proteinField,'9.5');
+          proteinField.dispatchEvent(new dom.window.Event('input',{bubbles:true}));
+        });
+        await act(async()=>button('Guardar macros').click());
+        assert.equal(db.getFood(1)?.protein,9.5,'saving updates the food without deleting the plan item');
+        assert.equal(db.getMealPlan(1)!.items.length,2,'the plan item survives the macro edit');
+        assert.match(dom.window.document.querySelector('.mp-food-nutrients')!.textContent!,/P 9\.5 g/,'the list reflects the new macros immediately');
+        assert.match(dom.window.document.querySelector('[data-macro-card]')!.textContent!,/10g \/ 150g/,'the consumed plan totals recalculate immediately');
+        assert.equal(macroDialog.isConnected,false,'the editor closes after saving');
         await act(async()=>button('+ Agregar comida · Rest Day').click());
         assert.match(button('+ Agregar comida · Rest Day').className,/animate-add-meal-ripple/);
         assert.equal(dom.window.document.querySelector('[data-meal-column="right"][data-meal-key="meal4"]')?.getAttribute('data-new-meal'),'true');

@@ -22,7 +22,10 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `/admin` | `src/app/(workspace)/admin/page.tsx` | `AdminPanel` |
 | `/admin/login` | `src/app/admin/login/page.tsx` | redirección compatible al login único `/` |
 | `/auth/callback` | `src/app/auth/callback/page.tsx` | validación de correo y recuperación |
-| `/auth/password` | `src/app/auth/password/page.tsx` | creación o cambio de contraseña |
+| `/auth/password` | `src/app/auth/password/page.tsx` | creación o cambio de contraseña y consentimiento del coach |
+| `/privacidad` | `src/app/privacidad/page.tsx` | aviso de privacidad integral público (versión 1.0) |
+| `/cuenta` | `src/app/(workspace)/cuenta/page.tsx` | perfil del titular: consentimiento, exportación y eliminación |
+| `/api/account/delete` | `src/app/api/account/delete/route.ts` | eliminación de la propia cuenta (Auth, Storage y datos) |
 | `/api/admin/coaches` | `src/app/api/admin/coaches/route.ts` | alta, renovación y eliminación administrativa |
 | `/api/nutrition/[provider]` | `src/app/api/nutrition/[provider]/route.ts` | proxy USDA/FatSecret autenticado |
 
@@ -36,6 +39,8 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `NumericInputNormalizer.tsx` | normalización global de campos numéricos controlados | `numeric-input`, DOM y eventos React |
 | `CloudGate.tsx` | sesión, carga de cuenta, importación heredada y estado de guardado | Supabase Auth, `db`, `SaveQueue` |
 | `LoginScreen.tsx` | login único por rol y recuperación; la primera activación solo llega por invitación | Supabase Auth, RPC `dietforge_is_admin`, `auth-role` |
+| `PrivacyConsentField.tsx` | consentimiento obligatorio con enlace al aviso | `/privacidad`, `privacy` |
+| `AccountPrivacy.tsx` | consentimiento, exportación JSON y eliminación con doble confirmación | RPC de privacidad, `/api/account/delete`, `privacy` |
 | `SubscriptionGate.tsx` / `SubscriptionPage.tsx` | bloquea o explica acceso comercial | `SubscriptionContext` |
 | `AdminPanel.tsx` | consola administrativa clínica: métricas, directorio, alta, periodos, suspensión, eliminación confirmada e historial | RPC Supabase y API `/admin/coaches` |
 | `Layout.tsx` | navegación, tema y cierre de sesión | rutas, suscripción |
@@ -43,7 +48,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `ClientList.tsx` / `ClientForm.tsx` | directorio clínico, filtros, estados, alta y edición | `db.clients` |
 | `ClientDetail.tsx` | expediente clínico, panel biométrico unificado, borrador/aceptación de macros, acciones y apertura animada de planes | mediciones, competencias, check-ins, planes, Peak Week |
 | `CalculatorPage.tsx` | captura clínica de antropometría, gasto y macros | `calculator`, `metrics`, mediciones y planes |
-| `MealPlanner.tsx` | entrada animada; edición Normal/Rest Day, alimentos, metas, PDF y plantillas | `db`, `meal-day`, `nutrition`, `pdf` |
+| `MealPlanner.tsx` | entrada animada; edición Normal/Rest Day, alimentos, macros de alimentos ya agregados, metas, PDF y plantillas | `db`, `meal-day`, `food-macros`, `nutrition`, `pdf` |
 | `FoodDB.tsx` | explorador, filtros, alta, ficha, importación y eliminación | `db.foods`, `NutritionWheel`, `nutrition`, APIs Next |
 | `NutritionWheel.tsx` | rueda accesible, distribución energética, filtro dominante e información contextual | colección `Food`, `FoodDB` |
 | `PeakWeekSimulator.tsx` | edición diaria de Peak Week | `peak-week`, `PeakCalendar` |
@@ -68,12 +73,16 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `src/lib/cloud/model.ts` | forma y validación del snapshot; lectura heredada |
 | `src/lib/cloud/repository.ts` | RPC de lectura/escritura ligada al token del propietario |
 | `src/lib/cloud/engine.ts` | cola serial, reintento idempotente y estados ready/saving/error |
+| `src/lib/privacy.ts` | versión y fecha del aviso, validación del alta con consentimiento y confirmación de eliminación |
+| `src/lib/privacy-client.ts` | RPC de consentimiento y sincronización desde `user_metadata` |
+| `src/lib/server/account-privacy-handler.ts` | verificación de sesión, purga RPC, Storage y eliminación de identidad Auth |
 | `src/lib/supabase.ts` | cliente browser y consulta del acceso actual |
 | `src/lib/subscription.ts` | logout seguro, utilidades de periodo y enlaces Stripe |
 | `src/lib/email-access.ts` | valida códigos y enlaces permitidos sin solicitar URLs arbitrarias |
 | `src/lib/server/admin-handler.ts` | alta Auth, renovación sin reinvitación y eliminación total autorizada |
 | `src/lib/server/nutrition-handler.ts` | autenticación y proxy seguro de proveedores |
 | `src/lib/meal-day.ts` | separación Normal/Rest, unidades, totales y metas reducidas |
+| `src/lib/food-macros.ts` | borrador y validación de los cuatro macros de un alimento ya agregado |
 | `src/lib/numeric-input.ts` | elimina ceros enteros redundantes sin romper vacío ni decimales |
 | `src/lib/peak-week.ts` | fechas, macros diarios, guardado idempotente de siete planes |
 | `src/lib/training.ts` | acceso canónico a días por semana, compatibilidad heredada, copia/redimensionado, volumen directo y validación de rutinas |
@@ -108,6 +117,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `supabase/migrations/20260906020000_admin_access.sql` | administradores, acceso, auditoría, periodos y protección de persistencia |
 | `supabase/migrations/20260909010000_admin_delete_and_strict_expiry.sql` | vencimiento estricto y eliminación administrativa idempotente |
 | `supabase/migrations/20260907030000_training_programs.sql` | colección `trainingPrograms` en snapshot, RPC y restricción de colecciones |
+| `supabase/migrations/20261116010000_privacy_consent_and_deletion.sql` | aviso versionado, consentimiento con RLS, bitácora ARCO, exportación y eliminación con purga de respaldos |
 | `supabase/schema.sql` | esquema histórico/consolidado de suscripciones y funciones |
 | `supabase/functions/check-subscription/index.ts` | función heredada de consulta de suscripción; exige JWT y devuelve solo el estado del llamante |
 | `supabase/functions/stripe-webhook/index.ts` | eventos Stripe y actualización de suscripciones |
@@ -120,9 +130,12 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `cloud-account.test.ts` | aislamiento por cuenta, montaje de pantallas y flujo Normal/Rest Day |
 | `cloud-queue.test.ts` | orden, revisión, reintento e idempotencia |
 | `meal-day.test.ts` | unidades, totales, separación y reducción |
+| `food-macros.test.ts` | borrador, decimales, ceros y rechazo de macros inválidos |
 | `peak-week.test.ts` / `peak-calendar.test.ts` | siete fechas, macros, guardado y calendario |
 | `training.test.ts` | volumen/frecuencia, copias independientes, validación, compatibilidad cloud y PDF seguro |
 | `admin-handler.test.ts` | autorización, alta, renovación sin reinvitación, eliminación e idempotencia |
+| `privacy.test.ts` / `portal-onboarding.test.ts` / `account-privacy-ui.test.ts` | consentimiento obligatorio, doble confirmación, migración con RLS, panel del titular y orden del endpoint de eliminación |
+| `tests/sql/privacy.sql` | consentimiento, exportación, purga de respaldos y bloqueo a `anon` con rollback |
 | `nutrition-api.test.ts` | autenticación, parámetros, proveedores y errores seguros |
 | `email-access.test.ts` / `auth-errors.test.ts` | enlaces/códigos permitidos y mensajes de Auth |
 | `domain-regression.test.ts` | cálculos críticos de dominio |
@@ -142,16 +155,21 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 
 | Archivo | Responsabilidad |
 |---|---|
-| `ClientPortal.tsx`, `/portal` | Autenticación del cliente y selección del expediente autorizado |
-| `ClientCare.tsx`, `/clients/[id]/care` | Integración de acceso, dieta, sesiones, check-ins y agenda |
+| `ClientPortal.tsx`, `/portal` | Autenticación del cliente, barra superior del portal y selección del expediente autorizado (el selector solo aparece con más de un expediente) |
+| `src/components/portal/PortalParts.tsx` | Presentación compartida del portal: barra superior, cuatro pestañas, tarjeta de dieta con Plan Normal/Rest Day, estado vacío. Sin acceso a datos |
+| `ClientCare.tsx`, `/clients/[id]/care` | Integración de acceso, dieta, sesiones, check-ins y agenda; portada con tres datos accionables en el modo cliente |
+| `PortalAuth.tsx`, `PortalCheckIn.tsx`, `CareAgenda.tsx` | Acceso en tres pasos, check-in con obligatorios visibles y agenda con cita solicitada por el cliente |
+| `/dev/portal`, `portal-captura.mjs`, `capturas/` | Vista previa local del portal con datos de ejemplo (`?coach=1`, `?dark=1`), capturas antes/después en Brave headless y sus PNG |
 | `SessionTracker.tsx`, `training-tracking.ts` | Captura real por semana/día, historial, validación, volumen directo/indirecto y métricas |
 | `TrainingTools.tsx` | Plantillas, duplicación, progresión y comparación de volumen |
-| `CareAgenda.tsx`, `AgendaHub.tsx`, `/agenda` | Calendario integrado por cliente |
+| `CareAgenda.tsx`, `AgendaHub.tsx`, `/agenda` | Calendario por cliente con citas, Peak Week y check-ins |
+| `agenda.ts` | Validación de citas, estados y eventos del calendario |
 | `client-portal.ts` | Contratos RPC del portal y actividad |
 | `QualityPanel.tsx`, `/quality` | Listado, descarga, captura y restauración |
 | `ErrorMonitor.tsx`, `error-monitor.ts` | Categorías de error en memoria de sesión |
 | Migraciones `20260908*` | Autorización, portal, respaldos, versiones, videos privados y validación de agendas independientes por semana |
 | `20261029010000_security_portal_subscription_hardening.sql` | Bloquea el auto-portal del coach y limita `check_subscription` a `service_role` |
+| `20261116020000_agenda_appointments.sql` | Citas del portal: amplía el CHECK de `kind`, valida horario/estado y reserva única; pendiente aplicar |
 | `docs/TRAINING_WEEKS.md` | Contrato de semanas independientes, metas musculares y barras de cumplimiento |
 | `tests/sql/client-portal.sql` | Regresiones reales de autorización, auto-portal y recuperación con rollback |
 | `scripts/supabase-healthcheck.mjs` | Comprobación externa de disponibilidad sin datos privados |
@@ -182,10 +200,12 @@ El ajuste de macros guardados se monta en la sección superior, en la posición 
 
 ### Seguimiento automático y check-ins
 - `src/lib/auto-refresh.ts`, `use-auto-refresh.ts`: lecturas seriales, invalidación/cola de recargas tras guardar y ciclo de visibilidad/reconexión.
-- `src/lib/use-portal-sync.ts`: estado del expediente, recuperación, descarte de respuestas anteriores y pausa ante errores terminales.
+- `src/lib/use-portal-sync.ts`: estado del expediente, recuperación, descarte de respuestas anteriores y pausa ante errores terminales. Revalida también al restaurar la página desde la bfcache (`pageshow`).
 - `src/lib/portal-errors.ts`: clasificación segura de errores Auth/RPC con causa interna conservada.
 - `tests/portal-sync-browser.test.ts`, `portal-errors.test.ts`, `auto-refresh.test.ts`: regresiones de concurrencia, identidad, offline y categorías de error (datos simulados y DOM JSDOM).
 - `src/components/PortalCheckIn.tsx`, `src/lib/portal-checkin.ts`: formulario cliente sin grasa, historial y recuperación de envío.
+- `src/components/CoachCheckInInbox.tsx`, `src/components/CheckInPhoto.tsx`: bandeja del coach con lista por fecha, miniaturas privadas y confirmación de importación.
+- `src/lib/checkin-import.ts`: normalización del envío, destino de la importación, deduplicación por UUID y fotos por ruta privada.
 - `src/lib/checkin-media.ts`: fotos privadas y URLs firmadas.
 - `src/components/CoachNotifications.tsx`: campana global y destinos de registros.
 - `src/components/TrainingLiveFeedback.tsx`: registros del cliente por programa/semana sin cambiar prescripción.
@@ -196,16 +216,23 @@ El ajuste de macros guardados se monta en la sección superior, en la posición 
 - `20260914030000_diet_change_notices.sql`: huella de dieta por cliente, lecturas privadas y RPC de cierre condicional.
 - `supabase/tests/diet-change-notices.sql`, `tests/diet-notice.test.ts`: aislamiento, no ruido, cierre persistente y ajustes simultáneos.
 - `tests/agenda-scope.test.ts`: Agenda conserva Peak Week/check-ins y excluye las categorías retiradas.
+- `tests/agenda-appointments.test.ts`: validación de citas, estados, lectura en la agenda y formulario solo para el cliente.
+- `tests/agenda-booking-smoke.mjs`: navegador real con RPC interceptadas; solicitud en el portal, lectura en `/agenda` y confirmación del coach sin escrituras vivas (ejecutar después de `npm run build`).
+- `tests/sql/agenda-appointments.sql`: prueba SQL multicuenta con ROLLBACK para el tipo `appointment`; pendiente ejecutarla cuando la pila local aplique las migraciones históricas.
+- `tests/checkin-import.test.ts`, `tests/coach-checkin-inbox.test.ts`: importación idempotente, filtrado de datos inválidos y flujo de confirmación en JSDOM.
+- `tests/checkin-inbox-smoke.mjs`: navegador real con RPC interceptadas; lista, importación, recarga y cero escrituras vivas (ejecutar después de `npm run build`).
 
 ## Entrada progresiva del workspace
 
 `src/lib/page-cascade.ts` mantiene visibles los bloques al recibir foco. Dashboard, ClientList, TrainingHub, TrainingPlanner, Reports, FoodDB y AgendaHub declaran `data-page-cascade` y ordenan bloques reales con `data-cascade`; CSS inicia su entrada al montarse. Layout excluye esas páginas de su animación genérica para evitar solapamientos.
 
 - `tests/portal-sync-smoke.mjs`: integración en Brave con RPC interceptadas; carga única, correo en edición, recuperación, revocación y Agenda. Ejecutar después de build; no realiza escrituras reales.
+- `tests/portal-diet-autorefresh.test.ts`: JSDOM; el portal pinta menús sin datos previos y plan/alimentos reflejan un alimento recién guardado tras el refresco, sin recargar.
+- `tests/portal-diet-update-smoke.mjs`: Brave sobre el build de producción con RPC interceptadas; plan actualizado solo (2 lecturas) y lista de `Mis menús` actualizada sola (2 lecturas); cero escrituras reales. Ejecutar después de `npm run build`.
 
 
 ## Menús y recetas
-- `src/components/diet-menus/`: pestañas, editor de menús, biblioteca/recetas, imágenes privadas, vista del portal y demostración local.
+- `src/components/diet-menus/`: pestañas, editor de menús, biblioteca/recetas, imágenes privadas, vista del portal y demostración local. `PortalMenus` tolera la ausencia de menú/día antes de la primera lectura (regresión 2026-11-16).
 - `src/types/diet-menus.ts`, `src/lib/diet-menus.ts`: contratos, validación, nutrición y duplicación.
 - `src/lib/portal-menus.ts`, `src/lib/recipe-photos.ts`: RPC diaria y Storage privado.
 - Menús y recetas: integrado en las subpestañas de Planificación, sin página de demostración.

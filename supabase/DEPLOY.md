@@ -92,3 +92,29 @@ Aplicar en orden las cinco migraciones `20260908*`. Las RPC públicas conservan 
 
 ## Menús y recetas — septiembre 2026
 Aplicar `migrations/20261029010000_security_portal_subscription_hardening.sql` después de `20260924010000_diet_menus.sql`. El frontend comprueba `dietforge_menus_read` antes de habilitar el editor en producción; sin migración muestra disponibilidad pendiente y mantiene el plan habitual. Tras aplicar, verificar acceso por coach/cliente y Storage privado `recipe-photos` con datos de prueba. Subir código a GitHub no aplica esta migración.
+
+## Privacidad y consentimiento — 2026-11-16 (pendiente de aplicar)
+
+`migrations/20261116010000_privacy_consent_and_deletion.sql` crea el aviso
+versionado (`dietforge_privacy_notices`), el consentimiento por usuario
+(`dietforge_privacy_consents`, RLS por `auth.uid()`), la bitácora de solicitudes
+ARCO (`dietforge_privacy_requests`) y las RPC `dietforge_privacy_record_consent`,
+`dietforge_privacy_read_consent`, `dietforge_privacy_export` y
+`dietforge_privacy_delete_account`.
+
+**No está aplicada en producción.** Antes de desplegar el código que la usa:
+
+1. Aprobación del Patrón Daniel.
+2. Aplicar primero en local (`supabase db reset` o `supabase migration up`) y
+   ejecutar `tests/sql/privacy.sql` con datos ficticios y `ROLLBACK`.
+3. Aplicar en el proyecto vinculado: `supabase db push` (o el flujo aprobado),
+   después de `20261029010000_security_portal_subscription_hardening.sql`.
+4. Comprobar que `SUPABASE_SERVICE_ROLE_KEY` existe solo en el servidor/Vercel y
+   nunca con prefijo `NEXT_PUBLIC_`: la eliminación de la propia cuenta la usa
+   para retirar archivos privados e identidad Auth.
+5. Verificar con una cuenta de prueba: aceptar el aviso, confirmar correo,
+   exportar JSON y eliminar la cuenta comprobando que `dietforge_backups` ya no
+   conserva filas del titular.
+
+La eliminación no revierte sola: no hay rollback automático de datos, solo la
+migración puede revertirse con `DROP FUNCTION`/`DROP TABLE` si nunca se usó.

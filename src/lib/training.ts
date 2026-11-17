@@ -172,3 +172,14 @@ export function trainingSaveErrors(program: TrainingProgram): string[] {
   for (const [muscle, range] of Object.entries(program.volume_ranges ?? {})) if (!Number.isFinite(range.min) || !Number.isFinite(range.max) || range.min < 0 || range.max > 100 || range.min > range.max) errors.push(`${muscle}: revisa el rango de volumen.`);
   return errors;
 }
+
+/**
+ * The portal always opens on a week that actually has content. A routine can
+ * legitimately start later than week 1, and showing an empty week looks broken.
+ */
+export function firstTrainingWeek(program:Pick<TrainingProgram,'days'|'week_days'|'duration_weeks'>|undefined|null):number {
+ if(!program)return 1;
+ const total=Math.max(1,program.duration_weeks||1);
+ for(let week=1;week<=total;week+=1){ if((trainingDays(program,week)??[]).length>0)return week; }
+ return 1;
+}

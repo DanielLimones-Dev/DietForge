@@ -38,6 +38,7 @@ export function LoginScreen() {
    <p>Clientes, seguimiento y planificación nutricional en un espacio diseñado para tu trabajo diario.</p>
    <div className="df-login-features">{["Todos tus clientes en un lugar","Planes claros, seguimiento continuo","Tu espacio en cualquier dispositivo"].map(t=><div key={t}><Check size={17}/>{t}</div>)}</div></div>
    <p className="df-login-footer">PRECISIÓN PARA TU TRABAJO DIARIO.</p>
+   <Link href="/privacidad" target="_blank" rel="noopener noreferrer" className="df-login-privacy">Aviso de privacidad</Link>
   </section>
   <section className="df-login-form"><div className="w-full max-w-sm">
    <span className="df-icon"><LockKeyhole size={25}/></span>

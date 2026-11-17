@@ -1,7 +1,7 @@
 'use client';
 import {useCallback,useEffect,useRef,useState} from 'react';
 import {startAutoRefresh} from './auto-refresh';
-import {portalFailure,type PortalFailure} from './portal-errors';
+import {portalFailure,shouldRetryPortalRead,type PortalFailure} from './portal-errors';
 
 export function usePortalSync<T>(read:()=>Promise<T>) {
  const [state,setState]=useState<{source:typeof read;data:T|null;error:PortalFailure|null}>({source:read,data:null,error:null});
@@ -15,20 +15,24 @@ export function usePortalSync<T>(read:()=>Promise<T>) {
     const error=portalFailure(cause);
     setState(previous=>({source:read,data:previous.source===read&&error.kind!=='session'&&error.kind!=='forbidden'?previous.data:null,error}));
    },
-   shouldRetry:cause=>portalFailure(cause).retryable,
+   shouldRetry:shouldRetryPortalRead,
    active:()=>!document.hidden&&navigator.onLine,
    schedule:(fn,delay)=>window.setTimeout(fn,delay) as unknown as ReturnType<typeof setTimeout>,
    cancel:id=>window.clearTimeout(id as unknown as number),
   });
   control.current=loop;
   const refresh=()=>{setOffline(!navigator.onLine);void loop.refresh();};
+  // A page restored from the back-forward cache keeps old timers; revalidate at once.
+  const restored=(event:PageTransitionEvent)=>{if(event.persisted)refresh();};
   refresh();
   window.addEventListener('online',refresh);window.addEventListener('offline',refresh);
   window.addEventListener('focus',refresh);document.addEventListener('visibilitychange',refresh);
+  window.addEventListener('pageshow',restored);
   return ()=>{
    loop.stop();if(control.current===loop)control.current=null;
    window.removeEventListener('online',refresh);window.removeEventListener('offline',refresh);
    window.removeEventListener('focus',refresh);document.removeEventListener('visibilitychange',refresh);
+   window.removeEventListener('pageshow',restored);
   };
  },[read]);
  const reload=useCallback(()=>control.current?.reload()??Promise.resolve(),[]);

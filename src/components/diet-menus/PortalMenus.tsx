@@ -10,7 +10,8 @@ export function PortalMenus({owner,clientId,coach=false}:{owner:string;clientId:
  const read=useCallback(()=>readPortalMenus(owner,clientId),[owner,clientId]);
  const sync=usePortalSync(read);const [date,setDate]=useState(trainingDateValue());const [preview,setPreview]=useState<number|null>(null);const [busy,setBusy]=useState(false);const lock=useRef(false);const [message,setMessage]=useState('');
  const menus=sync.data?.menus??[];const day=sync.data?.days.find(d=>d.date===date);const selected=menus.find(m=>m.id===(preview??day?.menu_id))??menus[0];
- const completed=day?.menu_id===selected?.id?day.completed_meals:[];
+ // Both sides are optional; comparing two undefined values must not dereference day.
+ const completed=day&&selected&&day.menu_id===selected.id?(day.completed_meals??[]):[];
  async function save(menuId:number,done:string[]){if(lock.current)return;lock.current=true;setBusy(true);setMessage('');try{await saveMenuDay(owner,clientId,date,menuId,done);setPreview(menuId);await sync.reload();}catch(e){setMessage(e instanceof Error?e.message:'No se pudo guardar. Inténtalo de nuevo.');}finally{lock.current=false;setBusy(false);}}
  function choose(menuId:number){if(busy)return;if(coach){setPreview(menuId);return;}if(day&&day.menu_id!==menuId&&day.completed_meals.length&&!window.confirm('Ya registraste comidas de otro menú hoy. ¿Cambiar de menú? El registro anterior se conservará en el historial y este menú comenzará sin comidas completadas.'))return;void save(menuId,day?.menu_id===menuId?day.completed_meals:[]);}
  function complete(id:string){if(!selected)return;if(day&&day.menu_id!==selected.id&&day.completed_meals.length&&!window.confirm('¿Cambiar el menú de este día y empezar un registro nuevo?'))return;

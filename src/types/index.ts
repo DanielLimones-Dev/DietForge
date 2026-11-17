@@ -159,6 +159,8 @@ export interface CheckIn {
   adherence?: Adherence;
   notes?: string;
   coach_feedback?: string;
+  // UUID of the portal check-in this record was imported from; it makes the import idempotent.
+  portal_activity_id?: string;
 }
 
 export interface PhotoRef {

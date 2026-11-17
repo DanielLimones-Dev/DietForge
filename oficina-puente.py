@@ -1,0 +1,1 @@
+/Users/daniellimones/.config/opencode/oficina-puente.py

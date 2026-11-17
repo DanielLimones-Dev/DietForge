@@ -9,15 +9,17 @@ test('portal onboarding asks email first, validates passwords and confirms insid
  const originals=new Map(keys.map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]));
  for(const key of keys)Object.defineProperty(globalThis,key,{configurable:true,value:dom.window[key]});
  Object.assign(globalThis,{IS_REACT_ACT_ENVIRONMENT:true});process.env.NEXT_PUBLIC_SUPABASE_URL='https://fixture.supabase.co';process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY='fixture-key';
- const {supabase}=await import('../src/lib/supabase');const originalSignup=supabase.auth.signUp,originalLogin=supabase.auth.signInWithPassword,originalRecovery=supabase.auth.resetPasswordForEmail;
+ const {supabase}=await import('../src/lib/supabase');const originalSignup=supabase.auth.signUp,originalLogin=supabase.auth.signInWithPassword,originalRecovery=supabase.auth.resetPasswordForEmail,originalRpc=supabase.rpc;
  let session=false,fail=false;const signup:unknown[]=[];const login:unknown[]=[];const recovery:unknown[]=[];
  supabase.auth.signUp=(async(args:unknown)=>{signup.push(args);return {data:{session:session?{}:null,user:null},error:fail?new Error('Network error'):null};}) as typeof supabase.auth.signUp;
  supabase.auth.signInWithPassword=(async(args:unknown)=>{login.push(args);return {data:{session:null,user:null},error:null};}) as unknown as typeof supabase.auth.signInWithPassword;
  supabase.auth.resetPasswordForEmail=async(...args)=>{recovery.push(args);return {data:{},error:null};};
+  supabase.rpc=(async()=>({data:{version:'1.0',accepted_at:'2026-11-16T18:00:00.000Z'},error:null})) as unknown as typeof supabase.rpc;
  const {PortalAuth}=await import('../src/components/PortalAuth');const {createRoot}=await import('react-dom/client');const root=createRoot(document.getElementById('root')!);
  const input=async(index:number,value:string)=>{const field=document.querySelectorAll('input')[index];assert.ok(field);await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!.call(field,value);field.dispatchEvent(new dom.window.Event('input',{bubbles:true}));});};
  const submit=async()=>{await act(async()=>{document.querySelector('form')!.dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));});};
  const click=async(text:string)=>{const button=Array.from(document.querySelectorAll('button')).find(b=>b.textContent===text);assert.ok(button,text);await act(async()=>button.click());};
+  const accept=async()=>{const box=document.querySelector<HTMLInputElement>('#portal-privacy-consent');assert.ok(box,'consent checkbox exists');assert.equal(box.checked,false);await act(async()=>box.click());assert.equal(box.checked,true);};
  try{
   await act(async()=>root.render(createElement(PortalAuth)));
   assert.match(document.body.textContent??'',/correo validado con tu coach/);assert.equal(document.querySelectorAll('input').length,1);
@@ -25,12 +27,14 @@ test('portal onboarding asks email first, validates passwords and confirms insid
   assert.equal(document.querySelectorAll('input[type=password]').length,2);
   await input(0,'short');await input(1,'short');await submit();assert.equal(signup.length,0);assert.match(document.querySelector('[role=alert]')!.textContent!,/12/);
   await input(0,'contraseña-larga');await input(1,'otra-contraseña');await submit();assert.equal(signup.length,0);assert.match(document.querySelector('[role=alert]')!.textContent!,/coinciden/);
-  fail=true;await input(1,'contraseña-larga');await submit();assert.equal(signup.length,1);assert.ok(document.querySelector('.care-onboarding [role=alert]'));assert.equal((document.querySelector('input') as HTMLInputElement).value,'','password cleared after request failure');
+  fail=true;await input(1,'contraseña-larga');await accept();await submit();assert.equal(signup.length,1);assert.ok(document.querySelector('.care-onboarding [role=alert]'));assert.equal((document.querySelector('input') as HTMLInputElement).value,'','password cleared after request failure');
   fail=false;await input(0,'contraseña-larga');await input(1,'contraseña-larga');await submit();assert.equal(signup.length,2);assert.match(document.querySelector('.care-onboarding [role=status]')!.textContent!,/Confirma tu correo/);
   assert.equal(document.querySelectorAll('input[type=password]').length,0);
-  assert.deepEqual(signup[1],{email:'cliente@example.invalid',password:'contraseña-larga',options:{emailRedirectTo:'http://localhost/auth/callback?next=portal'}});
+  const sent=signup[1] as {email:string;password:string;options:{emailRedirectTo:string;data:Record<string,unknown>}};
+  assert.equal(sent.email,'cliente@example.invalid');assert.equal(sent.password,'contraseña-larga');assert.equal(sent.options.emailRedirectTo,'http://localhost/auth/callback?next=portal');
+  assert.equal(sent.options.data.privacy_notice_version,'1.0');assert.equal(sent.options.data.privacy_source,'portal_signup');assert.match(String(sent.options.data.privacy_accepted_at),/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
   assert.equal(document.querySelector('a')?.getAttribute('href'),'/');await act(async()=>root.render(createElement(PortalAuth,{key:'recovery'})));assert.equal(Array.from(document.querySelectorAll('a')).find(a=>a.textContent==='Ya tengo cuenta')?.getAttribute('href'),'/');await input(0,'cliente@example.invalid');
   await click('Olvidé mi contraseña');await submit();assert.equal(recovery.length,1);assert.match(document.querySelector('.care-onboarding [role=status]')!.textContent!,/Revisa tu correo/);
-  await act(async()=>root.render(createElement(PortalAuth,{key:'automatic-session'})));session=true;await input(0,'otro@example.invalid');await submit();await input(0,'contraseña-larga');await input(1,'contraseña-larga');await submit();assert.match(document.querySelector('[role=status]')!.textContent!,/Tu sesión está lista/);assert.doesNotMatch(document.querySelector('[role=status]')!.textContent!,/mensaje enviado/);
- }finally{await act(async()=>root.unmount());supabase.auth.signUp=originalSignup;supabase.auth.signInWithPassword=originalLogin;supabase.auth.resetPasswordForEmail=originalRecovery;await supabase.auth.stopAutoRefresh();for(const key of keys){const old=originals.get(key);if(old)Object.defineProperty(globalThis,key,old);else Reflect.deleteProperty(globalThis,key);}dom.window.close();}
+  await act(async()=>root.render(createElement(PortalAuth,{key:'automatic-session'})));session=true;await input(0,'otro@example.invalid');await submit();await input(0,'contraseña-larga');await input(1,'contraseña-larga');await accept();await submit();assert.match(document.querySelector('[role=status]')!.textContent!,/Tu sesión está lista/);assert.doesNotMatch(document.querySelector('[role=status]')!.textContent!,/mensaje enviado/);
+ }finally{await act(async()=>root.unmount());supabase.auth.signUp=originalSignup;supabase.auth.signInWithPassword=originalLogin;supabase.auth.resetPasswordForEmail=originalRecovery;supabase.rpc=originalRpc;await supabase.auth.stopAutoRefresh();for(const key of keys){const old=originals.get(key);if(old)Object.defineProperty(globalThis,key,old);else Reflect.deleteProperty(globalThis,key);}dom.window.close();}
 });

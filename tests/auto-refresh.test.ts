@@ -49,12 +49,13 @@ test('auto refresh backs off failures, caps delay, and resets on success',async(
  fail=true;await control.refresh();assert.deepEqual(clock.delays(),[10000]);control.stop();
 });
 
-test('auto refresh does not read while hidden and resumes on explicit visibility refresh',async()=>{
+test('auto refresh never reads while hidden and keeps its lane alive until visible again',async()=>{
  const clock=scheduler();let active=false,reads=0;
  const control=startAutoRefresh({read:async()=>++reads,apply:()=>{},error:()=>assert.fail('Unexpected error'),active:()=>active,...clock});
- await control.refresh();assert.equal(reads,0);assert.equal(clock.pending.size,0);
+ // Un carril pausado debe reprogramarse: si se detiene, un evento de foco perdido lo mata hasta recargar.
+ await control.refresh();assert.equal(reads,0);assert.deepEqual(clock.delays(),[5000]);
  active=true;await control.refresh();assert.equal(reads,1);assert.deepEqual(clock.delays(),[5000]);
- active=false;clock.fire();assert.equal(reads,1);assert.equal(clock.pending.size,0);
+ active=false;clock.fire();assert.equal(reads,1);assert.deepEqual(clock.delays(),[5000]);
  active=true;await control.refresh();assert.equal(reads,2);assert.deepEqual(clock.delays(),[5000]);control.stop();
 });
 
@@ -92,6 +93,6 @@ test('a queued reload while hidden waits for visibility and never applies the in
  const control=startAutoRefresh({read:()=>++reads===1?old.promise:Promise.resolve(2),apply:v=>applied.push(v),error:()=>assert.fail('Unexpected error'),active:()=>active,...clock});
  const initial=control.refresh();const queued=control.reload();active=false;old.resolve(1);
  await Promise.all([initial,queued]);assert.deepEqual(applied,[]);assert.equal(reads,1);
- clock.fire();assert.equal(clock.pending.size,0);
+ clock.fire();assert.equal(reads,1,'a hidden tick does not read');assert.deepEqual(clock.delays(),[5000],'the lane stays scheduled');
  active=true;await control.refresh();assert.deepEqual(applied,[2]);assert.equal(reads,2);control.stop();
 });

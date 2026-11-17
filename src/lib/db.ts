@@ -2,6 +2,7 @@ import type {Recipe,ClientMenu} from '@/types/diet-menus';
 import {recipeIssues,menuIssues} from './diet-menus';
 import type { Client, ClientMeasurement, Food, MealPlan, MealPlanItem, DietTemplate, Competition, CheckIn, PhotoRef, WeekPlan, TrainingProgram, CustomExercise } from '@/types';
 import { classifyCarbs } from '@/lib/nutrition';
+import { applyFoodMacros } from '@/lib/food-macros';
 import { readRemote, writeRemote } from './cloud/repository';
 import { emptySnapshot, validateSnapshot, type Snapshot, type Database, sameSnapshot } from './cloud/model';
 import { SaveQueue, type SaveState } from './cloud/engine';
@@ -196,6 +197,27 @@ const localDb = {
     cache.foods.push(f);
     persist();
     return f;
+  },
+
+  updateFood: (id: number, data: Partial<Omit<Food, "id">>): Food | undefined => {
+    const index = cache.foods.findIndex((f) => f.id === id);
+    if (index === -1) return undefined;
+    const merged = { ...cache.foods[index], ...data };
+    const values = [merged.protein, merged.carbs, merged.fat, merged.kcal];
+    if (!values.every((value) => Number.isFinite(value) && value >= 0)) {
+      throw new Error('Usa números iguales o mayores que cero; se permiten decimales.');
+    }
+    if (!merged.name.trim()) throw new Error('El alimento necesita un nombre.');
+    const next: Food = applyFoodMacros(merged, {
+      protein: merged.protein,
+      carbs: merged.carbs,
+      fat: merged.fat,
+      kcal: merged.kcal,
+    });
+    next.carb_type = classifyCarbs({ name: next.name, category: next.category, fiber: next.fiber, carbs: next.carbs }) || undefined;
+    cache.foods = cache.foods.map((food) => (food.id === id ? next : food));
+    persist();
+    return next;
   },
 
   deleteFood: (id: number): void => {

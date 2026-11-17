@@ -1,6 +1,6 @@
-import NextImage from "next/image";
 import { useState, useEffect, useCallback } from "react";
 import { db } from "@/lib/db";
+import { CheckInPhoto } from "./CheckInPhoto";
 import { calculateWeightTrend, getRateLabel } from "@/lib/trends";
 import { checkWeightRate } from "@/lib/alerts";
 import { TrendingUp, AlertTriangle, Info, Camera, X, ChevronUp, ChevronDown, Minus, ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
@@ -222,7 +222,7 @@ export function CheckInHistory({ clientId, phase, onEdit, onDelete }: Props) {
                   <div className="grid grid-cols-2 gap-2">
                     {photos.map((p, i) => (
                       <div key={p.id} className="relative cursor-pointer" onClick={() => setPhotoViewer({ photos, index: i })}>
-                        <NextImage unoptimized width={800} height={800} src={p.data} alt={p.angle} className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700 hover:opacity-80 transition-opacity" />
+                        <CheckInPhoto src={p.data} alt={angleLabels[p.angle] || p.angle} className="w-full h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-700 hover:opacity-80 transition-opacity" />
                         <span className="absolute bottom-1 left-1 px-1.5 py-0.5 bg-black/60 text-[9px] text-white rounded">{angleLabels[p.angle] || p.angle}</span>
                       </div>
                     ))}
@@ -313,7 +313,7 @@ export function CheckInHistory({ clientId, phase, onEdit, onDelete }: Props) {
               </button>
             )}
 
-            <NextImage unoptimized width={800} height={800}
+            <CheckInPhoto
               src={photoViewer.photos[photoViewer.index].data}
               alt={photoViewer.photos[photoViewer.index].angle}
               className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg animate-scale-in"

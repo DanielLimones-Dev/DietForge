@@ -3,7 +3,7 @@ import {DietWorkspace} from "./diet-menus/DietWorkspace";
 import {subscribeStorage} from "@/lib/db";
 
 import { getPreference, setPreference } from "@/lib/db";
-import { useEffect, useState, useMemo, useRef, type CSSProperties } from "react";
+import { useEffect, useState, useMemo, useRef, type CSSProperties, type FormEvent } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Printer, Plus, Scale, X, Target, Globe, Moon, PieChart, Trash2 } from "lucide-react";
 import { db } from "@/lib/db";
@@ -11,6 +11,7 @@ import { itemsForDay, mealTotals, convertQuantity, restReduction, restTargets, f
 import { generateDietPDF } from "@/lib/pdf";
 import { openPrintDocument } from "@/lib/print-document";
 import { searchFatSecret, classifyCarbs } from "@/lib/nutrition";
+import { foodMacroDraft, parseFoodMacroDraft, type FoodMacroDraft } from "@/lib/food-macros";
 import type { Food, MealPlan, MealPlanItem, MealTime } from "@/types";
 import { ConfirmDialog, PromptDialog } from "./ui";
 import { useToast } from "./Toast";
@@ -55,6 +56,9 @@ function MealPlannerFields() {
   const [selectedMeal, setSelectedMeal] = useState<string | null>(null);
   const [targetColumn, setTargetColumn] = useState<"left" | "right">("left");
   const [selectedFood, setSelectedFood] = useState<Food | null>(null);
+  const [editingMacrosFood, setEditingMacrosFood] = useState<Food | null>(null);
+  const [macroDraft, setMacroDraft] = useState<FoodMacroDraft>({ protein: "", carbs: "", fat: "", kcal: "" });
+  const [macroError, setMacroError] = useState("");
   const [foodQuantity, setFoodQuantity] = useState(100);
   const [foodUnit, setFoodUnit] = useState("g");
   const [apiResults, setApiResults] = useState<Food[]>([]);
@@ -309,6 +313,9 @@ function MealPlannerFields() {
                           {Array.from(new Set([item.serving_unit,...(f.serving_unit === "ml" ? ["ml"] : ["g","lb",...(f.serving_size>0?["pieza"]:[])])])).map(unit=><option key={unit} value={unit}>{unit}</option>)}
                         </select>
                       </label>
+                      <button type="button" disabled={readOnly} aria-label="Editar macros" title={`Editar macros de ${f.name}`} onClick={e=>{e.stopPropagation();handleOpenMacroEditor(f);}} className="mp-food-edit">
+                        Editar macros
+                      </button>
                       <button type="button" disabled={readOnly} aria-label={`Quitar ${f.name}`} onClick={e=>{e.stopPropagation();setRemoveItemId(item.id);}} className="mp-food-remove">
                         <Trash2 size={16} aria-hidden="true" />
                       </button>
@@ -346,6 +353,32 @@ function MealPlannerFields() {
     db.deleteMealPlanItem(itemId);
     setPlan(db.getMealPlan(planId));
     setRemoveItemId(null);
+  };
+
+  const handleOpenMacroEditor = (food: Food) => {
+    setSelectedFood(null);
+    setMacroError("");
+    setMacroDraft(foodMacroDraft(food));
+    setEditingMacrosFood(food);
+  };
+
+  const handleSaveMacros = (event: FormEvent) => {
+    event.preventDefault();
+    if (!editingMacrosFood) return;
+    const parsed = parseFoodMacroDraft(macroDraft);
+    if (!parsed.ok) { setMacroError(parsed.error); return; }
+    try {
+      const updated = db.updateFood(editingMacrosFood.id, parsed.values);
+      if (!updated) { setMacroError("El alimento ya no existe."); return; }
+      // The food library and every meal total read from the same record, so a
+      // single refresh reflects the edit without removing the plan item.
+      setFoods(db.getFoods());
+      setPlan(db.getMealPlan(planId));
+      setEditingMacrosFood(null);
+      setMacroError("");
+    } catch (error) {
+      setMacroError(error instanceof Error ? error.message : "No se pudieron actualizar los macros.");
+    }
   };
 
 
@@ -680,6 +713,50 @@ function MealPlannerFields() {
               Agregar a {selectedMeal ? `"${MEAL_LABELS[selectedMeal]}"` : "selecciona una comida"}
             </button>
           </div>
+        </div>
+      )}
+
+      {editingMacrosFood && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setEditingMacrosFood(null)}>
+          <form noValidate role="dialog" aria-modal="true" aria-labelledby="food-macro-editor-title" onSubmit={handleSaveMacros} onClick={(event) => event.stopPropagation()} className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-900">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h3 id="food-macro-editor-title" className="text-lg font-bold dark:text-white">Editar macros</h3>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{editingMacrosFood.name} · valores por {editingMacrosFood.serving_size} {editingMacrosFood.serving_unit}</p>
+              </div>
+              <button type="button" aria-label="Cerrar edición de macros" onClick={() => setEditingMacrosFood(null)} className="rounded-lg p-1 hover:bg-gray-100 dark:hover:bg-gray-800">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                ["kcal", "Calorías", "kcal"],
+                ["protein", "Proteína", "g"],
+                ["carbs", "Carbohidratos", "g"],
+                ["fat", "Grasas", "g"],
+              ] as const).map(([key, label, unit]) => (
+                <label key={key} className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                  <span>{label} ({unit})</span>
+                  <input
+                    data-plain-number
+                    type="number"
+                    min="0"
+                    step="any"
+                    inputMode="decimal"
+                    value={macroDraft[key]}
+                    onChange={(event) => setMacroDraft((draft) => ({ ...draft, [key]: event.target.value }))}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  />
+                </label>
+              ))}
+            </div>
+            <p className="mt-3 text-[11px] text-gray-500 dark:text-gray-400">Se permiten decimales. El cambio se aplica a este alimento en todos los planes que lo usan.</p>
+            {macroError && <p role="alert" className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">{macroError}</p>}
+            <div className="mt-5 flex justify-end gap-2">
+              <button type="button" onClick={() => setEditingMacrosFood(null)} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800">Cancelar</button>
+              <button type="submit" className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700">Guardar macros</button>
+            </div>
+          </form>
         </div>
       )}
 
