@@ -17,7 +17,7 @@ test('menu editor locks controls during slow save and keeps dirty draft after fa
  const edit=async(value:string)=>{await act(async()=>{Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype,'value')!.set!.call(name(),value);name().dispatchEvent(new dom.window.Event('input',{bubbles:true}));});};
  const button=(text:string)=>{const b=Array.from(document.querySelectorAll('button')).find(b=>b.textContent===text);assert.ok(b,text);return b;};
  try{
-  await act(async()=>root.render(createElement(DietMenus,{clientId:1,clientName:'Fixture',store})));await edit('Nombre editado');
+  await act(async()=>root.render(createElement(DietMenus,{clientId:1,clientName:'Fixture',store})));assert.ok(button('PDF'),'menu editor exposes its own PDF export');await edit('Nombre editado');
   await act(async()=>button('Guardar menú').click());assert.equal(document.querySelector('fieldset')!.disabled,true);assert.equal(name().matches(':disabled'),true);assert.equal(updates,0,'write waits for prior queue');
   await act(async()=>button('Menú 2').click());assert.equal(name().value,'Nombre editado','native disabled fieldset blocks changing menu');
   await act(async()=>release());assert.equal(updates,1);assert.equal(document.querySelector('fieldset')!.disabled,false);assert.match(document.body.textContent??'',/Menú guardado como borrador/);

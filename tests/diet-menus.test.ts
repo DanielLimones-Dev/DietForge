@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import type {Food} from '../src/types';
 import type {Recipe,ClientMenu} from '../src/types/diet-menus';
 import {recipeTotals,menuTotals,duplicateMenu,recipeIssues,menuIssues} from '../src/lib/diet-menus';
+import {generateMenuPDF} from '../src/lib/menu-pdf';
 import {emptySnapshot,validateSnapshot} from '../src/lib/cloud/model';
 const food:Food={id:1,name:'Alimento prueba',category:'protein',protein:20,carbs:10,fat:5,fiber:2,antioxidants:0,kcal:165,serving_size:50,serving_unit:'g',source:'manual'};
 const recipe:Recipe={id:1,name:'Receta',servings:2,instructions:'Preparar',ingredients:[{id:'00000000-0000-4000-8000-000000000001',food,quantity:2,unit:'pieza'}],created_at:'2026-09-24T12:00:00Z',updated_at:'2026-09-24T12:00:00Z'};
@@ -49,4 +50,14 @@ test('domain rejects child IDs and numerical values that the cloud cannot accept
  assert.ok(menuIssues({...menu,meals:[{...menu.meals[0],items:[{...menu.meals[0].items[0],id:'invalid'}]}]}).length);
  assert.ok(menuIssues({...menu,meals:[{...menu.meals[0],items:[{id:'00000000-0000-4000-8000-000000000009',kind:'recipe',recipe,portions:10001}]}]}).length);
  assert.deepEqual(recipeIssues({...recipe,servings:10000,ingredients:[{...ingredient,quantity:100000,food:{...food,protein:100000}}]}),[]);
+});
+
+
+test('menu PDF renders meals, nutrition and escapes user text',()=>{
+ const html=generateMenuPDF({...menu,name:'<script>Menú</script>'},'Cliente <b>');
+ assert.match(html,/&lt;script&gt;Menú/);
+ assert.doesNotMatch(html,/<script>Menú/);
+ assert.match(html,/Desayuno/);
+ assert.match(html,/330/);
+ assert.doesNotMatch(html,/NaN|Infinity/);
 });

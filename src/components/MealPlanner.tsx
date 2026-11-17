@@ -46,6 +46,7 @@ function MealPlannerFields() {
   const { toast } = useToast();
   const planId = Number(id);
 
+  const [dietTab, setDietTab] = useState<'plan'|'menus'>('plan');
   const [plan, setPlan] = useState(() => db.getMealPlan(planId));
   const [client] = useState(() => db.getClient(plan?.plan.client_id || 0));
   const [foods, setFoods] = useState<Food[]>(() => db.getFoods());
@@ -468,14 +469,14 @@ function MealPlannerFields() {
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 xl:justify-end">
-            <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800/50 p-1.5">
+            {dietTab === 'plan' && <div className="grid grid-cols-2 gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-800/50 p-1.5">
               <button onClick={handleExportPDF} className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-semibold bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 hover:-translate-y-0.5 transition-all">
                 <Printer className="w-4 h-4" /> PDF
               </button>
               <button onClick={() => setShowTemplatePrompt(true)} className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all">
                 <Plus className="w-4 h-4" /> Plantilla
               </button>
-            </div>
+            </div>}
             <button aria-label={restDay?"Rest Day ON":"Rest Day"} aria-pressed={restDay} data-rest-day-state={restDay?"on":"off"} onAnimationEnd={event=>{if(event.target===event.currentTarget)setRestDayMotion(null);}} onClick={() => {
               const nextRestDay=!restDay;
               if(restDayLayoutTimer.current)clearTimeout(restDayLayoutTimer.current);
@@ -497,7 +498,7 @@ function MealPlannerFields() {
         </div>
       </section>
 
-      <DietWorkspace clientId={client.id}>
+      <DietWorkspace clientId={client.id} onTabChange={setDietTab}>
       {restDay && <section className="rest-reduction-control" aria-labelledby="rest-reduction-title">
         <span className="rest-reduction-icon"><PieChart size={17}/></span>
         <div className="rest-reduction-copy"><div><h3 id="rest-reduction-title">Reducción Rest Day</h3><span>Automático</span></div><p>Ajusta solo las metas; las porciones conservan su valor real.</p></div>

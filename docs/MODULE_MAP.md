@@ -237,6 +237,6 @@ El ajuste de macros guardados se monta en la sección superior, en la posición 
 - `src/components/diet-menus/`: pestañas, editor de menús, biblioteca/recetas, imágenes privadas, vista del portal y demostración local. `PortalMenus` tolera la ausencia de menú/día antes de la primera lectura (regresión 2026-11-16).
 - `src/types/diet-menus.ts`, `src/lib/diet-menus.ts`: contratos, validación, nutrición y duplicación.
 - `src/lib/portal-menus.ts`, `src/lib/recipe-photos.ts`: RPC diaria y Storage privado.
-- Menús y recetas: integrado en las subpestañas de Planificación, sin página de demostración.
+- Menús y recetas: integrado en las subpestañas de Planificación, sin página de demostración. Cada menú exporta su PDF con `src/lib/menu-pdf.ts`; el botón PDF del plan solo se muestra en la pestaña Plan de alimentación.
 - `supabase/migrations/20260924010000_diet_menus.sql`: persistencia, privacidad por coach/cliente, diarios y fotos. Aplicada en Supabase; falta validación real de JWT y Storage.
 - `tests/diet-menus.test.ts`, `tests/diet-menu-ui.test.ts`, `tests/sql/diet-menus.sql`: dominio/compatibilidad, guardados y autorización SQL.
