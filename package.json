@@ -21,12 +21,12 @@
     "@fullcalendar/react": "^6.1.20",
     "@supabase/supabase-js": "^2.108.1",
     "lucide-react": "^0.472.0",
-    "next": "16.3.4",
+    "next": "^16.4.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "recharts": "^2.15.0",
     "server-only": "^0.0.1",
-    "zod": "^4.0.0"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
@@ -36,7 +36,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.39.5",
-    "eslint-config-next": "16.3.4",
+    "eslint-config-next": "^16.4.6",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.6.0",
     "jsdom": "^26.1.0",

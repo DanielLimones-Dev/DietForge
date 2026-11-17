@@ -14,6 +14,10 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "stripe-signature, content-type",
 };
 
+// Stripe payloads are a few KB. Reject oversized bodies before buffering the
+// request, so an unauthenticated caller cannot consume Edge Function memory.
+const MAX_BODY_BYTES = 1024 * 1024;
+
 async function verifyStripeSignature(body: string, signature: string): Promise<any> {
   const { default: Stripe } = await import("npm:stripe@14.21.0");
   const stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" });
@@ -66,7 +70,15 @@ serve(async (req) => {
     return new Response("Missing stripe-signature", { status: 400, headers: CORS_HEADERS });
   }
 
+  const declaredLength = Number(req.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
+    return new Response("Payload too large", { status: 413, headers: CORS_HEADERS });
+  }
+
   const body = await req.text();
+  if (body.length > MAX_BODY_BYTES) {
+    return new Response("Payload too large", { status: 413, headers: CORS_HEADERS });
+  }
 
   let event: any;
   try {

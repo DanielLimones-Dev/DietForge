@@ -54,6 +54,7 @@ supabase secrets set SUPABASE_SERVICE_ROLE_KEY=sr_...
 supabase functions deploy stripe-webhook
 # check-subscription ahora exige JWT y solo devuelve el estado del llamante.
 supabase functions deploy check-subscription
+# stripe-webhook rechaza cuerpos mayores a 1 MiB; redesplegar tras la migración 20261117010000.
 ```
 
 ## 2.1 Migración de seguridad 2026-10-29

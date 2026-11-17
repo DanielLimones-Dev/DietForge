@@ -120,6 +120,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `supabase/migrations/20261116010000_privacy_consent_and_deletion.sql` | aviso versionado, consentimiento con RLS, bitácora ARCO, exportación y eliminación con purga de respaldos |
 | `supabase/schema.sql` | esquema histórico/consolidado de suscripciones y funciones |
 | `supabase/functions/check-subscription/index.ts` | función heredada de consulta de suscripción; exige JWT y devuelve solo el estado del llamante |
+| `supabase/functions/stripe-webhook/index.ts` | webhook de Stripe con verificación de firma y rechazo de cuerpos >1 MiB |
 | `supabase/functions/stripe-webhook/index.ts` | eventos Stripe y actualización de suscripciones |
 | `supabase/DEPLOY.md` | pasos operativos de Supabase |
 
@@ -169,6 +170,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `ErrorMonitor.tsx`, `error-monitor.ts` | Categorías de error en memoria de sesión |
 | Migraciones `20260908*` | Autorización, portal, respaldos, versiones, videos privados y validación de agendas independientes por semana |
 | `20261029010000_security_portal_subscription_hardening.sql` | Bloquea el auto-portal del coach y limita `check_subscription` a `service_role` |
+| `20261117010000_admin_delete_photos.sql` | Al borrar un coach se retira su registro de fotos privadas |
 | `20261116020000_agenda_appointments.sql` | Citas del portal: amplía el CHECK de `kind`, valida horario/estado y reserva única; pendiente aplicar |
 | `docs/TRAINING_WEEKS.md` | Contrato de semanas independientes, metas musculares y barras de cumplimiento |
 | `tests/sql/client-portal.sql` | Regresiones reales de autorización, auto-portal y recuperación con rollback |

@@ -53,10 +53,13 @@ test('coach deletion removes stored videos and the auth identity after database 
   const headers=new Headers(init?.headers);assert.equal(headers.get('authorization'),'Bearer secret');
   if(path.endsWith('/object/list/training-videos'))return Response.json([{name:'demo.mp4'}]);
   if(path.endsWith('/object/training-videos')){assert.deepEqual(JSON.parse(init!.body as string),{prefixes:['coach-id/demo.mp4']});return Response.json({});}
+  if(path.endsWith('/object/list/checkin-photos'))return Response.json([{name:'1/photo.jpg'}]);
+  if(path.endsWith('/object/checkin-photos')){assert.deepEqual(JSON.parse(init!.body as string),{prefixes:['coach-id/1/photo.jpg']});return Response.json({});}
+  if(path.endsWith('/object/list/recipe-photos'))return Response.json([]);
   if(path.endsWith('/admin/users/coach-id'))return new Response(null,{status:204});
   return new Response(null,{status:404});
  }});
- const response=await handler(deleteRequest());assert.equal(response.status,200);assert.deepEqual(await response.json(),{deleted:true});assert.deepEqual(calls,['POST /rest/v1/rpc/dietforge_is_admin','POST /rest/v1/rpc/dietforge_admin_delete_coach','POST /storage/v1/object/list/training-videos','DELETE /storage/v1/object/training-videos','DELETE /auth/v1/admin/users/coach-id']);
+ const response=await handler(deleteRequest());assert.equal(response.status,200);assert.deepEqual(await response.json(),{deleted:true});assert.deepEqual(calls,['POST /rest/v1/rpc/dietforge_is_admin','POST /rest/v1/rpc/dietforge_admin_delete_coach','POST /storage/v1/object/list/training-videos','DELETE /storage/v1/object/training-videos','POST /storage/v1/object/list/checkin-photos','DELETE /storage/v1/object/checkin-photos','POST /storage/v1/object/list/recipe-photos','DELETE /auth/v1/admin/users/coach-id']);
 });
 test('coach deletion requires exact validated input',async()=>{
  let calls=0;const handler=createAdminDeleteHandler({url:'https://fixture.invalid',publicKey:'public',serviceKey:'secret',fetch:async(input)=>{calls++;return String(input).endsWith('dietforge_is_admin')?Response.json(true):Response.json({});}});

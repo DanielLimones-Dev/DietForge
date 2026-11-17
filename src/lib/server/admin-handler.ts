@@ -63,13 +63,15 @@ export function createAdminDeleteHandler(options:Options){
    const userId=result.user_id;
    if(userId){
     const serviceHeaders={apikey:options.serviceKey,Authorization:'Bearer '+options.serviceKey,'Content-Type':'application/json'};
-    const listed=await options.fetch(new URL('/storage/v1/object/list/training-videos',options.url),{method:'POST',headers:serviceHeaders,body:JSON.stringify({prefix:userId+'/',limit:1000,offset:0}),signal:AbortSignal.timeout(15000)});
-    if(!listed.ok)return fail('Los datos se eliminaron, pero no se pudo comprobar el almacenamiento de videos. Reintenta la eliminación.',502);
-    const objects=await listed.json() as {name?:string}[];
-    const prefixes=objects.flatMap(item=>item.name?[userId+'/'+item.name]:[]);
-    if(prefixes.length){
-     const removed=await options.fetch(new URL('/storage/v1/object/training-videos',options.url),{method:'DELETE',headers:serviceHeaders,body:JSON.stringify({prefixes}),signal:AbortSignal.timeout(15000)});
-     if(!removed.ok)return fail('Los datos se eliminaron, pero no se pudieron retirar todos los videos. Reintenta la eliminación.',502);
+    for(const bucket of ['training-videos','checkin-photos','recipe-photos']){
+     const listed=await options.fetch(new URL(`/storage/v1/object/list/${bucket}`,options.url),{method:'POST',headers:serviceHeaders,body:JSON.stringify({prefix:userId+'/',limit:1000,offset:0}),signal:AbortSignal.timeout(15000)});
+     if(!listed.ok)return fail('Los datos se eliminaron, pero no se pudo comprobar el almacenamiento privado. Reintenta la eliminación.',502);
+     const objects=await listed.json() as {name?:string}[];
+     const prefixes=objects.flatMap(item=>item.name?[userId+'/'+item.name]:[]);
+     if(prefixes.length){
+      const removed=await options.fetch(new URL(`/storage/v1/object/${bucket}`,options.url),{method:'DELETE',headers:serviceHeaders,body:JSON.stringify({prefixes}),signal:AbortSignal.timeout(15000)});
+      if(!removed.ok)return fail('Los datos se eliminaron, pero no se pudieron retirar todos los archivos privados. Reintenta la eliminación.',502);
+     }
     }
     const deleted=await options.fetch(new URL('/auth/v1/admin/users/'+encodeURIComponent(userId),options.url),{method:'DELETE',headers:serviceHeaders,signal:AbortSignal.timeout(15000)});
     if(!deleted.ok&&deleted.status!==404)return fail('Los datos se eliminaron, pero la cuenta de acceso sigue activa. Reintenta la eliminación.',502);
