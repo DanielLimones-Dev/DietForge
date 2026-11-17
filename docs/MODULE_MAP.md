@@ -234,7 +234,7 @@ El ajuste de macros guardados se monta en la sección superior, en la posición 
 
 
 ## Menús y recetas
-- `src/components/diet-menus/`: pestañas, editor de menús con barra compacta, tarjetas de macros, primera comida seleccionada y biblioteca lateral; biblioteca/recetas, imágenes privadas, vista del portal y demostración local. `PortalMenus` tolera la ausencia de menú/día antes de la primera lectura (regresión 2026-11-16).
+- `src/components/diet-menus/`: pestañas, editor de menús con barra compacta, tarjetas de macros, primera comida seleccionada, biblioteca lateral y guardado automático del borrador; biblioteca/recetas, imágenes privadas, vista del portal y demostración local. `PortalMenus` tolera la ausencia de menú/día antes de la primera lectura (regresión 2026-11-16).
 - `src/types/diet-menus.ts`, `src/lib/diet-menus.ts`: contratos, validación, nutrición y duplicación.
 - `src/lib/portal-menus.ts`, `src/lib/recipe-photos.ts`: RPC diaria y Storage privado.
 - Menús y recetas: integrado en las subpestañas de Planificación, sin página de demostración. Cada menú exporta su PDF con `src/lib/menu-pdf.ts`; el botón PDF del plan solo se muestra en la pestaña Plan de alimentación.
