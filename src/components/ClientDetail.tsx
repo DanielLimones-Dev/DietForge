@@ -28,7 +28,7 @@ import { useToast } from "./Toast";
 import { ArrowLeft, ChevronLeft, ChevronRight, FileText, TrendingUp, Ruler, Camera, Download, BarChart3, Award, Activity, Moon, Dumbbell } from "lucide-react";
 import type {
   Client, ClientMeasurement, ActivityLevel, Goal, MacroResult,
-  DietTemplate, MealTime, CompetitionPhase, CheckIn, Competition, PeakWeekDayConfig,
+  DietTemplate, MealTime, MealPlanItem, CompetitionPhase, CheckIn, Competition, PeakWeekDayConfig,
 } from "@/types";
 import { BiometricChart } from "./BiometricChart";
 
@@ -408,13 +408,18 @@ export function ClientDetail() {
     if (!data || !client) return;
     const meas = db.getLatestMeasurement(data.plan.client_id);
     if (!meas) { toast("Registra una medición del cliente antes de generar el PDF.", "error"); return; }
-    const restDay = getPreference(`rd_${data.plan.id}`) === "true";
-    const items = itemsForDay(data.items, restDay).map((i) => {
+    const reduction = restReduction(getPreference(`rd_percent_${data.plan.id}`));
+    const missingFood = { id: 0, name: "Desconocido", category: "other" as const, protein: 0, carbs: 0, fat: 0, fiber: 0, antioxidants: 0, kcal: 0, serving_size: 100, serving_unit: "g", source: "manual" as const };
+    const toPdf = (items: MealPlanItem[]) => items.map((i) => {
       const food = db.getFood(i.food_id);
-      return { ...i, food: food || { id: 0, name: "Desconocido", category: "other", protein: 0, carbs: 0, fat: 0, fiber: 0, antioxidants: 0, kcal: 0, serving_size: 100, serving_unit: "g", source: "manual" as const } };
+      return { ...i, food: food || missingFood };
     });
-    const exportedPlan = restDay ? {...restTargets(data.plan,restReduction(getPreference(`rd_percent_${data.plan.id}`))), name:data.plan.name+" — Rest Day"} : data.plan;
-    const html = generateDietPDF({ client, measurement: meas, plan: exportedPlan, items });
+    const normalItems = toPdf(itemsForDay(data.items, false));
+    const restItems = toPdf(itemsForDay(data.items, true));
+    const rest = restItems.length > 0
+      ? { plan: restTargets(data.plan, reduction), items: restItems, reductionPercent: reduction }
+      : undefined;
+    const html = generateDietPDF({ client, measurement: meas, plan: data.plan, items: normalItems, rest });
     try { openPrintDocument(html); }
     catch (error) { toast(error instanceof Error ? error.message : "No se pudo abrir el PDF.", "error"); }
   };

@@ -110,6 +110,21 @@ test('progress export uses check-ins for weight history and ignores calculator e
  assert.doesNotMatch(html,/>99 kg<\/td>/);
  assert.match(html,/Historial de Check-ins/);
 });
+test('diet PDF shows Normal and Rest Day as two vertical tables when rest items exist',()=>{
+ const measurement={id:1,client_id:1,date:'2026-09-01',weight:80,height:180,age:30,sex:'male',activity_level:'moderate',goal:'maintain',tmb:1800,tdee:2400,protein:140,carbs:300,fat:70,fiber:25,antioxidants:1} satisfies ClientMeasurement;
+ const plan={id:1,client_id:1,measurement_id:1,date:'2026-09-01',name:'Plan con Rest Day',total_kcal:2400,total_protein:140,total_carbs:300,total_fat:70,total_fiber:25,total_antioxidants:1} satisfies MealPlan;
+ const food={id:1,name:'Proteína de prueba',category:'supplements' as const,protein:80,carbs:10,fat:2,kcal:378,fiber:0,antioxidants:0,serving_size:30,serving_unit:'g',source:'manual' as const};
+ const normal=[{id:1,meal_plan_id:1,meal_time:'meal1' as const,food_id:1,quantity:100,serving_unit:'g',food}];
+ const rest=[{id:2,meal_plan_id:1,meal_time:'meal1' as const,food_id:1,quantity:50,serving_unit:'g',day_type:'rest' as const,food}];
+ const html=generateDietPDF({client:{id:1,name:'Coach',created_at:'2026-09-01',updated_at:'2026-09-01'},measurement,plan,items:normal,rest:{plan:{...plan,total_kcal:1800,total_protein:105,total_carbs:225,total_fat:52},items:rest,reductionPercent:25}});
+ assert.match(html,/class="split"/);
+ assert.match(html,/Plan Normal/);assert.match(html,/Rest Day/);assert.match(html,/Reducción 25%/);
+ assert.match(html,/1800/);
+ const rendered=new JSDOM(html);assert.equal(rendered.window.document.querySelectorAll('.day-column').length,2);rendered.window.close();
+ const without=generateDietPDF({client:{id:1,name:'Coach',created_at:'2026-09-01',updated_at:'2026-09-01'},measurement,plan,items:normal});
+ assert.doesNotMatch(without,/class="split"|Reducción/);
+});
+
 test('empty diet PDF never contains NaN percentages',()=>{
  const measurement={id:1,client_id:1,date:'2026-09-01',weight:80,height:180,age:30,sex:'male',activity_level:'moderate',goal:'maintain',tmb:1800,tdee:2400,protein:140,carbs:300,fat:70,fiber:25,antioxidants:1} satisfies ClientMeasurement;
  const plan={id:1,client_id:1,measurement_id:1,date:'2026-09-01',name:'Plan vacío',total_kcal:0,total_protein:0,total_carbs:0,total_fat:0,total_fiber:0,total_antioxidants:0} satisfies MealPlan;

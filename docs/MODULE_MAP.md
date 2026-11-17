@@ -95,7 +95,7 @@ Este inventario indica dónde vive cada responsabilidad. Actualizarlo cuando se 
 | `src/lib/progression.ts` | sugerencias de ajuste según progreso |
 | `src/lib/alerts.ts` | alertas por ritmo, adherencia y ausencias |
 | `src/lib/nutrition.ts` | búsqueda y normalización USDA, FatSecret y OpenFoodFacts |
-| `src/lib/pdf.ts` | documento A4 imprimible del plan, totales, tablas y escape de contenido |
+| `src/lib/pdf.ts` | documento A4 imprimible del plan; Normal y Rest Day en dos columnas verticales cuando hay alimentos de descanso |
 | `src/lib/progressReport.ts` | documento A4 del progreso y apertura aislada de la ventana de impresión |
 | `src/lib/print-document.ts` | apertura compartida de documentos imprimibles con Blob, `noopener`, impresión automática y error si el navegador bloquea la ventana |
 | `src/lib/use-body-scroll-lock.ts` | bloqueo y restauración del scroll del fondo para modales, con compensación del scrollbar |

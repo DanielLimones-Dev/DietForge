@@ -142,7 +142,7 @@ Al activar Rest Day:
 
 Al eliminar una comida, la tarjeta sale primero. Si no existe una tarjeta de la otra modalidad en esa posición, el contenedor completo contrae su fila durante 620 ms antes de actualizar secciones y datos; así las comidas inferiores se reajustan progresivamente. Los botones de alta cambian de color según Normal/Rest Day y muestran una onda circular al activarse.
 
-`foodRatio` normaliza la cantidad a la base nutricional por 100 g/ml. Gramos y mililitros usan factor 1; libras usan 453.59237; pieza usa el peso declarado de la porción. El PDF y las plantillas exportan únicamente el día activo.
+`foodRatio` normaliza la cantidad a la base nutricional por 100 g/ml. Gramos y mililitros usan factor 1; libras usan 453.59237; pieza usa el peso declarado de la porción. El PDF muestra Plan Normal y, si hay alimentos de Rest Day, ambas variantes en dos columnas verticales con las metas reducidas del día de descanso; las plantillas siguen exportando únicamente el día activo.
 
 El título se edita en línea. Una cadena vacía restaura el título previo y los datos históricos vacíos se presentan como `Plan sin título`, de modo que el punto de edición nunca desaparece.
 

@@ -385,11 +385,16 @@ function MealPlannerFields() {
   const handleExportPDF = () => {
     const meas = db.getLatestMeasurement(plan.plan.client_id);
     if (!meas) { toast("Registra una medición del cliente antes de generar el PDF.", "error"); return; }
-    const items = itemsForDay(plan.items, restDay).map((i) => {
+    const toPdf = (items: MealPlanItem[]) => items.map((i) => {
       const food = db.getFood(i.food_id);
       return { ...i, food: food || emptyFood };
     });
-    const html = generateDietPDF({ client, measurement: meas, plan: restDay ? {...plan.plan, ...restDayTarget, name: plan.plan.name + " — Rest Day"} : plan.plan, items });
+    const normalItems = toPdf(itemsForDay(plan.items, false));
+    const restItems = toPdf(itemsForDay(plan.items, true));
+    const rest = restItems.length > 0
+      ? { plan: { ...plan.plan, ...restDayTarget }, items: restItems, reductionPercent: reduction }
+      : undefined;
+    const html = generateDietPDF({ client, measurement: meas, plan: plan.plan, items: normalItems, rest });
     try { openPrintDocument(html); }
     catch (error) { toast(error instanceof Error ? error.message : "No se pudo abrir el PDF.", "error"); }
   };
