@@ -53,7 +53,7 @@ test('meal library preserves repeated additions and automatically selects remain
  const {DietMenus}=await import('../src/components/diet-menus/DietMenus');const {supabase}=await import('../src/lib/supabase');const {createRoot}=await import('react-dom/client');const root=createRoot(document.getElementById('root')!);
  const target=()=>document.querySelector<HTMLSelectElement>('[aria-label="Comida de destino"]')!;const add=()=>document.querySelector<HTMLButtonElement>('.dm-picker-results button')!;const items=()=>Array.from(document.querySelectorAll('.dm-meal')).map(m=>m.querySelectorAll('.dm-entry').length);
  try{
-  await act(async()=>root.render(createElement(DietMenus,{clientId:1,clientName:'Fixture',store})));assert.equal(add().disabled,true);
+  await act(async()=>root.render(createElement(DietMenus,{clientId:1,clientName:'Fixture',store})));assert.equal(add().disabled,false);assert.equal(target().value,menu.meals[0].id,'the first meal is ready for additions');
   await act(async()=>document.querySelector<HTMLButtonElement>('[aria-label="Seleccionar Desayuno"]')!.click());const breakfast=target().value;
   await act(async()=>add().click());await act(async()=>add().click());assert.deepEqual(items(),[2,0]);assert.equal(target().value,breakfast);
   await act(async()=>{target().value=menu.meals[1].id;target().dispatchEvent(new dom.window.Event('change',{bubbles:true}));});await act(async()=>add().click());assert.deepEqual(items(),[2,1]);
