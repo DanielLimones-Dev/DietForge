@@ -85,7 +85,7 @@ SET LOCAL ROLE authenticated;
 DO $$ DECLARE failed boolean:=false; BEGIN
  PERFORM public.dietforge_activity_save('70000000-0000-4000-8000-000000000001',1,gen_random_uuid(),'appointment','{"date":"2020-01-01","time":"09:00","note":"registro histórico","status":"confirmed"}');
  failed:=false;
- BEGIN PERFORM public.dietforge_activity_save('70000000-0000-4000-8000-000000000001',1,gen_random_uuid(),'appointment',jsonb_build_object('date',to_char(current_date+400,'YYYY-MM-DD'),'time','09:00','note':'','status','requested')); EXCEPTION WHEN OTHERS THEN failed:=true; END;
+ BEGIN PERFORM public.dietforge_activity_save('70000000-0000-4000-8000-000000000001',1,gen_random_uuid(),'appointment',jsonb_build_object('date',to_char(current_date+400,'YYYY-MM-DD'),'time','09:00','note','','status','requested')); EXCEPTION WHEN OTHERS THEN failed:=true; END;
  ASSERT failed,'appointments beyond one year are rejected';
 END $$;
 RESET ROLE;

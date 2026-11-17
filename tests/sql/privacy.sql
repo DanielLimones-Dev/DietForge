@@ -5,6 +5,10 @@ BEGIN;
 DO $$ DECLARE u uuid; mail text; failed boolean; r jsonb; a jsonb; b jsonb; BEGIN
  SELECT id,lower(email) INTO u,mail FROM auth.users WHERE id NOT IN (SELECT user_id FROM public.dietforge_admins) AND email_confirmed_at IS NOT NULL LIMIT 1;
  IF u IS NULL THEN RAISE EXCEPTION 'A confirmed non-admin fixture is required'; END IF;
+ -- Self-contained fixture: an active account and a workspace so backup capture,
+ -- export and deletion exercise the real data paths.
+ INSERT INTO public.dietforge_access(email,expires_at) VALUES(mail,now()+interval '1 month') ON CONFLICT DO NOTHING;
+ INSERT INTO public.dietforge_workspaces(owner_id) VALUES(u) ON CONFLICT DO NOTHING;
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);
 
  -- El aviso vigente se publica y es la única versión aceptable.
