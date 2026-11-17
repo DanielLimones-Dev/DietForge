@@ -65,7 +65,7 @@ export function CoachDashboard({ embedded = false, onClientsChange }: { embedded
             {stats.activeClients} clientes activos · {activeClients.length} con check-in reciente
           </p>
         </div>
-        <button onClick={() => { setShowTagPanel(!showTagPanel); setActiveTag(false); setTagSearch(""); if (!showTagPanel) setPanelKey(n => n + 1); }}
+        <button type="button" onClick={() => { setShowTagPanel(!showTagPanel); setActiveTag(false); setTagSearch(""); if (!showTagPanel) setPanelKey(n => n + 1); }}
           className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all active:scale-[0.97] shadow-sm ${
             showTagPanel
               ? "bg-brand-600 text-white border-brand-600"
@@ -98,7 +98,7 @@ export function CoachDashboard({ embedded = false, onClientsChange }: { embedded
         ))}
       </div>}
 
-      {embedded && <div className="dashboard-card-heading coach-embedded-heading"><div><p className="df-eyebrow">SEGUIMIENTO DEL COACH</p><h2>Atención y organización de clientes</h2><p>Revisa alertas, etiquetas y el estado reciente sin salir del Dashboard.</p></div><button onClick={() => { setShowTagPanel(!showTagPanel); setActiveTag(false); setTagSearch(""); if (!showTagPanel) setPanelKey(n => n + 1); }}><Tags className="w-4 h-4" /> Etiquetas</button></div>}
+      {embedded && <div className="dashboard-card-heading coach-embedded-heading"><div><p className="df-eyebrow">SEGUIMIENTO DEL COACH</p><h2>Atención y organización de clientes</h2><p>Revisa alertas, etiquetas y el estado reciente sin salir del Dashboard.</p></div><button type="button" onClick={() => { setShowTagPanel(!showTagPanel); setActiveTag(false); setTagSearch(""); if (!showTagPanel) setPanelKey(n => n + 1); }}><Tags className="w-4 h-4" /> Etiquetas</button></div>}
 
       {atRiskClients.length > 0 && (
         <div className="coach-alert-card">
@@ -113,7 +113,7 @@ export function CoachDashboard({ embedded = false, onClientsChange }: { embedded
           </div>
           <div className="space-y-2">
             {atRiskClients.map(({ client, daysSinceCheckin }) => (
-              <div key={client.id} onClick={() => router.push(`/clients/${client.id}`)} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg cursor-pointer hover:shadow-sm transition-shadow">
+              <div key={client.id} role="link" tabIndex={0} onClick={() => router.push(`/clients/${client.id}`)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(`/clients/${client.id}`); } }} className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg cursor-pointer hover:shadow-sm transition-shadow">
                 <span className="text-sm font-medium dark:text-white">{client.name}</span>
                 <span className="text-xs text-red-600 dark:text-red-400 font-semibold">{daysSinceCheckin} días sin check-in</span>
               </div>
@@ -128,7 +128,7 @@ export function CoachDashboard({ embedded = false, onClientsChange }: { embedded
             <h3 className="font-semibold text-sm dark:text-white flex items-center gap-2">
               <Tags className="w-4 h-4 text-brand-600" /> Gestionar Etiquetas
             </h3>
-            <button onClick={() => setShowTagPanel(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all active:scale-[0.95]">
+            <button type="button" aria-label="Cerrar panel de etiquetas" onClick={() => setShowTagPanel(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all active:scale-[0.95]">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -171,7 +171,7 @@ export function CoachDashboard({ embedded = false, onClientsChange }: { embedded
             {tagPanelClients.map((c) => {
               const hasTag = activeTag ? c.tags?.includes(activeTag) : false;
               return (
-                <div key={c.id} onClick={() => activeTag && toggleClientTag(c, activeTag)}
+                <div key={c.id} role={activeTag ? "button" : undefined} tabIndex={activeTag ? 0 : undefined} aria-pressed={activeTag ? hasTag : undefined} onClick={() => activeTag && toggleClientTag(c, activeTag)} onKeyDown={(e) => { if (activeTag && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); toggleClientTag(c, activeTag); } }}
                   className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-all text-sm ${
                     activeTag
                       ? hasTag
@@ -230,14 +230,14 @@ export function CoachDashboard({ embedded = false, onClientsChange }: { embedded
             <span className="text-xs text-gray-400 font-medium bg-gray-100 dark:bg-gray-700/50 px-2 py-0.5 rounded-full">{clients.length} total</span>
           </div>
           <div className="flex gap-1.5 overflow-x-auto pb-1">
-            <button onClick={() => setActiveTag(false)}
+            <button type="button" onClick={() => setActiveTag(false)}
               className={`whitespace-nowrap px-2.5 py-1 text-[10px] font-semibold rounded-lg border transition-all uppercase tracking-wider ${
                 !activeTag ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white" : "bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700 hover:border-gray-300"
               }`}>
               Todos
             </button>
             {TAGS_LIST.filter((t) => clientsWithStatus.some((c) => (c.client.tags || []).includes(t))).map((t) => (
-              <button key={t} onClick={() => setActiveTag(activeTag === t ? false : t)}
+              <button key={t} type="button" onClick={() => setActiveTag(activeTag === t ? false : t)}
                 className={`whitespace-nowrap px-2.5 py-1 text-[10px] font-semibold rounded-lg border transition-all uppercase tracking-wider ${
                   activeTag === t ? "bg-brand-600 text-white border-brand-600" : "bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700 hover:border-gray-300"
                 }`}>
@@ -248,7 +248,7 @@ export function CoachDashboard({ embedded = false, onClientsChange }: { embedded
         </div>
         <div className="divide-y divide-gray-100 dark:divide-gray-700">
           {clientsWithStatus.filter((c) => !activeTag || (c.client.tags || []).includes(activeTag)).map(({ client, trend, daysSinceCheckin, hasAlert }) => (
-            <div key={client.id} onClick={() => router.push(`/clients/${client.id}`)} className="p-3 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            <div key={client.id} role="link" tabIndex={0} onClick={() => router.push(`/clients/${client.id}`)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(`/clients/${client.id}`); } }} className="p-3 flex items-center justify-between cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
               <div className="flex items-center gap-3">
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold shrink-0 ${
                   hasAlert ? "bg-red-100 text-red-600" : "bg-gradient-to-br from-brand-500 to-brand-600 text-white"

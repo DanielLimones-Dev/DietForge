@@ -79,7 +79,7 @@ export function ClientList() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setShowBatch(true)} className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm hover:shadow-md transition-all duration-200">
+          <button type="button" onClick={() => setShowBatch(true)} className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 shadow-sm hover:shadow-md transition-all duration-200">
             <Layers className="w-4 h-4" />
             Asignación Masiva
           </button>
@@ -94,14 +94,14 @@ export function ClientList() {
       </div>
 
       <div className="clients-tabs" data-cascade="1">
-        <button onClick={() => { setTab("todos"); setSelectedTag(null); }}
+        <button type="button" onClick={() => { setTab("todos"); setSelectedTag(null); }}
           className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-all uppercase tracking-wider ${
             tab === "todos" ? "bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white shadow-sm" : "bg-white dark:bg-gray-800 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700 hover:border-gray-300"
           }`}>
           <Users className="w-3.5 h-3.5 inline mr-1.5" />
           Todos ({clients.length})
         </button>
-        <button onClick={() => setTab("pendientes")}
+        <button type="button" onClick={() => setTab("pendientes")}
           className={`px-4 py-2 text-xs font-semibold rounded-xl border transition-all uppercase tracking-wider ${
             tab === "pendientes" ? "bg-red-600 text-white border-red-600 shadow-sm" : "bg-white dark:bg-gray-800 text-amber-600 dark:text-amber-400 border-gray-200 dark:border-gray-700 hover:border-amber-300 dark:hover:border-amber-600"
           }`}>
@@ -150,7 +150,10 @@ export function ClientList() {
           return (
             <div
               key={c.id}
+              role="link"
+              tabIndex={0}
               onClick={() => router.push(`/clients/${c.id}`)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(`/clients/${c.id}`); } }}
               className={`client-directory-row group ${
                 overdue
                   ? "border-red-200 dark:border-red-900/60 hover:border-red-300 dark:hover:border-red-700 bg-gradient-to-r from-red-50/50 to-white dark:from-red-950/20 dark:to-gray-900"
@@ -206,7 +209,10 @@ export function ClientList() {
                 </div>
                 <div className="flex items-center gap-1">
                   <button
+                    type="button"
+                    aria-label={`Eliminar a ${c.name}`}
                     onClick={(e) => { e.stopPropagation(); setDeleteId(c.id); }}
+                    onKeyDown={(e) => e.stopPropagation()}
                     className="p-1.5 rounded-lg text-gray-300 dark:text-gray-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
                     title="Eliminar cliente"
                   >

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type FormEvent } from "react";
 import { Database, Dumbbell, Film, Pencil, Plus, Search, X } from "lucide-react";
+import { revealFocusedCascade } from "@/lib/page-cascade";
 import exerciseData from "@/data/training-exercises.json";
 import { db } from "@/lib/db";
 import { exerciseLibraryKey, mergedExerciseLibrary } from "@/lib/exercise-library";
@@ -76,12 +77,12 @@ export function ExerciseDB() {
     toast("Ejercicio eliminado de tu base.", "info");
   }
 
-  return <div className="exercise-db-page">
-    <header className="exercise-db-hero">
+  return <div className="exercise-db-page" data-page-cascade onFocusCapture={revealFocusedCascade}>
+    <header className="exercise-db-hero" data-cascade="0">
       <div><p className="df-eyebrow">BIBLIOTECA DE ENTRENAMIENTO</p><h1>Base de ejercicios</h1><p>Crea tus propios movimientos con indicaciones y video. Aparecerán automáticamente al agregar ejercicios en cualquier rutina.</p></div>
       <div className="exercise-db-actions"><span><Database size={15}/><b>{libraryTotal}</b> ejercicios en tu biblioteca</span><button className="df-button" type="button" onClick={formOpen ? closeForm : startNew}>{formOpen ? <X size={16}/> : <Plus size={16}/>}{formOpen ? "Cerrar" : "Nuevo ejercicio"}</button></div>
     </header>
-    <div className="exercise-db-guide" aria-label="Cómo usar la base de ejercicios"><span><b>1</b>Crea el ejercicio una sola vez</span><span><b>2</b>Abre una rutina y pulsa “Agregar ejercicio”</span><span><b>3</b>Encuéntralo primero en la biblioteca</span></div>
+    <div className="exercise-db-guide" data-cascade="1" aria-label="Cómo usar la base de ejercicios"><span><b>1</b>Crea el ejercicio una sola vez</span><span><b>2</b>Abre una rutina y pulsa “Agregar ejercicio”</span><span><b>3</b>Encuéntralo primero en la biblioteca</span></div>
 
     {formOpen && <form data-exercise-form className="exercise-form animate-slide-down" onSubmit={save}>
       <div className="exercise-form-heading"><span><Dumbbell size={19}/></span><div><h2>{editingId !== null ? "Editar ejercicio" : personalizingIncluded ? "Personalizar ejercicio" : "Nuevo ejercicio"}</h2><p>{personalizingIncluded ? "Agrega tus indicaciones o video. Tu versión tendrá prioridad en todas tus rutinas." : "Esta ficha queda guardada en tu cuenta y disponible para todas tus rutinas."}</p></div></div>
@@ -94,7 +95,7 @@ export function ExerciseDB() {
       <footer><small>Puedes usar YouTube o subir MP4, WebM o MOV de hasta 50 MB.</small><button className="df-button" type="submit">{editingId === null ? <Plus size={15}/> : <Pencil size={15}/>} {editingId !== null ? "Guardar cambios" : personalizingIncluded ? "Guardar personalización" : "Guardar ejercicio"}</button></footer>
     </form>}
 
-    <section className="exercise-library-card">
+    <section className="exercise-library-card" data-cascade="2">
       <div className="exercise-library-top"><div><p className="df-eyebrow">CATÁLOGO</p><h2>Mis ejercicios</h2></div><span>{rows.length} resultados</span></div>
       <div className="exercise-db-toolbar">
         <label className="exercise-db-search"><Search size={17}/><input aria-label="Buscar ejercicios" value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar ejercicio o músculo…"/>{query && <button type="button" aria-label="Limpiar búsqueda" onClick={() => setQuery("")}><X size={14}/></button>}</label>

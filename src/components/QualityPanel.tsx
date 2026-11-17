@@ -1,14 +1,212 @@
-'use client';
-import {useEffect,useState} from 'react';
-import {supabase} from '@/lib/supabase';
-import {hasPendingCloudWrites,retryCloudSave,exportCloudBackup} from '@/lib/db';
-import {monitoredErrors} from '@/lib/error-monitor';
-export function QualityPanel(){
- const [backups,setBackups]=useState<{id:number;revision:number;created_at:string;bytes:number}[]>([]);const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);const [restore,setRestore]=useState<number|null>(null);const [confirmation,setConfirmation]=useState('');
- async function load(){const {data,error}=await supabase.rpc('dietforge_backup_list');if(error)setMessage('No se pudieron consultar los respaldos.');else setBackups(data??[]);}
- useEffect(()=>{let live=true;void supabase.rpc('dietforge_backup_list').then(({data,error})=>{if(!live)return;if(error)setMessage('No se pudieron consultar los respaldos.');else setBackups(data??[]);});return ()=>{live=false;};},[]);
- async function capture(){setBusy(true);try{await retryCloudSave();if(hasPendingCloudWrites())throw Error('Espera a que termine la sincronización.');const {error}=await supabase.rpc('dietforge_capture_backup');if(error)throw error;await load();setMessage('Respaldo creado.');}catch{setMessage('No se pudo crear el respaldo.');}finally{setBusy(false);}}
- async function download(id:number){setBusy(true);try{const {data,error}=await supabase.rpc('dietforge_backup_get',{b:id});if(error)throw error;const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=`dietforge-backup-${id}.json`;a.click();URL.revokeObjectURL(url);}catch{setMessage('No se pudo descargar el respaldo.');}finally{setBusy(false);}}
- async function recover(){if(restore===null||confirmation!=='RESTAURAR')return;setBusy(true);try{await retryCloudSave();if(hasPendingCloudWrites())throw Error('Sincronización pendiente.');const current=await supabase.rpc('dietforge_load');if(current.error)throw current.error;const {error}=await supabase.rpc('dietforge_backup_restore',{b:restore,expected:current.data.revision,mutation:crypto.randomUUID()});if(error)throw error;window.location.reload();}catch{setMessage('No se restauró. Puede existir una edición más reciente; actualiza y revisa antes de reintentar.');setBusy(false);}}
- return <div className="care-page"><section className="care-card"><h1>Calidad y recuperación</h1><p>Cada guardado del workspace conserva automáticamente su versión anterior. La restauración comprueba la revisión y recupera únicamente la actividad del respaldo. La actividad actual se archiva por separado para evitar mezclar expedientes.</p><div className="care-actions"><button disabled={busy} onClick={()=>void capture()}>Crear respaldo ahora</button><button onClick={exportCloudBackup}>Descargar estado local</button><button disabled={busy} onClick={()=>void load()}>Actualizar</button></div>{message&&<p role="status">{message}</p>}<div className="care-table-wrap"><table><thead><tr><th>Fecha</th><th>Revisión</th><th>Tamaño</th><th>Acciones</th></tr></thead><tbody>{backups.map(b=><tr key={b.id}><td>{new Date(b.created_at).toLocaleString()}</td><td>{b.revision}</td><td>{Math.ceil(b.bytes/1024)} KB</td><td><button disabled={busy} onClick={()=>void download(b.id)}>Descargar</button><button disabled={busy} onClick={()=>{setRestore(b.id);setConfirmation('');}}>Restaurar</button></td></tr>)}</tbody></table></div>{restore!==null&&<div className="care-inset"><h2>Restaurar respaldo {restore}</h2><p>Reemplazará la programación del workspace con esta versión. Se conservará una copia de la versión actual. Por seguridad, se revocarán los accesos al portal: deberás habilitarlos de nuevo para cada cliente. Las fotos retiradas quedarán archivadas y no se mostrarán en el portal restaurado. Escribe RESTAURAR para confirmar.</p><input aria-label="Confirmar restauración" value={confirmation} onChange={e=>setConfirmation(e.target.value)}/><button disabled={busy||confirmation!=='RESTAURAR'} onClick={()=>void recover()}>Confirmar restauración</button><button onClick={()=>setRestore(null)}>Cancelar</button></div>}</section><section className="care-card"><h2>Monitoreo de esta sesión</h2><p>{monitoredErrors().length} errores de ejecución detectados. El registro solo conserva categorías y fechas; no captura datos de clientes.</p>{monitoredErrors().map((e,i)=><p key={i}>{e.at} · {e.type}</p>)}</section></div>;
+"use client";
+
+import { useMemo, useState } from "react";
+import {
+  CheckCircle2,
+  ClipboardCheck,
+  Database,
+  Download,
+  Dumbbell,
+  FileSpreadsheet,
+  ShieldCheck,
+  Users,
+  AlertTriangle,
+} from "lucide-react";
+import { db, exportCloudBackup, hasPendingCloudWrites, retryCloudSave } from "@/lib/db";
+import { monitoredErrors } from "@/lib/error-monitor";
+import { revealFocusedCascade } from "@/lib/page-cascade";
+
+export function QualityPanel() {
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+
+  const stats = useMemo(() => {
+    const base = db.getStats();
+    const recipes = db.getRecipes().length;
+    const exercises = db.getExercises().length;
+    return {
+      ...base,
+      recipes,
+      exercises,
+    };
+  }, []);
+
+  const errors = monitoredErrors();
+  const pendingWrites = hasPendingCloudWrites();
+
+  async function handleDownloadAll() {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await retryCloudSave();
+      exportCloudBackup();
+      const time = new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+      setNotice(`Respaldo completo descargado (${time}). Incluye ${stats.clients} ${stats.clients === 1 ? "cliente" : "clientes"} y toda su programación.`);
+    } catch {
+      exportCloudBackup();
+      setNotice("Se descargó el respaldo con el estado local actual. Hay cambios pendientes de sincronizar en la nube.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const cards = [
+    {
+      label: "Clientes",
+      value: stats.clients,
+      detail: `${stats.activeClients} activos en 14 días`,
+      icon: Users,
+      tone: "green",
+    },
+    {
+      label: "Planes nutricionales",
+      value: stats.mealPlans,
+      detail: `${stats.foods} alimentos · ${stats.recipes} recetas`,
+      icon: FileSpreadsheet,
+      tone: "teal",
+    },
+    {
+      label: "Rutinas y ejercicios",
+      value: stats.trainingPrograms,
+      detail: `${stats.exercises} ejercicios personalizados`,
+      icon: Dumbbell,
+      tone: "blue",
+    },
+    {
+      label: "Check-ins acumulados",
+      value: stats.checkins,
+      detail: `${stats.competitions} competencias registradas`,
+      icon: ClipboardCheck,
+      tone: "amber",
+    },
+  ];
+
+  const includedItems = [
+    "Expedientes completos de todos los clientes",
+    "Mediciones antropométricas y composición corporal",
+    "Planes de alimentación, menús semanales y recetas",
+    "Mesociclos, rutinas de entrenamiento y biblioteca propia",
+    "Historial de check-ins, adherencia y competencias",
+    "Catálogo completo de alimentos y preferencias de cuenta",
+  ];
+
+  return (
+    <div className="quality-page" data-page-cascade onFocusCapture={revealFocusedCascade}>
+      <header className="quality-hero" data-cascade="0">
+        <div>
+          <span className="admin-master-pill">
+            <i />
+            Respaldo integral
+          </span>
+          <h1>Calidad y respaldo</h1>
+          <p>
+            Descarga un único archivo con todos tus clientes, dietas, rutinas, mediciones, check-ins y catálogo
+            completo.
+          </p>
+        </div>
+        <button type="button" className="df-button quality-download-btn" disabled={busy} onClick={() => void handleDownloadAll()}>
+          <Download size={17} />
+          {busy ? "Preparando archivo…" : "Descargar respaldo completo"}
+        </button>
+      </header>
+
+      <div className="quality-metrics" data-cascade="1">
+        {cards.map((card) => (
+          <article key={card.label} className={`quality-metric metric-${card.tone}`}>
+            <div>
+              <span>{card.label}</span>
+              <strong>{card.value}</strong>
+              <small>{card.detail}</small>
+            </div>
+            <span>
+              <card.icon size={18} />
+            </span>
+          </article>
+        ))}
+      </div>
+
+      {error && (
+        <div role="alert" className="admin-alert is-error">
+          <AlertTriangle size={16} />
+          <span>{error}</span>
+        </div>
+      )}
+      {notice && (
+        <div role="status" className="admin-alert is-notice">
+          <CheckCircle2 size={16} />
+          <span>{notice}</span>
+        </div>
+      )}
+
+      <div className="quality-grid" data-cascade="2">
+        <section className="quality-card">
+          <div className="quality-card-head">
+            <div>
+              <p className="df-eyebrow">ARCHIVO ÚNICO (.JSON)</p>
+              <h2>Qué incluye tu respaldo descargable</h2>
+            </div>
+            <span className="quality-format-pill">
+              <Database size={13} />
+              dietforge-respaldo.json
+            </span>
+          </div>
+          <ul className="quality-include-list">
+            {includedItems.map((item) => (
+              <li key={item}>
+                <CheckCircle2 size={15} aria-hidden="true" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="quality-card-footer">
+            <p>El archivo se genera al instante con la información más reciente de tu espacio de trabajo.</p>
+            <button type="button" className="df-button" disabled={busy} onClick={() => void handleDownloadAll()}>
+              <Download size={16} />
+              Descargar ahora
+            </button>
+          </div>
+        </section>
+
+        <aside className="quality-side">
+          <section className="quality-card quality-status-card">
+            <div className="quality-card-head">
+              <div>
+                <p className="df-eyebrow">ESTADO DEL SISTEMA</p>
+                <h2>Salud de la sesión</h2>
+              </div>
+              <ShieldCheck size={18} className="text-[var(--clinical-primary)]" />
+            </div>
+
+            <div className="quality-status-list">
+              <div className="quality-status-row">
+                <span>Sincronización</span>
+                <strong className={pendingWrites ? "is-warn" : "is-ok"}>
+                  {pendingWrites ? "Cambios pendientes" : "Al día"}
+                </strong>
+              </div>
+              <div className="quality-status-row">
+                <span>Errores de ejecución</span>
+                <strong className={errors.length ? "is-warn" : "is-ok"}>
+                  {errors.length === 0 ? "Sin incidencias" : `${errors.length} detectados`}
+                </strong>
+              </div>
+            </div>
+
+            {errors.length > 0 && (
+              <div className="quality-error-log">
+                {errors.slice(0, 5).map((entry, idx) => (
+                  <p key={idx}>
+                    <span>{entry.at}</span>
+                    <b>{entry.type}</b>
+                  </p>
+                ))}
+              </div>
+            )}
+          </section>
+        </aside>
+      </div>
+    </div>
+  );
 }

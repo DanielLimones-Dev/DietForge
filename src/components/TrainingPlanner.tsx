@@ -167,82 +167,165 @@ export function TrainingPlanner() {
   };
 
   return <div className="training-page" data-page-cascade onFocusCapture={revealFocusedCascade}>
-    <header className="training-hero" data-cascade="0">
-      <div><button className="training-back" onClick={() => router.push(`/clients/${clientId}`)}><ArrowLeft size={16}/>Expediente</button><span className="training-kicker"><Dumbbell size={14}/> PROGRAMACIÓN DE ENTRENAMIENTO</span><h1>{client.name}</h1><p>Rutinas por bloques, progresión semanal, volumen por músculo y videos técnicos.</p></div>
-      <div className="training-hero-actions"><button onClick={startNew}><Plus size={16}/>Nueva rutina</button>{draft&&<><button onClick={() => { try { printTrainingProgram(draft, client); } catch (error) { toast(error instanceof Error ? error.message : "No se pudo imprimir.", "error"); } }}><Printer size={16}/>PDF</button><button className="primary" onClick={save}><Save size={16}/>{dirty ? "Guardar cambios" : "Guardado"}</button></>}</div>
+    <header className="training-hero training-hero-compact" data-cascade="0">
+      <div>
+        <div className="training-hero-top">
+          <button type="button" className="training-back" onClick={() => router.push(`/clients/${clientId}`)}><ArrowLeft size={15}/>Expediente</button>
+          <span className="training-kicker"><Dumbbell size={13}/> PROGRAMACIÓN DE ENTRENAMIENTO</span>
+          {draft && <span className={`training-status-pill is-${draft.status}`}>{draft.status === "active" ? "Activa" : draft.status === "draft" ? "Borrador" : "Archivada"}</span>}
+        </div>
+        <h1>{client.name}</h1>
+        <p>Bloques semanales, prescripción de series/RIR y control de volumen por músculo.</p>
+      </div>
+      <div className="training-hero-actions">
+        <button type="button" onClick={startNew}><Plus size={15}/>Nueva rutina</button>
+        {draft && <>
+          <button type="button" onClick={() => { try { printTrainingProgram(draft, client); } catch (error) { toast(error instanceof Error ? error.message : "No se pudo imprimir.", "error"); } }}><Printer size={15}/>PDF</button>
+          <button type="button" className="primary" onClick={save}><Save size={15}/>{dirty ? "Guardar cambios" : "Guardado"}</button>
+        </>}
+      </div>
     </header>
 
-    {draft&&<section className="training-media-section" aria-label="Material de apoyo"><h2>Videos y material de apoyo</h2><p>Agrega tus propias explicaciones de RIR, calentamiento o uso del programa para mostrarlas en el portal.</p>{(draft.resources??[]).map(resource=><div className="training-media-resource" key={resource.id}><input aria-label="Título del material" value={resource.title} onChange={e=>mutate(p=>{const r=p.resources?.find(r=>r.id===resource.id);if(r)r.title=e.target.value;})}/><TrainingVideoEditor value={resource.url} label={`Video de ${resource.title||'apoyo'}`} onChange={url=>mutate(p=>{const r=p.resources?.find(r=>r.id===resource.id);if(r)r.url=url;})}/><button onClick={()=>mutate(p=>{p.resources=p.resources?.filter(r=>r.id!==resource.id);})}>Eliminar material</button></div>)}<button onClick={()=>mutate(p=>{p.resources=[...(p.resources??[]),{id:crypto.randomUUID(),title:'Mi explicación',url:''}];})}>+ Agregar mi explicación</button></section>}
+    {programs.length > 0 && <nav className="training-program-tabs" data-cascade="1" aria-label="Rutinas del cliente">{programs.map(program => <button type="button" key={program.id} className={draft?.id === program.id ? "active" : ""} onClick={() => chooseProgram(program)}><span>{program.name}</span><small>{program.duration_weeks} sem · {program.status === "active" ? "Activa" : program.status === "draft" ? "Borrador" : "Archivada"}</small></button>)}</nav>}
 
-    {programs.length > 0 && <nav className="training-program-tabs" data-cascade="1" aria-label="Rutinas del cliente">{programs.map(program => <button key={program.id} className={draft?.id === program.id ? "active" : ""} onClick={() => chooseProgram(program)}><span>{program.name}</span><small>{program.duration_weeks} sem · {program.status === "active" ? "Activa" : program.status === "draft" ? "Borrador" : "Archivada"}</small></button>)}</nav>}
-
-    {!draft ? <section className="training-empty" data-cascade="1"><span><Dumbbell size={28}/></span><h2>Crea la primera rutina personalizada</h2><p>Empieza con cinco días y cinco semanas. Puedes adaptar cada ejercicio, serie, rango de repeticiones y RIR.</p><button onClick={startNew}><Plus size={16}/>Crear rutina</button></section> : <>
+    {!draft ? <section className="training-empty" data-cascade="1"><span><Dumbbell size={28}/></span><h2>Crea la primera rutina personalizada</h2><p>Empieza con cinco días y cinco semanas. Puedes adaptar cada ejercicio, serie, rango de repeticiones y RIR.</p><button type="button" onClick={startNew}><Plus size={16}/>Crear rutina</button></section> : <>
       <TrainingTools program={draft} week={week} onChange={p=>{setDraft(independentTrainingProgram(p));setDirty(true);}} onOpen={p=>{if(dirty&&!window.confirm("¿Cargar esta rutina y descartar los cambios sin guardar?"))return;const next=independentTrainingProgram(p);setDraft(next);setDayId(trainingDays(next,1)[0]?.id??"");setWeek(1);setDirty(p.id===0);setPrograms(db.getTrainingPrograms(clientId));}}/>
-      <section className="training-setup" data-cascade="2">
-        <label className="wide">Nombre del bloque<input value={draft.name} onChange={event => mutate(program => { program.name = event.target.value; })}/></label>
-        <label>Objetivo<select value={draft.objective} onChange={event => mutate(program => { program.objective = event.target.value as TrainingGoal; })}>{goals.map(goal => <option key={goal.value} value={goal.value}>{goal.label}</option>)}</select></label>
-        <label>Inicio<input type="date" value={draft.start_date} onChange={event => mutate(program => { program.start_date = event.target.value; })}/></label>
-        <label>Semanas<input type="number" min="1" max="12" value={draft.duration_weeks} onChange={event => { const value = normalizeTrainingWeeks(Number(event.target.value)); setDraft(current => current ? resizeProgramWeeks(current, value) : current); setDirty(true); setWeek(current => Math.min(current, value)); }}/></label>
-        <label>Mesociclo<input type="number" min="1" value={draft.mesocycle_number} onChange={event => mutate(program => { program.mesocycle_number = Number(event.target.value) || 1; })}/></label>
-        <label>Rotación<input type="number" min="1" value={draft.rotation_number} onChange={event => mutate(program => { program.rotation_number = Number(event.target.value) || 1; })}/></label>
-        <label className="wide">Split / distribución<input value={draft.split} placeholder="Ej. Upper · Lower · Descanso · Push · Pull" onChange={event => mutate(program => { program.split = event.target.value; })}/></label>
-        <label className="wide">Prioridades<input value={draft.priorities.join(", ")} placeholder="Ej. Brazos, espalda, cuádriceps" onChange={event => mutate(program => { program.priorities = event.target.value.split(",").map(value => value.trim()).filter(Boolean).slice(0, 5); })}/></label>
-        <label>Estado<select value={draft.status} onChange={event => mutate(program => { program.status = event.target.value as TrainingProgram["status"]; })}><option value="draft">Borrador</option><option value="active">Activa</option><option value="archived">Archivada</option></select></label>
-        <label className="full">Indicaciones generales<textarea rows={2} value={draft.notes ?? ""} onChange={event => mutate(program => { program.notes = event.target.value; })}/></label>
-      </section>
 
-      <section className="training-volume-overview training-volume-minimal" data-cascade="3" aria-labelledby="weekly-series-title">
-        <header><div><span>SEMANA {week} · VOLUMEN PROGRAMADO</span><h2 id="weekly-series-title">Distribución de series</h2></div><div className="series-week-nav"><button type="button" aria-label="Semana anterior de volumen" disabled={week<=1} onClick={()=>{setWeek(week-1);setDayId(trainingDays(draft,week-1)[0]?.id??"");}}><ArrowLeft size={16}/></button><span>Semana {week} / {draft.duration_weeks}</span><button type="button" aria-label="Semana siguiente de volumen" disabled={week>=draft.duration_weeks} onClick={()=>{setWeek(week+1);setDayId(trainingDays(draft,week+1)[0]?.id??"");}}><ArrowRight size={16}/></button></div></header>
-        <div className="series-summary"><div><span>Series directas / meta</span><strong>{weeklyDirectTotal} <small>/ {weeklyTargetTotal}</small></strong><span>{weeklyTargetTotal>0?`${weeklyProgress}%`:"Sin meta activa"}</span></div><div className="series-summary-meta"><span>{allWeeklySeries.reduce((sum,item)=>sum+item.indirect,0).toFixed(1)} indirectas</span><span>{allWeeklySeries.reduce((sum,item)=>sum+item.total,0).toFixed(1)} efectivas</span><span>{currentDays.length} días</span></div><progress aria-label={`Cumplimiento general semana ${week}`} max="100" value={weeklyProgress}/><p>Suma todos los días de esta semana. Cada semana conserva sus propias metas.</p></div>
-        <div className="series-groups">
-          {[
-            {name:"Torso",match:/(pectoral|pecho|espalda|dorsal|trapecio|hombro|deltoide)/},
-            {name:"Brazos y core",match:/(biceps|triceps|antebrazo|abdomen|abdominal|core|oblicuo)/},
-            {name:"Pierna",match:/(cuadriceps|isquio|femoral|gluteo|aductor|abductor|pantorrilla|gemelo|soleo|tibial|pierna)/},
-          ].map((group,index,groups)=>{
-            const items=allWeeklySeries.filter(item=>{const name=item.muscle.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();const matched=groups.findIndex(candidate=>candidate.match?.test(name));return matched===index;});
-            if(!items.length)return null;
-            return <section className="series-group" key={group.name}><header><h3>{group.name}</h3><span>{items.length} grupos</span></header>{items.map(item=>{
-              const target=draft.weekly_volume_targets?.[String(week)]?.[item.muscle]??item.direct;
-              const progress=target>0?Math.min(100,Math.round(item.direct/target*100)):0;
-              const difference=item.direct-target;
-              const muscleName=item.muscle.toLocaleLowerCase("es");
-              const priority=draft.priorities.some(value=>muscleName.includes(value.toLocaleLowerCase("es"))||value.toLocaleLowerCase("es").includes(muscleName));
-              const setTarget=(value:number)=>mutate(program=>{program.weekly_volume_targets??={};program.weekly_volume_targets[String(week)]??={};program.weekly_volume_targets[String(week)][item.muscle]=Math.min(100,Math.max(0,Number.isFinite(value)?value:0));});
-              return <article className="series-row" key={item.muscle}>
-                <div className="series-row-main"><strong>{item.muscle}{priority&&<small className="series-priority" title="Grupo prioritario"> · Prioridad</small>}</strong><div className="series-target"><span title="Series directas">{item.direct}</span><span aria-hidden="true">/</span><button type="button" aria-label={`Reducir meta de ${item.muscle}`} disabled={target<=0} onClick={()=>setTarget(target-1)}>−</button><input data-plain-number aria-label={`Meta de ${item.muscle} semana ${week}`} type="number" min="0" max="100" step="1" value={target} onChange={event=>setTarget(Number(event.target.value))}/><button type="button" aria-label={`Aumentar meta de ${item.muscle}`} disabled={target>=100} onClick={()=>setTarget(target+1)}>+</button><small>{target>0?`${progress}%`:"—"}</small></div></div>
-                <progress className="series-progress" aria-label={`Progreso de ${item.muscle} semana ${week}`} max="100" value={progress}/>
-                <details className="series-detail"><summary>Detalle <span>{target===0?"Sin meta activa":difference===0?"En meta":`${difference>0?"+":""}${difference} series`}</span></summary><dl><div><dt>Directas</dt><dd>{item.direct}</dd></div><div><dt>Indirectas</dt><dd>{item.indirect.toFixed(1)}</dd></div><div><dt>Efectivas</dt><dd>{item.total.toFixed(1)}</dd></div><div><dt>Frecuencia</dt><dd>{item.frequency} días</dd></div></dl></details>
-              </article>;
-            })}</section>;
-          })}
-        </div>
-        <p>Las indirectas se consultan en Detalle; la barra compara series directas con la meta semanal.</p>
-      </section>
+      <details className="training-collapsible" data-cascade="2" open={draft.id === 0}>
+        <summary>
+          <div>
+            <span className="df-eyebrow">CONFIGURACIÓN DEL BLOQUE</span>
+            <strong>{draft.name || "Bloque sin nombre"}</strong>
+          </div>
+          <div className="training-summary-chips">
+            <span>{goals.find(g => g.value === draft.objective)?.label ?? draft.objective}</span>
+            <span>{draft.duration_weeks} sem</span>
+            <span>M{draft.mesocycle_number} · R{draft.rotation_number}</span>
+            <ChevronDown size={16} className="training-collapsible-chevron" aria-hidden="true"/>
+          </div>
+        </summary>
+        <section className="training-setup training-setup-compact">
+          <label className="wide">Nombre del bloque<input value={draft.name} onChange={event => mutate(program => { program.name = event.target.value; })}/></label>
+          <label>Objetivo<select value={draft.objective} onChange={event => mutate(program => { program.objective = event.target.value as TrainingGoal; })}>{goals.map(goal => <option key={goal.value} value={goal.value}>{goal.label}</option>)}</select></label>
+          <label>Inicio<input type="date" value={draft.start_date} onChange={event => mutate(program => { program.start_date = event.target.value; })}/></label>
+          <label>Semanas<input type="number" min="1" max="12" value={draft.duration_weeks} onChange={event => { const value = normalizeTrainingWeeks(Number(event.target.value)); setDraft(current => current ? resizeProgramWeeks(current, value) : current); setDirty(true); setWeek(current => Math.min(current, value)); }}/></label>
+          <label>Mesociclo<input type="number" min="1" value={draft.mesocycle_number} onChange={event => mutate(program => { program.mesocycle_number = Number(event.target.value) || 1; })}/></label>
+          <label>Rotación<input type="number" min="1" value={draft.rotation_number} onChange={event => mutate(program => { program.rotation_number = Number(event.target.value) || 1; })}/></label>
+          <label className="wide">Split / distribución<input value={draft.split} placeholder="Ej. Upper · Lower · Descanso · Push · Pull" onChange={event => mutate(program => { program.split = event.target.value; })}/></label>
+          <label className="wide">Prioridades<input value={draft.priorities.join(", ")} placeholder="Ej. Brazos, espalda, cuádriceps" onChange={event => mutate(program => { program.priorities = event.target.value.split(",").map(value => value.trim()).filter(Boolean).slice(0, 5); })}/></label>
+          <label>Estado<select value={draft.status} onChange={event => mutate(program => { program.status = event.target.value as TrainingProgram["status"]; })}><option value="draft">Borrador</option><option value="active">Activa</option><option value="archived">Archivada</option></select></label>
+          <label className="full">Indicaciones generales<textarea rows={2} value={draft.notes ?? ""} onChange={event => mutate(program => { program.notes = event.target.value; })}/></label>
+        </section>
+      </details>
 
-      <div className="training-workspace">
+      <div className="training-workspace" data-cascade="3">
         <main className="training-builder">
-          <div className="training-switcher"><div className="training-week-tabs" aria-label="Semana">{Array.from({ length: draft.duration_weeks }, (_, index) => index + 1).map(value => <button key={value} className={week === value ? "active" : ""} onClick={() => {setWeek(value);setDayId(trainingDays(draft,value)[0]?.id??"");}}>Semana {value}<small>{trainingDays(draft,value).length} días</small></button>)}</div>{week > 1 && <button className="copy-week" onClick={() => { const next=copyTrainingWeek(draft, week - 1, week);setDraft(next);setDayId(trainingDays(next,week)[0]?.id??"");setDirty(true);toast(`Semana ${week - 1} copiada completa a semana ${week}.`); }}><Copy size={14}/>Copiar anterior</button>}</div>
-          <div className="training-day-tabs" aria-label={`Días de entrenamiento de semana ${week}`}>{currentDays.map(day => <button key={day.id} className={selectedDay?.id === day.id ? "active" : ""} onClick={() => setDayId(day.id)}><span>{String(day.day_number).padStart(2, "0")}</span>{day.name}<small>{day.exercises.length} ejercicios</small></button>)}<button className="add-day" onClick={addDay} disabled={currentDays.length >= 7}><Plus size={16}/>Día</button></div>
+          <div className="training-switcher"><div className="training-week-tabs" aria-label="Semana">{Array.from({ length: draft.duration_weeks }, (_, index) => index + 1).map(value => <button type="button" key={value} className={week === value ? "active" : ""} onClick={() => {setWeek(value);setDayId(trainingDays(draft,value)[0]?.id??"");}}>Semana {value}<small>{trainingDays(draft,value).length} días</small></button>)}</div>{week > 1 && <button type="button" className="copy-week" onClick={() => { const next=copyTrainingWeek(draft, week - 1, week);setDraft(next);setDayId(trainingDays(next,week)[0]?.id??"");setDirty(true);toast(`Semana ${week - 1} copiada completa a semana ${week}.`); }}><Copy size={14}/>Copiar anterior</button>}</div>
+          <div className="training-day-tabs" aria-label={`Días de entrenamiento de semana ${week}`}>{currentDays.map(day => <button type="button" key={day.id} className={selectedDay?.id === day.id ? "active" : ""} onClick={() => setDayId(day.id)}><span>{String(day.day_number).padStart(2, "0")}</span>{day.name}<small>{day.exercises.length} ejercicios</small></button>)}<button type="button" className="add-day" onClick={addDay} disabled={currentDays.length >= 7}><Plus size={16}/>Día</button></div>
 
           {selectedDay && <section className="training-day-editor">
-            <div className="training-day-head"><div><label>Día dentro de la semana {week}<select value={selectedDay.weekday_offset??selectedDay.day_number-1} onChange={event=>mutate(program=>{const day=trainingDays(program,week).find(d=>d.id===selectedDay.id);if(day)day.weekday_offset=Number(event.target.value);})}>{Array.from({length:7},(_,i)=><option key={i} value={i}>Día {i+1}</option>)}</select></label><input aria-label="Nombre del día" value={selectedDay.name} onChange={event => mutate(program => { const day = trainingDays(program,week).find(item => item.id === selectedDay.id); if (day) day.name = event.target.value; })}/><input aria-label="Notas del día" value={selectedDay.notes ?? ""} placeholder="Enfoque, calentamiento o indicaciones del día" onChange={event => mutate(program => { const day = trainingDays(program,week).find(item => item.id === selectedDay.id); if (day) day.notes = event.target.value; })}/></div><div><button onClick={() => { setReplacing(null); setAddedExerciseCount(0); setLibraryOpen(true); }}><Plus size={15}/>Agregar ejercicio</button><button className="danger" onClick={removeDay} disabled={currentDays.length <= 1}><Trash2 size={15}/>Eliminar día</button></div></div>
-            {selectedDay.exercises.length === 0 ? <div className="training-day-empty"><Dumbbell size={25}/><p>Agrega ejercicios desde tu biblioteca.</p><button onClick={() => { setReplacing(null); setAddedExerciseCount(0); setLibraryOpen(true); }}><Plus size={15}/>Elegir ejercicio</button></div> : <><div className="training-exercise-columns" aria-hidden="true"><span>#</span><span>Ejercicio</span><span>Series · repeticiones · RIR</span><span/></div><div className="training-exercises">{selectedDay.exercises.map((exercise, index) => {
+            <div className="training-day-head"><div><label>Día dentro de la semana {week}<select value={selectedDay.weekday_offset??selectedDay.day_number-1} onChange={event=>mutate(program=>{const day=trainingDays(program,week).find(d=>d.id===selectedDay.id);if(day)day.weekday_offset=Number(event.target.value);})}>{Array.from({length:7},(_,i)=><option key={i} value={i}>Día {i+1}</option>)}</select></label><input aria-label="Nombre del día" value={selectedDay.name} onChange={event => mutate(program => { const day = trainingDays(program,week).find(item => item.id === selectedDay.id); if (day) day.name = event.target.value; })}/><input aria-label="Notas del día" value={selectedDay.notes ?? ""} placeholder="Enfoque, calentamiento o indicaciones del día" onChange={event => mutate(program => { const day = trainingDays(program,week).find(item => item.id === selectedDay.id); if (day) day.notes = event.target.value; })}/></div><div><button type="button" onClick={() => { setReplacing(null); setAddedExerciseCount(0); setLibraryOpen(true); }}><Plus size={15}/>Agregar ejercicio</button><button type="button" className="danger" onClick={removeDay} disabled={currentDays.length <= 1}><Trash2 size={15}/>Eliminar día</button></div></div>
+            {selectedDay.exercises.length === 0 ? <div className="training-day-empty"><Dumbbell size={25}/><p>Agrega ejercicios desde tu biblioteca.</p><button type="button" onClick={() => { setReplacing(null); setAddedExerciseCount(0); setLibraryOpen(true); }}><Plus size={15}/>Elegir ejercicio</button></div> : <><div className="training-exercise-columns" aria-hidden="true"><span>#</span><span>Ejercicio</span><span>Carga · Series · Reps · RIR</span><span/></div><div className="training-exercises">{selectedDay.exercises.map((exercise, index) => {
               const prescription = exercise.prescriptions.find(item => item.week === week)!;
               return <article className="training-exercise" key={exercise.id}>
-                <div className="training-order"><strong>{String(index + 1).padStart(2, "0")}</strong><button aria-label={`Subir ${exercise.name}`} disabled={index === 0} onClick={() => moveExercise(exercise.id, -1)}><ChevronUp size={14}/></button><button aria-label={`Bajar ${exercise.name}`} disabled={index === selectedDay.exercises.length - 1} onClick={() => moveExercise(exercise.id, 1)}><ChevronDown size={14}/></button></div>
-                <div className="training-exercise-main"><button onClick={()=>{setAddedExerciseCount(0);setReplacing(exercise.id);setLibraryOpen(true);}}>Sustituir ejercicio</button><span>{exercise.muscle_group}</span><input aria-label="Nombre del ejercicio" value={exercise.name} onChange={event => updateExercise(exercise.id, item => { item.name = event.target.value; })}/><TrainingVideoEditor iconOnly key={`${draft.id}-${exercise.id}`} label={`Agregar mi video · ${exercise.name}`} value={exerciseVideo(exercise)} onChange={url=>updateExercise(exercise.id,item=>{item.video_url=url;item.video_custom=true;})}/></div>
-                <div className="training-prescription training-prescription-compact"><label>Carga (kg)<input type="number" min="0" step="0.5" value={prescription.load_kg??""} onChange={event=>updateExercise(exercise.id,item=>{item.prescriptions[week-1].load_kg=event.target.value===""?undefined:Number(event.target.value);})}/></label><label>Series<input aria-label={`Series de ${exercise.name}`} type="number" min="0" max="20" value={prescription.sets} onChange={event => updateExercise(exercise.id, item => { item.prescriptions[week - 1].sets = Number(event.target.value) || 0; })}/></label><TrainingRepRange key={`${exercise.id}-${week}`} label={`Repeticiones de ${exercise.name}`} min={prescription.reps_min} max={prescription.reps_max} onCommit={(min,max)=>updateExercise(exercise.id,item=>{item.prescriptions[week-1].reps_min=min;item.prescriptions[week-1].reps_max=max;})}/><label>RIR<input aria-label={`RIR de ${exercise.name}`} title={prescription.rir_start!==prescription.rir_end?`Este ejercicio conservaba RIR inicial ${prescription.rir_start} y final ${prescription.rir_end}. Se muestra el final; al editar se aplicará el nuevo RIR a ambos.`:"Repeticiones en reserva"} type="number" min="0" max="10" value={prescription.rir_end} onChange={event=>updateExercise(exercise.id,item=>{const value=Math.min(10,Math.max(0,Number(event.target.value)||0));item.prescriptions[week-1].rir_start=value;item.prescriptions[week-1].rir_end=value;})}/></label><button title="Aplicar esta prescripción a las apariciones del ejercicio en todas las semanas" onClick={() => applyPrescriptionToAllWeeks(exercise.id, prescription)}><Copy size={14}/><span>Aplicar a todas</span></button></div>
+                <div className="training-order"><strong>{String(index + 1).padStart(2, "0")}</strong><button type="button" aria-label={`Subir ${exercise.name}`} disabled={index === 0} onClick={() => moveExercise(exercise.id, -1)}><ChevronUp size={14}/></button><button type="button" aria-label={`Bajar ${exercise.name}`} disabled={index === selectedDay.exercises.length - 1} onClick={() => moveExercise(exercise.id, 1)}><ChevronDown size={14}/></button></div>
+                <div className="training-exercise-main"><button type="button" onClick={()=>{setAddedExerciseCount(0);setReplacing(exercise.id);setLibraryOpen(true);}}>Sustituir ejercicio</button><span>{exercise.muscle_group}</span><input aria-label="Nombre del ejercicio" value={exercise.name} onChange={event => updateExercise(exercise.id, item => { item.name = event.target.value; })}/><TrainingVideoEditor iconOnly key={`${draft.id}-${exercise.id}`} label={`Agregar mi video · ${exercise.name}`} value={exerciseVideo(exercise)} onChange={url=>updateExercise(exercise.id,item=>{item.video_url=url;item.video_custom=true;})}/></div>
+                <div className="training-prescription training-prescription-compact"><label>Carga (kg)<input type="number" min="0" step="0.5" value={prescription.load_kg??""} onChange={event=>updateExercise(exercise.id,item=>{item.prescriptions[week-1].load_kg=event.target.value===""?undefined:Number(event.target.value);})}/></label><label>Series<input aria-label={`Series de ${exercise.name}`} type="number" min="0" max="20" value={prescription.sets} onChange={event => updateExercise(exercise.id, item => { item.prescriptions[week - 1].sets = Number(event.target.value) || 0; })}/></label><TrainingRepRange key={`${exercise.id}-${week}`} label={`Repeticiones de ${exercise.name}`} min={prescription.reps_min} max={prescription.reps_max} onCommit={(min,max)=>updateExercise(exercise.id,item=>{item.prescriptions[week-1].reps_min=min;item.prescriptions[week-1].reps_max=max;})}/><label>RIR<input aria-label={`RIR de ${exercise.name}`} title={prescription.rir_start!==prescription.rir_end?`Este ejercicio conservaba RIR inicial ${prescription.rir_start} y final ${prescription.rir_end}. Se muestra el final; al editar se aplicará el nuevo RIR a ambos.`:"Repeticiones en reserva"} type="number" min="0" max="10" value={prescription.rir_end} onChange={event=>updateExercise(exercise.id,item=>{const value=Math.min(10,Math.max(0,Number(event.target.value)||0));item.prescriptions[week-1].rir_start=value;item.prescriptions[week-1].rir_end=value;})}/></label><button type="button" title="Aplicar esta prescripción a las apariciones del ejercicio en todas las semanas" onClick={() => applyPrescriptionToAllWeeks(exercise.id, prescription)}><Copy size={14}/><span>Aplicar a todas</span></button></div>
                 <DeleteIconButton className="training-remove-exercise" label={`Eliminar ${exercise.name}`} onClick={() => removeExercise(exercise.id)}/>
               </article>;
             })}</div></>}
           </section>}
+
+          <details className="training-collapsible">
+            <summary>
+              <div>
+                <span className="df-eyebrow">SEMANA {week} · VOLUMEN PROGRAMADO</span>
+                <strong>Distribución de series ({weeklyDirectTotal} / {weeklyTargetTotal})</strong>
+              </div>
+              <div className="training-summary-chips">
+                <span>{weeklyTargetTotal > 0 ? `${weeklyProgress}% meta` : "Sin meta"}</span>
+                <span>{currentDays.length} días</span>
+                <ChevronDown size={16} className="training-collapsible-chevron" aria-hidden="true"/>
+              </div>
+            </summary>
+            <section className="training-volume-overview training-volume-minimal training-volume-embedded" aria-labelledby="weekly-series-title">
+              <header><div><span>SEMANA {week} · VOLUMEN PROGRAMADO</span><h2 id="weekly-series-title">Distribución de series</h2></div><div className="series-week-nav"><button type="button" aria-label="Semana anterior de volumen" disabled={week<=1} onClick={()=>{setWeek(week-1);setDayId(trainingDays(draft,week-1)[0]?.id??"");}}><ArrowLeft size={16}/></button><span>Semana {week} / {draft.duration_weeks}</span><button type="button" aria-label="Semana siguiente de volumen" disabled={week>=draft.duration_weeks} onClick={()=>{setWeek(week+1);setDayId(trainingDays(draft,week+1)[0]?.id??"");}}><ArrowRight size={16}/></button></div></header>
+              <div className="series-summary"><div><span>Series directas / meta</span><strong>{weeklyDirectTotal} <small>/ {weeklyTargetTotal}</small></strong><span>{weeklyTargetTotal>0?`${weeklyProgress}%`:"Sin meta activa"}</span></div><div className="series-summary-meta"><span>{allWeeklySeries.reduce((sum,item)=>sum+item.indirect,0).toFixed(1)} indirectas</span><span>{allWeeklySeries.reduce((sum,item)=>sum+item.total,0).toFixed(1)} efectivas</span><span>{currentDays.length} días</span></div><progress aria-label={`Cumplimiento general semana ${week}`} max="100" value={weeklyProgress}/><p>Suma todos los días de esta semana. Cada semana conserva sus propias metas.</p></div>
+              <div className="series-groups">
+                {[
+                  {name:"Torso",match:/(pectoral|pecho|espalda|dorsal|trapecio|hombro|deltoide)/},
+                  {name:"Brazos y core",match:/(biceps|triceps|antebrazo|abdomen|abdominal|core|oblicuo)/},
+                  {name:"Pierna",match:/(cuadriceps|isquio|femoral|gluteo|aductor|abductor|pantorrilla|gemelo|soleo|tibial|pierna)/},
+                ].map((group,index,groups)=>{
+                  const items=allWeeklySeries.filter(item=>{const name=item.muscle.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();const matched=groups.findIndex(candidate=>candidate.match?.test(name));return matched===index;});
+                  if(!items.length)return null;
+                  return <section className="series-group" key={group.name}><header><h3>{group.name}</h3><span>{items.length} grupos</span></header>{items.map(item=>{
+                    const target=draft.weekly_volume_targets?.[String(week)]?.[item.muscle]??item.direct;
+                    const progress=target>0?Math.min(100,Math.round(item.direct/target*100)):0;
+                    const difference=item.direct-target;
+                    const muscleName=item.muscle.toLocaleLowerCase("es");
+                    const priority=draft.priorities.some(value=>muscleName.includes(value.toLocaleLowerCase("es"))||value.toLocaleLowerCase("es").includes(muscleName));
+                    const setTarget=(value:number)=>mutate(program=>{program.weekly_volume_targets??={};program.weekly_volume_targets[String(week)]??={};program.weekly_volume_targets[String(week)][item.muscle]=Math.min(100,Math.max(0,Number.isFinite(value)?value:0));});
+                    return <article className="series-row" key={item.muscle}>
+                      <div className="series-row-main"><strong>{item.muscle}{priority&&<small className="series-priority" title="Grupo prioritario"> · Prioridad</small>}</strong><div className="series-target"><span title="Series directas">{item.direct}</span><span aria-hidden="true">/</span><button type="button" aria-label={`Reducir meta de ${item.muscle}`} disabled={target<=0} onClick={()=>setTarget(target-1)}>−</button><input data-plain-number aria-label={`Meta de ${item.muscle} semana ${week}`} type="number" min="0" max="100" step="1" value={target} onChange={event=>setTarget(Number(event.target.value))}/><button type="button" aria-label={`Aumentar meta de ${item.muscle}`} disabled={target>=100} onClick={()=>setTarget(target+1)}>+</button><small>{target>0?`${progress}%`:"—"}</small></div></div>
+                      <progress className="series-progress" aria-label={`Progreso de ${item.muscle} semana ${week}`} max="100" value={progress}/>
+                      <details className="series-detail"><summary>Detalle <span>{target===0?"Sin meta activa":difference===0?"En meta":`${difference>0?"+":""}${difference} series`}</span></summary><dl><div><dt>Directas</dt><dd>{item.direct}</dd></div><div><dt>Indirectas</dt><dd>{item.indirect.toFixed(1)}</dd></div><div><dt>Efectivas</dt><dd>{item.total.toFixed(1)}</dd></div><div><dt>Frecuencia</dt><dd>{item.frequency} días</dd></div></dl></details>
+                    </article>;
+                  })}</section>;
+                })}
+              </div>
+              <p>Las indirectas se consultan en Detalle; la barra compara series directas con la meta semanal.</p>
+            </section>
+          </details>
+
+          <details className="training-collapsible">
+            <summary>
+              <div>
+                <span className="df-eyebrow">MATERIAL DE APOYO</span>
+                <strong>Videos y explicaciones del bloque</strong>
+              </div>
+              <div className="training-summary-chips">
+                <span>{(draft.resources ?? []).length} {(draft.resources ?? []).length === 1 ? "video" : "videos"}</span>
+                <ChevronDown size={16} className="training-collapsible-chevron" aria-hidden="true"/>
+              </div>
+            </summary>
+            <section className="training-media-section training-media-embedded" aria-label="Material de apoyo">
+              <p>Agrega tus propias explicaciones de RIR, calentamiento o uso del programa para mostrarlas en el portal.</p>
+              {(draft.resources??[]).map(resource=><div className="training-media-resource" key={resource.id}><input aria-label="Título del material" value={resource.title} onChange={e=>mutate(p=>{const r=p.resources?.find(r=>r.id===resource.id);if(r)r.title=e.target.value;})}/><TrainingVideoEditor value={resource.url} label={`Video de ${resource.title||'apoyo'}`} onChange={url=>mutate(p=>{const r=p.resources?.find(r=>r.id===resource.id);if(r)r.url=url;})}/><button type="button" onClick={()=>mutate(p=>{p.resources=p.resources?.filter(r=>r.id!==resource.id);})}>Eliminar material</button></div>)}
+              <button type="button" onClick={()=>mutate(p=>{p.resources=[...(p.resources??[]),{id:crypto.randomUUID(),title:'Mi explicación',url:''}];})}>+ Agregar mi explicación</button>
+            </section>
+          </details>
         </main>
 
-        <aside className="training-analysis"><TrainingLiveFeedback key={`${clientId}-${draft.id}`} clientId={clientId} programId={draft.id} week={week}/><div className="training-analysis-head"><span>SEMANA {week}</span><h2>Feedback y revisión</h2><p>Control del bloque junto a los ejercicios de la semana.</p></div><div className={`training-quality ${issues.length ? "warning" : "ok"}`}>{issues.length ? <AlertTriangle size={17}/> : <CheckCircle2 size={17}/>}<div><strong>{issues.length ? `${issues.length} puntos por revisar` : "Semana consistente"}</strong>{issues.map(issue => <p key={issue}>{issue}</p>)}{!issues.length && <p>Rangos y estructura listos para revisión del coach.</p>}</div></div><section className="training-review training-review-side"><div><span>CIERRE DEL BLOQUE</span><h2>Decisiones para la siguiente rotación</h2><p>Registra sensaciones y cambios mientras revisas la rutina.</p></div><div className="training-review-grid"><label>Fatiga general (1–10)<input type="number" min="1" max="10" value={draft.review?.general_fatigue || ""} onChange={event => mutate(program => { program.review ??= { session_fatigue: [] }; program.review.general_fatigue = Number(event.target.value) || undefined; })}/></label><label>Tolerancia al volumen (1–10)<input type="number" min="1" max="10" value={draft.review?.volume_tolerance || ""} onChange={event => mutate(program => { program.review ??= { session_fatigue: [] }; program.review.volume_tolerance = Number(event.target.value) || undefined; })}/></label><label>Dolor muscular o molestias<textarea rows={2} value={draft.review?.soreness ?? ""} onChange={event => mutate(program => { program.review ??= { session_fatigue: [] }; program.review.soreness = event.target.value; })}/></label><label>Sesión más demandante<textarea rows={2} value={draft.review?.hardest_session ?? ""} onChange={event => mutate(program => { program.review ??= { session_fatigue: [] }; program.review.hardest_session = event.target.value; })}/></label><label>Ejercicios incómodos o con mala técnica<textarea rows={2} value={draft.review?.uncomfortable_exercises ?? ""} onChange={event => mutate(program => { program.review ??= { session_fatigue: [] }; program.review.uncomfortable_exercises = event.target.value; })}/></label><label>Ejercicios que conviene mantener<textarea rows={2} value={draft.review?.keep_exercises ?? ""} onChange={event => mutate(program => { program.review ??= { session_fatigue: [] }; program.review.keep_exercises = event.target.value; })}/></label></div></section><div className="training-rir-note"><strong>CRITERIO RIR</strong><p>RIR indica cuántas repeticiones adicionales estimas poder realizar. El valor de RIR indica la reserva objetivo del ejercicio. Acercarse al fallo no obliga a llegar al fallo en todas las series.</p></div><p className="training-evidence">La evidencia favorece volumen suficiente y progresión gradual. DietForge ordena los datos; el coach toma la decisión final.</p></aside>
+        <aside className="training-analysis">
+          <TrainingLiveFeedback key={`${clientId}-${draft.id}`} clientId={clientId} programId={draft.id} week={week}/>
+          <div className="training-analysis-head"><span>SEMANA {week}</span><h2>Feedback y revisión</h2><p>Control del bloque junto a los ejercicios de la semana.</p></div>
+          <div className={`training-quality ${issues.length ? "warning" : "ok"}`}>{issues.length ? <AlertTriangle size={17}/> : <CheckCircle2 size={17}/>}<div><strong>{issues.length ? `${issues.length} puntos por revisar` : "Semana consistente"}</strong>{issues.map(issue => <p key={issue}>{issue}</p>)}{!issues.length && <p>Rangos y estructura listos para revisión del coach.</p>}</div></div>
+          <details className="training-collapsible training-collapsible-side">
+            <summary>
+              <div>
+                <span className="df-eyebrow">CIERRE DEL BLOQUE</span>
+                <strong>Notas para la siguiente rotación</strong>
+              </div>
+              <ChevronDown size={15} className="training-collapsible-chevron" aria-hidden="true"/>
+            </summary>
+            <section className="training-review training-review-side">
+              <div className="training-review-grid">
+                <label>Fatiga general (1–10)<input type="number" min="1" max="10" value={draft.review?.general_fatigue || ""} onChange={event => mutate(program => { program.review ??= { session_fatigue: [] }; program.review.general_fatigue = Number(event.target.value) || undefined; })}/></label>
+                <label>Tolerancia al volumen (1–10)<input type="number" min="1" max="10" value={draft.review?.volume_tolerance || ""} onChange={event => mutate(program => { program.review ??= { session_fatigue: [] }; program.review.volume_tolerance = Number(event.target.value) || undefined; })}/></label>
+                <label>Dolor muscular o molestias<textarea rows={2} value={draft.review?.soreness ?? ""} onChange={event => mutate(program => { program.review ??= { session_fatigue: [] }; program.review.soreness = event.target.value; })}/></label>
+                <label>Sesión más demandante<textarea rows={2} value={draft.review?.hardest_session ?? ""} onChange={event => mutate(program => { program.review ??= { session_fatigue: [] }; program.review.hardest_session = event.target.value; })}/></label>
+                <label>Ejercicios incómodos o con mala técnica<textarea rows={2} value={draft.review?.uncomfortable_exercises ?? ""} onChange={event => mutate(program => { program.review ??= { session_fatigue: [] }; program.review.uncomfortable_exercises = event.target.value; })}/></label>
+                <label>Ejercicios que conviene mantener<textarea rows={2} value={draft.review?.keep_exercises ?? ""} onChange={event => mutate(program => { program.review ??= { session_fatigue: [] }; program.review.keep_exercises = event.target.value; })}/></label>
+              </div>
+            </section>
+          </details>
+          <div className="training-rir-note"><strong>CRITERIO RIR</strong><p>RIR indica cuántas repeticiones adicionales estimas poder realizar. El valor de RIR indica la reserva objetivo del ejercicio. Acercarse al fallo no obliga a llegar al fallo en todas las series.</p></div>
+          <p className="training-evidence">La evidencia favorece volumen suficiente y progresión gradual. DietForge ordena los datos; el coach toma la decisión final.</p>
+        </aside>
       </div>
 
-      <div className="training-footer-actions"><button className="danger" onClick={() => setDeleteOpen(true)}><Trash2 size={15}/>Eliminar rutina</button><button className="primary" onClick={save}><Save size={16}/>Guardar rutina</button></div>
+      <div className="training-footer-actions"><button type="button" className="danger" onClick={() => setDeleteOpen(true)}><Trash2 size={15}/>Eliminar rutina</button><button type="button" className="primary" onClick={save}><Save size={16}/>Guardar rutina</button></div>
     </>}
 
     {libraryOpen && <div className="training-library-layer">

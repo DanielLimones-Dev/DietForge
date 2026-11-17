@@ -50,7 +50,7 @@ export function Dashboard() {
 
   const metrics = [
     { label: "Clientes registrados", value: snapshot.stats.clients, detail: `${snapshot.stats.activeClients} activos en 14 días`, icon: Users, tone: "green", href: "/clients" },
-    { label: "Adherencia promedio", value: adherence === null ? "—" : `${adherence}%`, detail: adherence === null ? "Sin check-ins evaluados" : "Basada en hábitos registrados", icon: CheckCircle2, tone: "teal", href: "/reports" },
+    { label: "Adherencia promedio", value: adherence === null ? "—" : `${adherence}%`, detail: adherence === null ? "Sin check-ins evaluados" : "Promedio general de check-ins", icon: CheckCircle2, tone: "teal", href: "/reports" },
     { label: "Balance calórico", value: averageKcal ? averageKcal.toLocaleString("es-MX") : "—", detail: averageKcal ? "kcal promedio por plan" : "Crea el primer plan", icon: TrendingUp, tone: "blue", href: "/calculator" },
     { label: "Planes nutricionales", value: snapshot.stats.mealPlans, detail: `${snapshot.stats.checkins} check-ins acumulados`, icon: FileText, tone: "amber", href: "/reports" },
   ];
@@ -76,7 +76,7 @@ export function Dashboard() {
           <section className="dashboard-macro-card" data-cascade="6">
             <div className="dashboard-card-heading"><div><p className="df-eyebrow">MATRIZ DE PLANES</p><h2>Distribución de macros</h2></div><Activity size={18} /></div>
             <p>Promedio energético de los planes guardados.</p>
-            <div className="dashboard-donut" style={{ background: `conic-gradient(#00855d 0 ${proteinShare}%, #d97706 ${proteinShare}% ${proteinShare + carbShare}%, #e11d48 ${proteinShare + carbShare}% 100%)` }}><div><strong>100%</strong><span>{snapshot.plans.length ? `${snapshot.plans.length} planes` : "Referencia"}</span></div></div>
+            <div className="dashboard-donut" style={{ background: `conic-gradient(#00855d 0 ${proteinShare}%, #e89923 ${proteinShare}% ${proteinShare + carbShare}%, #e15562 ${proteinShare + carbShare}% 100%)` }}><div><strong>100%</strong><span>{snapshot.plans.length ? `${snapshot.plans.length} ${snapshot.plans.length === 1 ? "plan" : "planes"}` : "Referencia"}</span></div></div>
             <div className="dashboard-macro-legend"><span className="macro-protein"><i />{proteinShare}%<small>Proteína</small></span><span className="macro-carbs"><i />{carbShare}%<small>Carbos</small></span><span className="macro-fat"><i />{fatShare}%<small>Grasas</small></span></div>
             <Link href="/foods">Explorar alimentos y matrices <ArrowRight size={14} /></Link>
           </section>
@@ -85,7 +85,7 @@ export function Dashboard() {
             <div className="dashboard-card-heading"><div><p className="df-eyebrow">CUENTA</p><h2>Estado del acceso</h2></div>{status.isAdmin ? <ShieldCheck size={18} /> : <CheckCircle2 size={18} />}</div>
             <div className={`dashboard-access-status ${isExpiring ? "is-expiring" : ""}`}><i /> <strong>{status.isAdmin ? "Administrador" : status.active ? "Acceso activo" : trialActive ? "Periodo de prueba" : "Acceso pendiente"}</strong><span>{status.isAdmin ? "Permanente" : status.active ? `${daysLeft ?? "—"} días restantes` : trialActive ? `${trialDaysLeft} días restantes` : "Requiere activación"}</span></div>
             {email && <p>{email}</p>}
-            <div>{!status.active && !trialActive && email && <button onClick={() => openExternal(`${STRIPE_PAYMENT_LINK_MONTHLY}?prefilled_email=${encodeURIComponent(email)}`)}>Suscribirse</button>}<button onClick={logout}>Cerrar sesión</button></div>
+            <div>{!status.active && !trialActive && email && <button type="button" onClick={() => openExternal(`${STRIPE_PAYMENT_LINK_MONTHLY}?prefilled_email=${encodeURIComponent(email)}`)}>Suscribirse</button>}<button type="button" onClick={logout}>Cerrar sesión</button></div>
           </section>
         </aside>
       </div>

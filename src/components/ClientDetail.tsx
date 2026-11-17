@@ -54,6 +54,7 @@ export function ClientDetail() {
   const [selectedPhase, setSelectedPhase] = useState<CompetitionPhase | undefined>(undefined);
   const [deleteConfirm, setDeleteConfirm] = useState<{ planId: number } | null>(null);
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
+  const [deleteCompConfirm, setDeleteCompConfirm] = useState<number | null>(null);
   const [openingPlanId, setOpeningPlanId] = useState<number | null>(null);
   const navigationTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const { toast } = useToast();
@@ -399,9 +400,7 @@ export function ClientDetail() {
   };
 
   const handleDeleteCompetition = (id: number) => {
-    if (!confirm("¿Eliminar esta competencia?")) return;
-    db.deleteCompetition(id);
-    setCompetitions(db.getCompetitions(clientId));
+    setDeleteCompConfirm(id);
   };
 
   const handleExportPDF = (planId: number) => {
@@ -1177,9 +1176,9 @@ export function ClientDetail() {
       </div>
 
       {showTemplates && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowTemplates(false)}>
+        <div role="dialog" aria-modal="true" aria-labelledby="templates-modal-title" tabIndex={-1} onKeyDown={(e) => { if (e.key === "Escape") setShowTemplates(false); }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowTemplates(false)}>
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-bold text-lg mb-4 dark:text-white">Cargar Plantilla</h3>
+            <h3 id="templates-modal-title" className="font-bold text-lg mb-4 dark:text-white">Cargar Plantilla</h3>
             {templates.length === 0 && <p className="text-sm text-gray-400 text-center py-8">No hay plantillas guardadas. Crea una desde el plan de comidas.</p>}
             {templates.map((t) => (
               <div key={t.id} className="flex items-center justify-between p-3 rounded-xl border border-gray-200 dark:border-gray-700 mb-2">
@@ -1215,8 +1214,8 @@ export function ClientDetail() {
             <div className="flex gap-3 mt-6">
               <button onClick={() => {
                 if (!compEditorData || !compEditorData.name) return;
-                if (!peakDates(compEditorData.date).length) {alert("Selecciona una fecha válida.");return;}
-                try{compEditorData.config.forEach(d=>dailyMacros(d,latest??{protein:0,carbs:0,fat:0}));}catch{alert("Revisa los macros: deben ser números iguales o mayores que cero.");return;}
+                if (!peakDates(compEditorData.date).length) {toast("Selecciona una fecha válida.", "error");return;}
+                try{compEditorData.config.forEach(d=>dailyMacros(d,latest??{protein:0,carbs:0,fat:0}));}catch{toast("Revisa los macros: deben ser números iguales o mayores que cero.", "error");return;}
                 const competitionData = {
                   client_id: clientId, name: compEditorData.name.trim(), date: compEditorData.date,
                   category: compEditorData.category || undefined, weight: compEditorData.weight ? Number(compEditorData.weight) : undefined,
@@ -1246,6 +1245,20 @@ export function ClientDetail() {
         message={`¿Eliminar TODOS los ${plans.length} planes de dieta?`}
         onConfirm={confirmDeleteAllPlans}
         onCancel={() => setDeleteAllConfirm(false)}
+      />
+      <ConfirmDialog
+        open={deleteCompConfirm !== null}
+        title="Eliminar competencia"
+        message="¿Eliminar esta competencia?"
+        onConfirm={() => {
+          if (deleteCompConfirm !== null) {
+            db.deleteCompetition(deleteCompConfirm);
+            setCompetitions(db.getCompetitions(clientId));
+            setDeleteCompConfirm(null);
+            toast("Competencia eliminada");
+          }
+        }}
+        onCancel={() => setDeleteCompConfirm(null)}
       />
     </div>
   );

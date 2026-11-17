@@ -2,6 +2,7 @@
 import {revealFocusedCascade} from "@/lib/page-cascade";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState } from "react";
 import { db } from "@/lib/db";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -10,11 +11,11 @@ import { Users, UserPlus, Clock, CheckCircle, AlertTriangle, TrendingUp } from "
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 px-4 py-3">
-      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">{label}</p>
+    <div className="rounded-xl border border-[var(--clinical-line)] bg-[var(--clinical-surface)] px-4 py-3 shadow-lg">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--clinical-muted)] mb-1">{label}</p>
       {payload.map((p, i) => (
-        <p key={i} className="text-sm font-bold" style={{ color: p.color }}>
-          {p.name}: {p.value}
+        <p key={i} className="text-sm font-bold text-[var(--clinical-primary)]">
+          {p.name}: <span className="text-[var(--clinical-text)]">{p.value}</span>
         </p>
       ))}
     </div>
@@ -110,14 +111,14 @@ export function Reports() {
 
       <div className="reports-grid">
         <div className="reports-card" data-cascade="5">
-          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 to-cyan-500" />
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 to-teal-500" />
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="font-semibold text-gray-900 dark:text-white">Crecimiento de Clientes</h3>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Altas por mes</p>
             </div>
             {growthData.length > 1 && (
-              <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2.5 py-1 rounded-full font-medium">
+              <div className="flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/25 px-2.5 py-1 rounded-full font-medium">
                 <TrendingUp className="w-3.5 h-3.5" />
                 +{Math.round(newThisMonth / Math.max(1, clients.length - newThisMonth) * 100)}%
               </div>
@@ -125,18 +126,18 @@ export function Reports() {
           </div>
           {growthData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={growthData} barCategoryGap="20%">
+              <BarChart data={growthData} barCategoryGap="24%">
                 <defs>
                   <linearGradient id="growthGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0ea5e9" stopOpacity={1} />
-                    <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.4} />
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="#059669" stopOpacity={0.35} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:opacity-20" />
-                <XAxis dataKey="month" fontSize={11} tick={{ fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                <YAxis fontSize={11} tick={{ fill: '#9ca3af' }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9', className: 'dark:fill-gray-800' }} />
-                <Bar dataKey="count" fill="url(#growthGradient)" radius={[6, 6, 0, 0]} maxBarSize={48} name="Nuevos clientes" />
+                <CartesianGrid vertical={false} strokeDasharray="4 7" stroke="var(--clinical-line)" />
+                <XAxis dataKey="month" fontSize={11} tick={{ fill: 'var(--clinical-muted)' }} axisLine={false} tickLine={false} dy={6} />
+                <YAxis fontSize={11} tick={{ fill: 'var(--clinical-muted)' }} axisLine={false} tickLine={false} allowDecimals={false} width={32} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--clinical-soft)', opacity: 0.6 }} />
+                <Bar dataKey="count" fill="url(#growthGradient)" radius={[8, 8, 2, 2]} maxBarSize={44} name="Nuevos clientes" />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -227,8 +228,8 @@ export function Reports() {
                 const ci = db.getLatestCheckIn(c.id);
                 const overdue = c.next_check_in_date && new Date(c.next_check_in_date).getTime() < now;
                 return (
-                  <tr key={c.id} className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer" onClick={() => router.push(`/clients/${c.id}`)}>
-                    <td className="px-4 py-3 font-medium dark:text-white">{c.name}</td>
+                  <tr key={c.id} tabIndex={0} className="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer" onClick={() => router.push(`/clients/${c.id}`)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push(`/clients/${c.id}`); } }}>
+                    <td className="px-4 py-3 font-medium dark:text-white"><Link href={`/clients/${c.id}`} onClick={(e) => e.stopPropagation()} className="hover:underline focus:underline">{c.name}</Link></td>
                     <td className="px-4 py-3 text-center dark:text-gray-300">{m ? `${m.weight} kg` : "—"}</td>
                     <td className="px-4 py-3 text-center text-xs text-gray-400">{ci ? new Date(ci.date).toLocaleDateString("es-MX") : "—"}</td>
                     <td className="px-4 py-3 text-center text-xs text-gray-400">{c.next_check_in_date ? new Date(c.next_check_in_date).toLocaleDateString("es-MX") : "—"}</td>

@@ -24,8 +24,23 @@ function snapshot():Snapshot{return structuredClone({database:cache,templates:te
 function adopt(s:Snapshot){cache=s.database;templatesCache=s.templates;preferences=s.preferences;}
 function localKey(kind:string){return `dietforge_cloud_${owner}_${kind}`;}
 export function exportCloudBackup(){
- const blob=new Blob([JSON.stringify({format:'dietforge-v1',owner,snapshot:snapshot()},null,2)],{type:'application/json'});
- const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='dietforge-respaldo.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ const snap=snapshot();
+ const dateTag=new Date().toISOString().slice(0,10);
+ const payload={
+  format:'dietforge-v1',
+  exported_at:new Date().toISOString(),
+  owner,
+  summary:{
+   clients:snap.database.clients.length,
+   mealPlans:snap.database.mealPlans.length,
+   trainingPrograms:snap.database.trainingPrograms.length,
+   checkins:snap.database.checkins.length,
+   foods:snap.database.foods.length,
+  },
+  snapshot:snap,
+ };
+ const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`dietforge-respaldo-${dateTag}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 export async function retryCloudSave(){await queue?.flush();}
 export function hasPendingCloudWrites(){return !!queue?.pending;}
