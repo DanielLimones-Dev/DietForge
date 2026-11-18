@@ -1,6 +1,7 @@
 "use client";
 
 import {CoachNotifications} from "./CoachNotifications";
+import {SystemUpdateNotice} from "./SystemUpdateNotice";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -12,36 +13,11 @@ import {
   Home,
   Moon,
   Sun,
-  LogOut, ShieldCheck, Leaf, Menu, X, Dumbbell, Library, ChevronDown, FolderKanban, Activity,
+  LogOut, ShieldCheck, Leaf, Menu, X, Dumbbell, Library, ChevronDown, FolderKanban, Activity, Languages, User, FileText,
 } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-
-const primaryLinks = [
-  { to: "/", label: "Dashboard", icon: Home },
-  { to: "/clients", label: "Clientes", icon: Users },
-];
-
-const baseGroups = [
-  {
-    id: "tracking",
-    label: "Seguimiento",
-    icon: Activity,
-    links: [
-      { to: "/agenda", label: "Agenda", icon: ClipboardList },
-      { to: "/reports", label: "Reportes", icon: BarChart3 },
-    ],
-  },
-  {
-    id: "planning",
-    label: "Planificación",
-    icon: FolderKanban,
-    links: [
-      { to: "/training", label: "Rutinas", icon: Dumbbell },
-      { to: "/foods", label: "Alimentos", icon: Apple },
-      { to: "/exercises", label: "Ejercicios", icon: Library },
-    ],
-  },
-];
+import { SHELL_COPY, useAppLanguage } from "@/lib/language";
+import { attachDomTranslator } from "@/lib/i18n-dom";
 
 const isCurrent = (pathname: string, to: string) => pathname === to || (to !== "/" && pathname.startsWith(`${to}/`));
 
@@ -50,19 +26,49 @@ export function Layout({ children }: { children: ReactNode }) {
   const mainRef = useRef<HTMLElement>(null);
   const [dark, setDark] = useState(() => { try { return localStorage.getItem("dietforge_dark") === "true"; } catch { return false; } });
   const { logout, email, status } = useSubscription();
+  const { lang, setLang } = useAppLanguage();
+  const t = SHELL_COPY[lang];
   const [mobile, setMobile] = useState(false);
-  const groups = [...baseGroups, {
-    id: "system",
-    label: "Sistema",
-    icon: ShieldCheck,
-    links: [
-      { to: "/quality", label: "Calidad y respaldos", icon: ShieldCheck },
-      ...(status.isAdmin ? [{ to: "/admin", label: "Administración", icon: ShieldCheck }] : []),
-    ],
-  }];
+
+  type NavItem = { to: string; label: string; icon: typeof Home };
+  const primaryLinks: NavItem[] = [
+    { to: "/", label: t.dashboard, icon: Home },
+    { to: "/clients", label: t.clients, icon: Users },
+  ];
+
+  const groups: { id: string; label: string; icon: typeof Home; links: NavItem[] }[] = [
+    {
+      id: "tracking",
+      label: t.tracking,
+      icon: Activity,
+      links: [
+        { to: "/agenda", label: t.agenda, icon: ClipboardList },
+        { to: "/reports", label: t.reports, icon: BarChart3 },
+      ],
+    },
+    {
+      id: "planning",
+      label: t.planning,
+      icon: FolderKanban,
+      links: [
+        { to: "/training", label: t.routines, icon: Dumbbell },
+        { to: "/foods", label: t.foods, icon: Apple },
+        { to: "/exercises", label: t.exercises, icon: Library },
+      ],
+    },
+    {
+      id: "system",
+      label: t.system,
+      icon: ShieldCheck,
+      links: [
+        { to: "/quality", label: t.quality, icon: ShieldCheck },
+        ...(status.isAdmin ? [{ to: "/admin", label: t.admin, icon: ShieldCheck }] : []),
+      ],
+    },
+  ];
   const allLinks = [...primaryLinks, ...groups.flatMap(group => group.links)];
   const [openGroups, setOpenGroups] = useState<string[]>([]);
-  const currentLabel = allLinks.find(link => isCurrent(pathname, link.to))?.label ?? "Planificación";
+  const currentLabel = allLinks.find(link => isCurrent(pathname, link.to))?.label ?? t.planning;
 
   const toggleGroup = (id: string) => setOpenGroups(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
 
@@ -141,13 +147,19 @@ export function Layout({ children }: { children: ReactNode }) {
     try { localStorage.setItem("dietforge_dark", String(dark)); } catch { /* Theme still applies for this session. */ }
   }, [dark]);
 
+  useEffect(() => {
+    const main = mainRef.current;
+    if (!main) return;
+    return attachDomTranslator(main, lang);
+  }, [lang, pathname]);
+
   return (
     <div className="df-shell">
-      {mobile&&<button className="df-backdrop" aria-label="Cerrar navegación" onClick={()=>setMobile(false)}/>}
+      {mobile&&<button className="df-backdrop" aria-label={t.closeNav} onClick={()=>setMobile(false)}/>}
       <aside className={"df-sidebar "+(mobile?"is-open":"")}>
         <Link href="/" className="df-wordmark"><span className="df-logo"><Leaf size={21}/></span>DietForge<span className="df-wordmark-tag">PRO</span></Link>
-        <p className="text-[10px] tracking-widest text-emerald-200/50 mt-9 px-3">ESPACIO DE TRABAJO</p>
-        <nav aria-label="Navegación principal" className="df-navigation">
+        <p className="text-[10px] tracking-widest text-emerald-200/50 mt-9 px-3">{t.workspace}</p>
+        <nav aria-label={t.navLabel} className="df-navigation">
           {primaryLinks.map(link=><Link key={link.to} href={link.to} onClick={()=>setMobile(false)} aria-current={isCurrent(pathname,link.to)?"page":undefined}><link.icon size={17}/>{link.label}</Link>)}
           <div className="df-nav-divider"/>
           {groups.map(group=>{
@@ -163,10 +175,32 @@ export function Layout({ children }: { children: ReactNode }) {
             </div>;
           })}
         </nav>
-        <div className="df-sidebar-foot"><div className="border-t border-white/10 pt-4 pb-3 px-3"><p className="text-xs font-medium">{status.isAdmin?"Administrador":"Cuenta de coach"}</p><p className="text-[10px] text-emerald-100/50 mt-2 break-all">{email}</p></div><Link href="/cuenta" className="df-privacy-link">Mi cuenta</Link><Link href="/privacidad" target="_blank" rel="noopener noreferrer" className="df-privacy-link">Aviso de privacidad</Link><button onClick={()=>setDark(!dark)}>{dark?<Sun size={16}/>:<Moon size={16}/>}Modo {dark?"claro":"oscuro"}</button><button onClick={logout}><LogOut size={16}/>Cerrar sesión</button></div>
+        <div className="df-sidebar-foot">
+          <div className="df-account-card">
+            <div className="df-account-meta">
+              <span className="df-account-role">{status.isAdmin?t.adminRole:t.coachAccount}</span>
+              <p className="df-account-email">{email}</p>
+            </div>
+            <div className="df-account-links">
+              <Link href="/cuenta" className="df-privacy-link" onClick={()=>setMobile(false)}><User size={14}/>{t.myAccount}</Link>
+              <Link href="/privacidad" target="_blank" rel="noopener noreferrer" className="df-privacy-link"><FileText size={14}/>{t.privacyNotice}</Link>
+            </div>
+          </div>
+          <div className="df-sidebar-prefs">
+            <div className="df-lang-switch" role="group" aria-label={t.language}>
+              <span className="df-lang-label"><Languages size={14}/>{t.language}</span>
+              <div className="df-lang-pills">
+                <button type="button" aria-pressed={lang==="es"} onClick={()=>setLang("es")}>ES</button>
+                <button type="button" aria-pressed={lang==="en"} onClick={()=>setLang("en")}>EN</button>
+              </div>
+            </div>
+            <button type="button" className="df-foot-btn" onClick={()=>setDark(!dark)}>{dark?<Sun size={14}/>:<Moon size={14}/>}{dark?t.lightMode:t.darkMode}</button>
+            <button type="button" className="df-foot-btn df-foot-logout" onClick={logout}><LogOut size={14}/>{t.logout}</button>
+          </div>
+        </div>
       </aside>
-      <div className="df-main"><header className="df-topbar"><div className="flex gap-3 items-center"><button className="df-mobile-toggle" aria-label="Abrir navegación" aria-expanded={mobile} onClick={()=>setMobile(!mobile)}>{mobile?<X size={20}/>:<Menu size={20}/>}</button><span className="df-muted">DietForge <span className="mx-2 opacity-40">/</span> <strong className="df-text font-medium">{currentLabel}</strong></span></div><div className="flex items-center gap-3"><CoachNotifications/><span className="df-badge df-badge-green">{status.isAdmin?"Administrador":"Coach profesional"}</span></div></header>
-        <main ref={mainRef} className="df-content">{children}</main>
+      <div className="df-main"><header className="df-topbar"><div className="flex gap-3 items-center"><button className="df-mobile-toggle" aria-label={t.openNav} aria-expanded={mobile} onClick={()=>setMobile(!mobile)}>{mobile?<X size={20}/>:<Menu size={20}/>}</button><span className="df-muted">DietForge <span className="mx-2 opacity-40">/</span> <strong className="df-text font-medium">{currentLabel}</strong></span></div><div className="flex items-center gap-3"><CoachNotifications/><span className="df-badge df-badge-green">{status.isAdmin?t.adminRole:t.proCoach}</span></div></header>
+        <main ref={mainRef} className="df-content"><SystemUpdateNotice/>{children}</main>
       </div>
     </div>
   );
