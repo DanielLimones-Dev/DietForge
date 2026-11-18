@@ -5,7 +5,8 @@ import { flushSync } from "react-dom";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { db } from "@/lib/db";
-import { calculateMacros, calculateBodyFatFromSkinfolds, macroKcal } from "@/lib/calculator";
+import { calculateMacros, calculateBodyFatFromSkinfolds, macroKcal, type ClinicalCalcOptions } from "@/lib/calculator";
+import { ClinicalCalculatorControls } from "./ClinicalCalculatorControls";
 import { itemsForDay, restTargets, restReduction } from "@/lib/meal-day";
 import { getPreference } from "@/lib/db";
 import { generateDietPDF } from "@/lib/pdf";
@@ -25,7 +26,7 @@ import { PeakWeekSimulator } from "./PeakWeekSimulator";
 import { CompetitionPeakWeekEditor } from "./CompetitionPeakWeekEditor";
 import { ConfirmDialog } from "./ui";
 import { useToast } from "./Toast";
-import { ArrowLeft, ChevronLeft, ChevronRight, FileText, TrendingUp, Ruler, Camera, Download, BarChart3, Award, Activity, Moon, Dumbbell } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, FileText, TrendingUp, Ruler, Camera, Download, BarChart3, Award, Activity, Moon, Dumbbell, Calculator, Info, Sparkles } from "lucide-react";
 import type {
   Client, ClientMeasurement, ActivityLevel, Goal, MacroResult,
   DietTemplate, MealTime, MealPlanItem, CompetitionPhase, CheckIn, Competition, PeakWeekDayConfig,
@@ -69,6 +70,15 @@ export function ClientDetail() {
     activityLevel: "moderate" as ActivityLevel,
     goal: "maintain" as Goal,
     hasWorkout: true, usePhase: false,
+  });
+  const [clinicalOptions, setClinicalOptions] = useState<ClinicalCalcOptions>({
+    formula: "auto",
+    includeTef: true,
+    goalMode: "standard",
+    customGoalDelta: -300,
+    macroMode: "percent",
+    proteinPerKg: 2.0,
+    fatPerKg: 0.8,
   });
   const [result, setResult] = useState<MacroResult | null>(null);
   const [draftMeasurement, setDraftMeasurement] = useState<Omit<ClientMeasurement, "id"> | null>(null);
@@ -214,7 +224,7 @@ export function ClientDetail() {
       if (calculated !== null) { bf = calculated; bfMethod = "isak1"; skinfolds = sf; }
     } else if (bf) { bfMethod = "direct"; }
 
-    let macros = calculateMacros(w, h, a, calcForm.sex, calcForm.activityLevel, calcForm.goal, bf);
+    let macros = calculateMacros(w, h, a, calcForm.sex, calcForm.activityLevel, calcForm.goal, bf, clinicalOptions);
     if (calcForm.usePhase && selectedPhase) {
       macros = calculatePhaseMacros(macros, w, selectedPhase);
     }
@@ -435,8 +445,8 @@ export function ClientDetail() {
             <div className="macro-draft-heading"><div><span>AJUSTE DE PRESCRIPCIÓN</span><h4>{editingMeasurementId !== null ? "Editar macros guardados" : "Macros calculados"}</h4></div><p>{editingMeasurementId !== null ? "Guardar actualiza este cálculo; Cancelar conserva sus valores originales." : "Revisa, ajusta y guarda para incorporarlos al historial."}</p></div>
             <div className="macro-control-grid">
               <div className="macro-control-card is-calories stagger-1">
-                <header><span><i/>Calorías</span><b>Objetivo energético</b></header>
-                <div><button type="button" aria-label="Reducir calorías" onClick={() => stepMacroDraft("tdee", -1)}>−</button><input type="number" data-plain-number min="0" value={macroInputs.tdee}
+                <header><span><i/>Calorías</span><b>Objetivo diario</b></header>
+                <div><button type="button" aria-label="Reducir calorías" onClick={() => stepMacroDraft("tdee", -1)}>−</button><input type="number" data-plain-number min="0" aria-label="Calorías objetivo" value={macroInputs.tdee}
                   onChange={(e) => updateMacroDraft("tdee", e.target.value)} onBlur={() => restoreEmptyMacroDraft("tdee")}
                   className="macro-edit-number" /><small>kcal</small><button type="button" aria-label="Aumentar calorías" onClick={() => stepMacroDraft("tdee", 1)}>+</button></div>
                 <footer>Pasos de 50 kcal · redistribuye P/C/G</footer>
@@ -796,27 +806,59 @@ export function ClientDetail() {
         </div>
       )}
 
-      <div className="client-calculator-card bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 mb-8 shadow-sm">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-          <h3 className="font-semibold flex items-center gap-2 dark:text-white">
-            <TrendingUp className="w-4 h-4 text-brand-600" /> Calculadora de Macros
-          </h3>
-          <button onClick={() => {
-            if (result) cancelCalculatedMacros();
-            setShowCalc(!showCalc);
-          }}
-            className="text-xs font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 transition-colors flex items-center gap-1">
-            {showCalc ? "▲ Ocultar" : "▼ Nuevo cálculo"}
-          </button>
+      <div className="client-calculator-card bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 mb-8 shadow-sm">
+        <div className="calc-pro-header">
+          <div className="calc-pro-header-title">
+            <div className="calc-pro-header-icon"><Calculator className="w-4 h-4" /></div>
+            <div>
+              <span>Prescripción clínica · Opción 3</span>
+              <h3>Calculadora de Macros</h3>
+            </div>
+          </div>
+          <div className="calc-pro-header-actions">
+            {showCalc && latest && (
+              <button
+                type="button"
+                onClick={() => setCalcForm((prev) => ({
+                  ...prev,
+                  weight: String(latest.weight),
+                  height: String(latest.height),
+                  age: String(latest.age),
+                  sex: latest.sex,
+                  bodyFat: latest.body_fat ? String(latest.body_fat) : prev.bodyFat,
+                  activityLevel: latest.activity_level,
+                  goal: latest.goal,
+                }))}
+                className="calc-pro-prefill-btn"
+              >
+                <Sparkles className="w-3.5 h-3.5" /> Usar última medición
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                if (result) cancelCalculatedMacros();
+                setShowCalc(!showCalc);
+              }}
+              className="calc-pro-toggle-btn"
+            >
+              {showCalc ? "▲ Ocultar" : "▼ Nuevo cálculo"}
+            </button>
+          </div>
         </div>
 
         {showCalc && (
           <>
-            <div className="mx-5 mt-4 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-xs text-brand-800 dark:border-brand-800 dark:bg-brand-950/30 dark:text-brand-200">
-              Calcular o guardar macros no registra un check-in. El peso, la composición y la tendencia solo cambian desde el seguimiento del cliente.
+            <div className="calc-pro-notice">
+              <Info className="w-4 h-4" />
+              <span>Calcular o guardar macros no registra un check-in. El peso, la composición y la tendencia solo cambian desde el seguimiento del cliente.</span>
             </div>
-          <div className="p-5 space-y-5">
-            <p className="text-[10px] text-gray-400 dark:text-gray-500">Los campos con <span className="text-red-400">*</span> son obligatorios</p>
+          <div className="calc-pro-body">
+            <section className="calc-pro-section">
+              <header className="calc-pro-section-head">
+                <span className="calc-pro-step"><b>1</b> Antropometría y composición corporal</span>
+                <span className="text-[10px] text-gray-400 dark:text-gray-500">Los campos con <span className="text-red-400">*</span> son obligatorios</span>
+              </header>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <label className="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Peso <span className="text-red-400">*</span></label>
@@ -1004,42 +1046,79 @@ export function ClientDetail() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Actividad</label>
-                <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.activityLevel} onChange={(e) => setCalcForm({ ...calcForm, activityLevel: e.target.value as ActivityLevel })}>
-                  <option value="sedentary">Sedentario</option>
-                  <option value="light">Ligero</option>
-                  <option value="moderate">Moderado</option>
-                  <option value="active">Activo</option>
-                  <option value="very_active">Muy activo</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Objetivo</label>
-                <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.goal} onChange={(e) => setCalcForm({ ...calcForm, goal: e.target.value as Goal })}>
-                  <option value="lose_fat">Perder grasa — Déficit</option>
-                  <option value="maintain">Mantener peso</option>
-                  <option value="build_muscle">Ganar músculo — Volumen</option>
-                  <option value="gain_weight">Subir de peso — Aumento</option>
-                </select>
-              </div>
-            </div>
+            </section>
 
-            <div className="flex flex-wrap items-center gap-4 pt-1">
-              {selectedPhase && (
+            <section className="calc-pro-section">
+              <header className="calc-pro-section-head">
+                <span className="calc-pro-step"><b>2</b> Estrategia energética y fórmula clínica</span>
+              </header>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Actividad</label>
+                  <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.activityLevel} onChange={(e) => setCalcForm({ ...calcForm, activityLevel: e.target.value as ActivityLevel })}>
+                    <option value="sedentary">Sedentario</option>
+                    <option value="light">Ligero</option>
+                    <option value="moderate">Moderado</option>
+                    <option value="active">Activo</option>
+                    <option value="very_active">Muy activo</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Objetivo</label>
+                  <select className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all" value={calcForm.goal} onChange={(e) => setCalcForm({ ...calcForm, goal: e.target.value as Goal })}>
+                    <option value="lose_fat">Perder grasa — Déficit</option>
+                    <option value="maintain">Mantener peso</option>
+                    <option value="build_muscle">Ganar músculo — Volumen</option>
+                    <option value="gain_weight">Subir de peso — Aumento</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4">
+                {selectedPhase && (
+                  <label className="flex items-center gap-2 text-[12px] text-gray-600 dark:text-gray-300 cursor-pointer select-none">
+                    <input type="checkbox" checked={calcForm.usePhase} onChange={(e) => setCalcForm({ ...calcForm, usePhase: e.target.checked })}
+                      className="rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500/30" />
+                    Ajuste de fase ({getPhaseLabel(selectedPhase)})
+                  </label>
+                )}
                 <label className="flex items-center gap-2 text-[12px] text-gray-600 dark:text-gray-300 cursor-pointer select-none">
-                  <input type="checkbox" checked={calcForm.usePhase} onChange={(e) => setCalcForm({ ...calcForm, usePhase: e.target.checked })}
+                  <input type="checkbox" checked={calcForm.hasWorkout} onChange={(e) => setCalcForm({ ...calcForm, hasWorkout: e.target.checked })}
                     className="rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500/30" />
-                  Ajuste de fase ({getPhaseLabel(selectedPhase)})
+                  Pre/intra/post entrenamiento
                 </label>
-              )}
-              <label className="flex items-center gap-2 text-[12px] text-gray-600 dark:text-gray-300 cursor-pointer select-none">
-                <input type="checkbox" checked={calcForm.hasWorkout} onChange={(e) => setCalcForm({ ...calcForm, hasWorkout: e.target.checked })}
-                  className="rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500/30" />
-                Pre/intra/post entrenamiento
-              </label>
-            </div>
+              </div>
+
+              <ClinicalCalculatorControls
+                weight={Number(calcForm.weight)}
+                height={Number(calcForm.height)}
+                age={Number(calcForm.age)}
+                sex={calcForm.sex}
+                bodyFat={(() => {
+                  if (calcForm.bfMethod === "isak1") {
+                    const sf = {
+                      chest: calcForm.chest ? Number(calcForm.chest) : undefined,
+                      abdominal: calcForm.abdominal ? Number(calcForm.abdominal) : undefined,
+                      thigh: calcForm.thigh ? Number(calcForm.thigh) : undefined,
+                      triceps: calcForm.triceps ? Number(calcForm.triceps) : undefined,
+                      suprailiac: calcForm.suprailiac ? Number(calcForm.suprailiac) : undefined,
+                      subscapular: calcForm.subscapular ? Number(calcForm.subscapular) : undefined,
+                      biceps: calcForm.biceps ? Number(calcForm.biceps) : undefined,
+                      iliacCrest: calcForm.iliacCrest ? Number(calcForm.iliacCrest) : undefined,
+                      supraspinale: calcForm.supraspinale ? Number(calcForm.supraspinale) : undefined,
+                      medialCalf: calcForm.medialCalf ? Number(calcForm.medialCalf) : undefined,
+                    };
+                    return calculateBodyFatFromSkinfolds(sf, calcForm.sex, Number(calcForm.age)) ?? undefined;
+                  }
+                  return calcForm.bodyFat ? Number(calcForm.bodyFat) : undefined;
+                })()}
+                activityLevel={calcForm.activityLevel}
+                goal={calcForm.goal}
+                options={clinicalOptions}
+                onChange={setClinicalOptions}
+              />
+            </section>
 
             {calcError && (
               <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
@@ -1047,14 +1126,14 @@ export function ClientDetail() {
               </div>
             )}
 
-            <div className="flex flex-wrap gap-3 pt-1">
+            <div className="flex flex-wrap gap-3">
               <button onClick={handleCalc}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold bg-brand-600 text-white hover:bg-brand-700 active:scale-[0.98] transition-all shadow-sm">
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-brand-600 text-white hover:bg-brand-700 active:scale-[0.98] transition-all shadow-sm">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 3h6v6H9zM15 15h6v6h-6zM3 15h6v6H3zM3 3h6v6H3z"/></svg>
                 Calcular Macros
               </button>
               <button onClick={handleLoadTemplate}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.98] transition-all">
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-[0.98] transition-all">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 Cargar Plantilla
               </button>

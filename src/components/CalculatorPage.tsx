@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { calculateMacros, distributeMeals, calculateBodyFatFromSkinfolds, adjustMacroField, macroKcal } from "@/lib/calculator";
+import { calculateMacros, distributeMeals, calculateBodyFatFromSkinfolds, adjustMacroField, macroKcal, type ClinicalCalcOptions } from "@/lib/calculator";
+import { ClinicalCalculatorControls } from "./ClinicalCalculatorControls";
 import { Ruler, RotateCcw, Lock, AlertTriangle } from "lucide-react";
 import type { ActivityLevel, Goal, MacroResult } from "@/types";
 
@@ -40,6 +41,15 @@ export function CalculatorPage() {
   const [adjusted, setAdjusted] = useState<{ protein: number; carbs: number; fat: number } | null>(null);
   const [lastField, setLastField] = useState<"protein" | "carbs" | "fat" | null>(null);
   const [calcError, setCalcError] = useState("");
+  const [clinicalOptions, setClinicalOptions] = useState<ClinicalCalcOptions>({
+    formula: "auto",
+    includeTef: true,
+    goalMode: "standard",
+    customGoalDelta: -300,
+    macroMode: "percent",
+    proteinPerKg: 2.0,
+    fatPerKg: 0.8,
+  });
 
   const handleCalc = () => {
     const w = Number(form.weight);
@@ -73,7 +83,7 @@ export function CalculatorPage() {
       setCalcError("El porcentaje de grasa debe ser mayor que 0 y menor que 100.");
       return;
     }
-    const r = calculateMacros(w, h, a, form.sex, form.activityLevel, form.goal, bf);
+    const r = calculateMacros(w, h, a, form.sex, form.activityLevel, form.goal, bf, clinicalOptions);
     setResult(r);
     setAdjusted({ protein: r.protein, carbs: r.carbs, fat: r.fat });
     setLastField(null);
@@ -239,6 +249,36 @@ export function CalculatorPage() {
           <input type="checkbox" checked={form.hasWorkout} onChange={(e) => setForm({ ...form, hasWorkout: e.target.checked })} className="rounded border-gray-300 dark:border-gray-600 text-brand-600 focus:ring-brand-500/30" />
           Incluye entrenamiento (pre/intra/post)
         </label>
+        <div className="mb-4">
+          <ClinicalCalculatorControls
+            weight={Number(form.weight)}
+            height={Number(form.height)}
+            age={Number(form.age)}
+            sex={form.sex}
+            bodyFat={(() => {
+              if (form.bfMethod === "isak1") {
+                const sf = {
+                  chest: form.chest ? Number(form.chest) : undefined,
+                  abdominal: form.abdominal ? Number(form.abdominal) : undefined,
+                  thigh: form.thigh ? Number(form.thigh) : undefined,
+                  triceps: form.triceps ? Number(form.triceps) : undefined,
+                  suprailiac: form.suprailiac ? Number(form.suprailiac) : undefined,
+                  subscapular: form.subscapular ? Number(form.subscapular) : undefined,
+                  biceps: form.biceps ? Number(form.biceps) : undefined,
+                  iliacCrest: form.iliacCrest ? Number(form.iliacCrest) : undefined,
+                  supraspinale: form.supraspinale ? Number(form.supraspinale) : undefined,
+                  medialCalf: form.medialCalf ? Number(form.medialCalf) : undefined,
+                };
+                return calculateBodyFatFromSkinfolds(sf, form.sex, Number(form.age)) ?? undefined;
+              }
+              return form.bodyFat ? Number(form.bodyFat) : undefined;
+            })()}
+            activityLevel={form.activityLevel}
+            goal={form.goal}
+            options={clinicalOptions}
+            onChange={setClinicalOptions}
+          />
+        </div>
         {calcError && (
           <div className="mb-3 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-sm text-red-600 dark:text-red-400">
             {calcError}
