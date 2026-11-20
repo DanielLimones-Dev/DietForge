@@ -1,6 +1,6 @@
 import type { Client, TrainingProgram } from "@/types";
 import {exerciseVideo} from './training-media';
-import {trainingDays} from './training';
+import {formatPrescriptionIntensity, trainingDays} from './training';
 import {openPrintDocument} from './print-document';
 
 const escapeHtml = (value: unknown) => String(value ?? "").replace(/[&<>'"]/g, character => ({
@@ -21,11 +21,11 @@ export function trainingProgramHtml(program: TrainingProgram, client: Client): s
     ${trainingDays(program,week).map(day => `<article class="day">
       <header><div><span>${escapeHtml(String(day.day_number).padStart(2, "0"))}</span><h3>${escapeHtml(day.name)}</h3></div><small>${escapeHtml(day.exercises.length)} ejercicios</small></header>
       ${day.notes ? `<p class="day-note">${escapeHtml(day.notes)}</p>` : ""}
-      <table><thead><tr><th>Grupo</th><th>Ejercicio</th><th>Series</th><th>Repeticiones</th><th>RIR</th><th>Carga kg</th><th>Nota</th></tr></thead><tbody>
+      <table><thead><tr><th>Grupo</th><th>Ejercicio</th><th>Series</th><th>Repeticiones</th><th>Intensidad</th><th>Carga kg</th><th>Nota</th></tr></thead><tbody>
       ${day.exercises.length ? day.exercises.map(exercise => {
         const prescription = exercise.prescriptions.find(item => item.week === week);
         const coachVideo = safeUrl(exerciseVideo(exercise));
-        return `<tr><td>${escapeHtml(exercise.muscle_group)}</td><td><strong>${escapeHtml(exercise.name)}</strong>${coachVideo ? `<a href="${coachVideo}" target="_blank" rel="noreferrer">Video del coach</a>` : ""}</td><td>${escapeHtml(prescription?.sets ?? 0)}</td><td>${escapeHtml(prescription ? `${prescription.reps_min}–${prescription.reps_max}` : "—")}</td><td>${escapeHtml(prescription ? `${prescription.rir_start}→${prescription.rir_end}` : "—")}</td><td>${escapeHtml(prescription?.load_kg ?? "—")}</td><td>${escapeHtml(exercise.notes || "—")}</td></tr>`;
+        return `<tr><td>${escapeHtml(exercise.muscle_group)}</td><td><strong>${escapeHtml(exercise.name)}</strong>${coachVideo ? `<a href="${coachVideo}" target="_blank" rel="noreferrer">Video del coach</a>` : ""}</td><td>${escapeHtml(prescription?.sets ?? 0)}</td><td>${escapeHtml(prescription ? `${prescription.reps_min}–${prescription.reps_max}` : "—")}</td><td>${escapeHtml(prescription ? formatPrescriptionIntensity(prescription) : "—")}</td><td>${escapeHtml(prescription?.load_kg ?? "—")}</td><td>${escapeHtml(exercise.notes || "—")}</td></tr>`;
       }).join("") : `<tr><td colspan="7" class="empty">Día de descanso o sesión sin ejercicios.</td></tr>`}
       </tbody></table>
     </article>`).join("")}

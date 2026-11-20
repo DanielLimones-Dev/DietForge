@@ -16,10 +16,22 @@ export function trainingDateValue(date = new Date(), timeZone?: string): string 
   return `${value.year}-${value.month}-${value.day}`;
 }
 
+export function formatPrescriptionIntensity(
+  p: Pick<TrainingPrescription, "rir_start" | "rir_end" | "intensity_type" | "intensity_value">
+): string {
+  if (p.intensity_type === "rpe" && p.intensity_value != null) {
+    return `RPE ${p.intensity_value}`;
+  }
+  if (p.intensity_type === "percent_1rm" && p.intensity_value != null) {
+    return `${p.intensity_value}% 1RM`;
+  }
+  return p.rir_start !== p.rir_end ? `RIR ${p.rir_start}–${p.rir_end}` : `RIR ${p.rir_end}`;
+}
+
 export function blankPrescription(week: number, source?: TrainingPrescription): TrainingPrescription {
   return source
     ? { ...source, week }
-    : { week, sets: 3, reps_min: 8, reps_max: 12, rir_start: 2, rir_end: 1 };
+    : { week, sets: 3, reps_min: 8, reps_max: 12, rir_start: 2, rir_end: 1, intensity_type: "rir", intensity_value: 1 };
 }
 
 export function createTrainingDraft(clientId: number, clientName: string, today = trainingDateValue()): Omit<TrainingProgram, "id" | "created_at" | "updated_at"> {
@@ -167,7 +179,12 @@ export function trainingSaveErrors(program: TrainingProgram): string[] {
   if (!Number.isInteger(program.duration_weeks) || program.duration_weeks < 1 || program.duration_weeks > 12) errors.push('La duración debe ser de 1 a 12 semanas.');
   for (let week = 1; week <= program.duration_weeks; week++) for (const day of trainingDays(program,week)) for (const exercise of day.exercises) {
       const p = exercise.prescriptions.find(p => p.week === week);
-      if (!p || !Number.isInteger(p.sets) || p.sets < 0 || p.sets > 30 || !Number.isInteger(p.reps_min) || !Number.isInteger(p.reps_max) || p.reps_min < 0 || p.reps_max > 200 || p.reps_min > p.reps_max || !Number.isFinite(p.rir_start) || !Number.isFinite(p.rir_end) || p.rir_start < 0 || p.rir_start > 10 || p.rir_end < 0 || p.rir_end > 10 || (p.load_kg != null && (!Number.isFinite(p.load_kg) || p.load_kg < 0 || p.load_kg > 1500))) errors.push(`${exercise.name}, semana ${week}: revisa series, repeticiones, RIR y carga.`);
+      const badIntensity = p?.intensity_type === "rpe"
+        ? (p.intensity_value == null || !Number.isFinite(p.intensity_value) || p.intensity_value < 1 || p.intensity_value > 10)
+        : p?.intensity_type === "percent_1rm"
+          ? (p.intensity_value == null || !Number.isFinite(p.intensity_value) || p.intensity_value < 1 || p.intensity_value > 120)
+          : false;
+      if (!p || !Number.isInteger(p.sets) || p.sets < 0 || p.sets > 30 || !Number.isInteger(p.reps_min) || !Number.isInteger(p.reps_max) || p.reps_min < 0 || p.reps_max > 200 || p.reps_min > p.reps_max || !Number.isFinite(p.rir_start) || !Number.isFinite(p.rir_end) || p.rir_start < 0 || p.rir_start > 10 || p.rir_end < 0 || p.rir_end > 10 || badIntensity || (p.load_kg != null && (!Number.isFinite(p.load_kg) || p.load_kg < 0 || p.load_kg > 1500))) errors.push(`${exercise.name}, semana ${week}: revisa series, repeticiones, intensidad y carga.`);
   }
   for (const [muscle, range] of Object.entries(program.volume_ranges ?? {})) if (!Number.isFinite(range.min) || !Number.isFinite(range.max) || range.min < 0 || range.max > 100 || range.min > range.max) errors.push(`${muscle}: revisa el rango de volumen.`);
   return errors;

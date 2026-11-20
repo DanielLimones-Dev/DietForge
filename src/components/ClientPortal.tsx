@@ -9,6 +9,7 @@ import {NumericInputNormalizer} from './NumericInputNormalizer';
 import {PortalAuth} from './PortalAuth';
 import {AccountPrivacy} from './AccountPrivacy';
 import {PortalTopBar} from './portal/PortalParts';
+import {PortalRippleEffect} from './portal/PortalRippleEffect';
 export function ClientPortal(){
  const router=useRouter();
  useEffect(()=>{router.prefetch('/');},[router]);
@@ -24,6 +25,7 @@ export function ClientPortal(){
  useEffect(()=>{if(!user)return;let live=true;void memberships().then(rows=>{if(live)setEntries(rows.filter(r=>r.enabled));}).catch(e=>{if(live)setMessage(e.message);});return ()=>{live=false;};},[user]);
  const entry=entries.find(e=>e.owner_id+':'+e.client_id===selected)??entries[0];
  return <div className={dark?'dark':''}><div className="care-portal portal-app">
+  <PortalRippleEffect/>
   <NumericInputNormalizer/>
   <PortalTopBar dark={dark} onDark={()=>setDark(!dark)} signedIn={!!user} onLogout={()=>void logout()} signingOut={signingOut}/>
   {user&&<details className="care-privacy-details portal-privacy-details"><summary><ShieldCheck size={16} aria-hidden="true"/>Privacidad y mis datos</summary><AccountPrivacy context="portal"/></details>}

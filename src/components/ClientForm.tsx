@@ -13,9 +13,29 @@ export function ClientForm() {
   const [form, setForm] = useState(() => {
     if (id) {
       const client = db.getClient(Number(id));
-      if (client) return { name: client.name, email: client.email || "", phone: client.phone || "", notes: client.notes || "", prep_type: client.prep_type || "", check_in_interval_days: client.check_in_interval_days || 7 };
+      if (client) {
+        return {
+          name: client.name,
+          email: client.email || "",
+          phone: client.phone || "",
+          notes: client.notes || "",
+          prep_type: client.prep_type || "",
+          modality: client.modality || ("presencial" as "presencial" | "online"),
+          onboarding_questionnaire: Boolean(client.onboarding_questionnaire),
+          check_in_interval_days: client.check_in_interval_days || 7,
+        };
+      }
     }
-    return { name: "", email: "", phone: "", notes: "", prep_type: "", check_in_interval_days: 7 };
+    return {
+      name: "",
+      email: "",
+      phone: "",
+      notes: "",
+      prep_type: "",
+      modality: "presencial" as "presencial" | "online",
+      onboarding_questionnaire: true,
+      check_in_interval_days: 7,
+    };
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -67,6 +87,56 @@ export function ClientForm() {
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
           />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Modalidad</label>
+          <div className="flex flex-wrap gap-2">
+            {(["presencial", "online"] as const).map((mod) => (
+              <button
+                key={mod}
+                type="button"
+                onClick={() =>
+                  setForm({
+                    ...form,
+                    modality: mod,
+                    onboarding_questionnaire: mod === "online" ? form.onboarding_questionnaire : false,
+                  })
+                }
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-all active:scale-[0.97] ${
+                  form.modality === mod
+                    ? "bg-brand-600 text-white border-brand-600 shadow-sm"
+                    : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-600 hover:border-gray-400"
+                }`}
+              >
+                {mod === "online" ? "Online" : "Presencial"}
+              </button>
+            ))}
+          </div>
+          {form.modality === "online" && (
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={form.onboarding_questionnaire}
+              onClick={() => setForm({ ...form, onboarding_questionnaire: !form.onboarding_questionnaire })}
+              className={`mt-2.5 inline-flex items-center gap-2.5 px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
+                form.onboarding_questionnaire
+                  ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200"
+                  : "bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300"
+              }`}
+            >
+              <span
+                aria-hidden="true"
+                className={`inline-grid place-items-center w-4 h-4 rounded border text-[11px] font-bold transition-colors ${
+                  form.onboarding_questionnaire
+                    ? "bg-brand-600 border-brand-600 text-white"
+                    : "border-gray-400 dark:border-gray-500 bg-white dark:bg-gray-900"
+                }`}
+              >
+                {form.onboarding_questionnaire ? "✓" : ""}
+              </span>
+              <span>Habilitar cuestionario inicial cuando el cliente inicie sesión en su portal</span>
+            </button>
+          )}
         </div>
         <div>
           <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">Tipo de preparación</label>

@@ -2,11 +2,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   ShieldCheck, Users, Clock, Plus, RefreshCw, Search, Trash2,
-  AlertTriangle, CheckCircle2, PauseCircle, X, SlidersHorizontal, History as HistoryIcon
+  AlertTriangle, CheckCircle2, PauseCircle, X, SlidersHorizontal, History as HistoryIcon, ExternalLink, Copy
 } from "lucide-react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { db, retryCloudSave } from "@/lib/db";
+import { grantPortal, memberships, type PortalMembership } from "@/lib/client-portal";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { revealFocusedCascade } from "@/lib/page-cascade";
+import type { Client } from "@/types";
 
 type Coach = {
   email: string;
@@ -83,6 +87,13 @@ export function AdminPanel() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [auditFilter, setAuditFilter] = useState<AuditFilter>("all");
+  const [adminSection, setAdminSection] = useState<"coaches" | "portal_clients">("coaches");
+  const [portalClients, setPortalClients] = useState<Client[]>(() => db.getClients());
+  const [portalMemberships, setPortalMemberships] = useState<PortalMembership[]>([]);
+  const [portalOwnerId, setPortalOwnerId] = useState<string>("");
+  const [clientQuery, setClientQuery] = useState("");
+  const [clientAccessFilter, setClientAccessFilter] = useState<"all" | "enabled" | "disabled">("all");
+  const [clientEmailDrafts, setClientEmailDrafts] = useState<Record<number, string>>({});
   const [selected, setSelected] = useState<Coach | null>(null);
   const [adding, setAdding] = useState(false);
   const [email, setEmail] = useState("");
@@ -95,18 +106,58 @@ export function AdminPanel() {
   const request = useRef<{ payload: string; id: string } | null>(null);
   const rowAnimationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const reloadPortalClients = useCallback(async () => {
+    setPortalClients(db.getClients());
+    try {
+      const [{ data }, rows] = await Promise.all([supabase.auth.getUser(), memberships()]);
+      if (data.user?.id) setPortalOwnerId(data.user.id);
+      setPortalMemberships(rows);
+    } catch {
+      // Ignore transient membership read failure.
+    }
+  }, []);
+
+  const togglePortalAccess = async (client: Client, nextEnabled: boolean) => {
+    const targetEmail = (clientEmailDrafts[client.id] ?? client.email ?? "").trim().toLowerCase();
+    if (!targetEmail) {
+      setError(`Ingresa un correo para habilitar el portal de ${client.name}.`);
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      if (targetEmail !== (client.email ?? "").trim().toLowerCase()) {
+        db.updateClient(client.id, { email: targetEmail });
+      }
+      await retryCloudSave();
+      await grantPortal(client.id, targetEmail, nextEnabled);
+      await reloadPortalClients();
+      setNotice(
+        nextEnabled
+          ? `Acceso al portal habilitado para ${client.name} (${targetEmail}).`
+          : `Acceso al portal revocado para ${client.name}.`
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo actualizar el acceso del cliente.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const reload = useCallback(async () => {
     try {
       const { data, error: rpcError } = await supabase.rpc("dietforge_admin_list");
       if (rpcError) throw rpcError;
       setCoaches(data.coaches);
       setHistory(data.history);
+      await reloadPortalClients();
     } catch {
       setError("No pudimos cargar el panel. Vuelve a intentar.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [reloadPortalClients]);
 
   useEffect(() => {
     if (!status.isAdmin) return;
@@ -120,6 +171,14 @@ export function AdminPanel() {
       }
       setLoading(false);
     });
+    void supabase.auth.getUser().then(({ data }) => {
+      if (live && data.user?.id) setPortalOwnerId(data.user.id);
+    });
+    void memberships()
+      .then((rows) => {
+        if (live) setPortalMemberships(rows);
+      })
+      .catch(() => {});
     return () => {
       live = false;
     };
@@ -364,44 +423,240 @@ export function AdminPanel() {
         </div>
       </header>
 
-      <div className="admin-metrics" data-cascade="1">
-        {metrics.map((m) => {
-          const pressed = statusFilter === m.key && m.key !== "all";
-          return (
-            <button
-              type="button"
-              key={m.label}
-              aria-pressed={statusFilter === m.key}
-              className={`admin-metric metric-${m.tone}${pressed ? " is-active-filter" : ""}`}
-              onClick={() => setStatusFilter((current) => (current === m.key ? "all" : m.key))}
-            >
-              <div>
-                <span>{m.label}</span>
-                <strong>{m.value}</strong>
-                <small>{m.detail}</small>
-              </div>
-              <span>
-                <m.icon size={18} />
-              </span>
-            </button>
-          );
-        })}
+      <div className="admin-filter-tabs mb-4" role="tablist" aria-label="Apartados de administración" data-cascade="1">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={adminSection === "coaches"}
+          onClick={() => setAdminSection("coaches")}
+        >
+          <span>Coaches y accesos</span>
+          <small>{coaches.length}</small>
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={adminSection === "portal_clients"}
+          onClick={() => {
+            setAdminSection("portal_clients");
+            void reloadPortalClients();
+          }}
+        >
+          <span>Clientes del portal (Asesoría)</span>
+          <small>{portalClients.length}</small>
+        </button>
       </div>
 
-      {error && (
-        <div role="alert" className="admin-alert is-error">
-          <AlertTriangle size={16} />
-          <span>{error}</span>
-        </div>
-      )}
-      {notice && (
-        <div role="status" className="admin-alert is-notice">
-          <CheckCircle2 size={16} />
-          <span>{notice}</span>
-        </div>
-      )}
+      {adminSection === "portal_clients" ? (
+        <section className="admin-directory" data-cascade="2" aria-label="Clientes dados de alta para el portal">
+          {(() => {
+            const membershipMap = new Map(
+              portalMemberships
+                .filter((m) => !portalOwnerId || m.owner_id === portalOwnerId)
+                .map((m) => [m.client_id, m])
+            );
+            const enabledCount = portalClients.filter((c) => membershipMap.get(c.id)?.enabled).length;
+            const q = clientQuery.trim().toLowerCase();
+            const list = portalClients.filter((c) => {
+              const m = membershipMap.get(c.id);
+              const isEnabled = Boolean(m?.enabled);
+              if (clientAccessFilter === "enabled" && !isEnabled) return false;
+              if (clientAccessFilter === "disabled" && isEnabled) return false;
+              const mail = (m?.email || c.email || "").toLowerCase();
+              if (q && !c.name.toLowerCase().includes(q) && !mail.includes(q)) return false;
+              return true;
+            });
 
-      <div className="admin-workspace" data-cascade="2">
+            return (
+              <>
+                <div className="admin-directory-head">
+                  <div>
+                    <p className="df-eyebrow">MIS ASESORÍAS</p>
+                    <div className="admin-directory-title">
+                      <h2>Clientes del portal</h2>
+                      <span className="admin-count-pill">
+                        {enabledCount} activos de {portalClients.length}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="admin-search">
+                      <Search size={16} />
+                      <input
+                        aria-label="Buscar cliente del portal"
+                        placeholder="Buscar por nombre o correo…"
+                        value={clientQuery}
+                        onChange={(e) => setClientQuery(e.target.value)}
+                      />
+                      {clientQuery && (
+                        <button type="button" aria-label="Limpiar búsqueda" onClick={() => setClientQuery("")}>
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="df-button-secondary"
+                      onClick={() =>
+                        void navigator.clipboard
+                          .writeText(`${window.location.origin}/portal`)
+                          .then(() => setNotice("Enlace /portal copiado."))
+                          .catch(() => {})
+                      }
+                    >
+                      <Copy size={14} />
+                      Copiar enlace /portal
+                    </button>
+                    <Link href="/clients/new" className="df-button">
+                      <Plus size={15} />
+                      Nuevo cliente
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="admin-filter-tabs" role="tablist" aria-label="Filtrar clientes por estado del portal">
+                  {(
+                    [
+                      ["all", "Todos", portalClients.length],
+                      ["enabled", "Portal activo", enabledCount],
+                      ["disabled", "Sin acceso", portalClients.length - enabledCount],
+                    ] as const
+                  ).map(([key, label, count]) => (
+                    <button
+                      type="button"
+                      role="tab"
+                      key={key}
+                      aria-selected={clientAccessFilter === key}
+                      onClick={() => setClientAccessFilter(key)}
+                    >
+                      <span>{label}</span>
+                      <small>{count}</small>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="df-table admin-table">
+                    <thead>
+                      <tr>
+                        <th>Cliente</th>
+                        <th>Modalidad</th>
+                        <th>Correo del portal</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {list.map((c) => {
+                        const membership = membershipMap.get(c.id);
+                        const isEnabled = Boolean(membership?.enabled);
+                        const currentEmail = clientEmailDrafts[c.id] ?? membership?.email ?? c.email ?? "";
+                        return (
+                          <tr key={c.id} className="admin-coach-row">
+                            <td>
+                              <div className="admin-account-cell">
+                                <span className="admin-avatar" aria-hidden="true">
+                                  {c.name.slice(0, 2).toUpperCase()}
+                                </span>
+                                <div>
+                                  <span className="admin-email">{c.name}</span>
+                                  <p className="admin-subline">ID #{c.id}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <span className="admin-usage-pill">
+                                {c.modality === "online" ? "Online" : "Presencial"}
+                              </span>
+                            </td>
+                            <td>
+                              <input
+                                type="email"
+                                aria-label={`Correo de portal para ${c.name}`}
+                                value={currentEmail}
+                                onChange={(e) =>
+                                  setClientEmailDrafts((prev) => ({ ...prev, [c.id]: e.target.value }))
+                                }
+                                placeholder="cliente@correo.com"
+                                className="df-input min-w-[200px]"
+                              />
+                            </td>
+                            <td>
+                              <span className={`admin-status-badge ${isEnabled ? "is-active" : "is-pending"}`}>
+                                {isEnabled ? "Activo" : "Sin acceso"}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  disabled={busy || !currentEmail.trim()}
+                                  onClick={() => void togglePortalAccess(c, !isEnabled)}
+                                  className="admin-manage-btn"
+                                >
+                                  {isEnabled ? "Revocar" : "Habilitar portal"}
+                                </button>
+                                <Link href={`/clients/${c.id}`} className="admin-manage-btn">
+                                  <ExternalLink size={13} />
+                                  Expediente
+                                </Link>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {!list.length && (
+                  <div className="admin-empty">
+                    <p>No hay clientes en este apartado todavía.</p>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </section>
+      ) : (
+        <>
+          <div className="admin-metrics" data-cascade="1">
+            {metrics.map((m) => {
+              const pressed = statusFilter === m.key && m.key !== "all";
+              return (
+                <button
+                  type="button"
+                  key={m.label}
+                  aria-pressed={statusFilter === m.key}
+                  className={`admin-metric metric-${m.tone}${pressed ? " is-active-filter" : ""}`}
+                  onClick={() => setStatusFilter((current) => (current === m.key ? "all" : m.key))}
+                >
+                  <div>
+                    <span>{m.label}</span>
+                    <strong>{m.value}</strong>
+                    <small>{m.detail}</small>
+                  </div>
+                  <span>
+                    <m.icon size={18} />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {error && (
+            <div role="alert" className="admin-alert is-error">
+              <AlertTriangle size={16} />
+              <span>{error}</span>
+            </div>
+          )}
+          {notice && (
+            <div role="status" className="admin-alert is-notice">
+              <CheckCircle2 size={16} />
+              <span>{notice}</span>
+            </div>
+          )}
+
+          <div className="admin-workspace" data-cascade="2">
         <section className="admin-directory">
           <div className="admin-directory-head">
             <div>
@@ -808,6 +1063,8 @@ export function AdminPanel() {
           </section>
         </aside>
       </div>
+        </>
+      )}
     </div>
   );
 }

@@ -13,11 +13,12 @@ import {
   Home,
   Moon,
   Sun,
-  LogOut, ShieldCheck, Leaf, Menu, X, Dumbbell, Library, ChevronDown, FolderKanban, Activity, Languages, User, FileText,
+  LogOut, ShieldCheck, Leaf, Menu, X, Dumbbell, Library, ChevronDown, FolderKanban, Activity, Languages, User, FileText, MessageSquare,
 } from "lucide-react";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { SHELL_COPY, useAppLanguage } from "@/lib/language";
 import { attachDomTranslator } from "@/lib/i18n-dom";
+import { useWhiteLabel } from "@/lib/white-label";
 
 const isCurrent = (pathname: string, to: string) => pathname === to || (to !== "/" && pathname.startsWith(`${to}/`));
 
@@ -27,6 +28,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const [dark, setDark] = useState(() => { try { return localStorage.getItem("dietforge_dark") === "true"; } catch { return false; } });
   const { logout, email, status } = useSubscription();
   const { lang, setLang } = useAppLanguage();
+  const { brand } = useWhiteLabel();
   const t = SHELL_COPY[lang];
   const [mobile, setMobile] = useState(false);
 
@@ -34,6 +36,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const primaryLinks: NavItem[] = [
     { to: "/", label: t.dashboard, icon: Home },
     { to: "/clients", label: t.clients, icon: Users },
+    { to: "/chat", label: t.chat, icon: MessageSquare },
   ];
 
   const groups: { id: string; label: string; icon: typeof Home; links: NavItem[] }[] = [
@@ -157,7 +160,7 @@ export function Layout({ children }: { children: ReactNode }) {
     <div className="df-shell">
       {mobile&&<button className="df-backdrop" aria-label={t.closeNav} onClick={()=>setMobile(false)}/>}
       <aside className={"df-sidebar "+(mobile?"is-open":"")}>
-        <Link href="/" className="df-wordmark"><span className="df-logo"><Leaf size={21}/></span>DietForge<span className="df-wordmark-tag">PRO</span></Link>
+        <Link href="/" className="df-wordmark"><span className="df-logo">{brand.logoDataUrl ? (/* eslint-disable-next-line @next/next/no-img-element */ <img src={brand.logoDataUrl} alt="" className="w-full h-full object-cover rounded-[9px]" />) : <Leaf size={21}/>}</span>{brand.brandName}<span className="df-wordmark-tag">{brand.tagline}</span></Link>
         <p className="text-[10px] tracking-widest text-emerald-200/50 mt-9 px-3">{t.workspace}</p>
         <nav aria-label={t.navLabel} className="df-navigation">
           {primaryLinks.map(link=><Link key={link.to} href={link.to} onClick={()=>setMobile(false)} aria-current={isCurrent(pathname,link.to)?"page":undefined}><link.icon size={17}/>{link.label}</Link>)}
@@ -199,7 +202,7 @@ export function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </aside>
-      <div className="df-main"><header className="df-topbar"><div className="flex gap-3 items-center"><button className="df-mobile-toggle" aria-label={t.openNav} aria-expanded={mobile} onClick={()=>setMobile(!mobile)}>{mobile?<X size={20}/>:<Menu size={20}/>}</button><span className="df-muted">DietForge <span className="mx-2 opacity-40">/</span> <strong className="df-text font-medium">{currentLabel}</strong></span></div><div className="flex items-center gap-3"><CoachNotifications/><span className="df-badge df-badge-green">{status.isAdmin?t.adminRole:t.proCoach}</span></div></header>
+      <div className="df-main"><header className="df-topbar"><div className="flex gap-3 items-center"><button className="df-mobile-toggle" aria-label={t.openNav} aria-expanded={mobile} onClick={()=>setMobile(!mobile)}>{mobile?<X size={20}/>:<Menu size={20}/>}</button><span className="df-muted">{brand.brandName} <span className="mx-2 opacity-40">/</span> <strong className="df-text font-medium">{currentLabel}</strong></span></div><div className="flex items-center gap-3"><CoachNotifications/><span className="df-badge df-badge-green">{status.isAdmin?t.adminRole:t.proCoach}</span></div></header>
         <main ref={mainRef} className="df-content"><SystemUpdateNotice/>{children}</main>
       </div>
     </div>

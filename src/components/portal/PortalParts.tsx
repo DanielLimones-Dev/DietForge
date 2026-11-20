@@ -1,28 +1,31 @@
 'use client';
 import Link from 'next/link';
 import {flushSync} from 'react-dom';
-import {Bell,CalendarDays,Check,ChevronRight,Dumbbell,LogOut,Moon,Salad,ShieldCheck,Sun,TrendingUp,UtensilsCrossed,X} from 'lucide-react';
+import {Bell,CalendarDays,Check,ChevronRight,Dumbbell,LogOut,MessageSquare,Moon,Salad,ShieldCheck,Sun,TrendingUp,UtensilsCrossed,X} from 'lucide-react';
 import {foodRatio} from '@/lib/meal-day';
+import {useWhiteLabel} from '@/lib/white-label';
 import type {Activity} from '@/lib/training-tracking';
 import type {Food,MealPlan,MealPlanItem} from '@/types';
 
 const mealNames:Record<string,string>={pre_workout:'Pre-Entreno',intra_workout:'Intra-Entreno',post_workout:'Post-Entreno',meal1:'Comida 1',meal2:'Comida 2',meal3:'Comida 3',meal4:'Comida 4',meal5:'Comida 5',meal6:'Comida 6'};
 
-export type PortalTabKey='training'|'diet'|'progress'|'agenda';
+export type PortalTabKey='training'|'diet'|'progress'|'agenda'|'chat';
 
 export const portalTabs:{key:PortalTabKey;label:string;icon:typeof Salad}[]=[
  {key:'diet',label:'Dieta',icon:Salad},
  {key:'training',label:'Rutina',icon:Dumbbell},
  {key:'progress',label:'Progreso',icon:TrendingUp},
  {key:'agenda',label:'Agenda',icon:CalendarDays},
+ {key:'chat',label:'Chat',icon:MessageSquare},
 ];
 
 /** Sticky top bar shared by every portal screen: brand, quick actions and session exit. */
 export function PortalTopBar({dark,onDark,signedIn,onLogout,signingOut,context}:{dark:boolean;onDark:()=>void;signedIn:boolean;onLogout?:()=>void;signingOut?:boolean;context?:string}){
+ const {brand}=useWhiteLabel();
  return <header className="portal-topbar">
   <div className="portal-topbar-brand">
-   <span className="portal-topbar-logo" aria-hidden="true"><UtensilsCrossed size={18}/></span>
-   <span className="portal-topbar-name">DietForge<small>Portal del cliente</small></span>
+   <span className="portal-topbar-logo" aria-hidden="true">{brand.logoDataUrl?(/* eslint-disable-next-line @next/next/no-img-element */ <img src={brand.logoDataUrl} alt="" className="w-full h-full object-cover rounded-[10px]"/>):<UtensilsCrossed size={18}/>}</span>
+   <span className="portal-topbar-name">{brand.brandName}<small>Portal del cliente</small></span>
    {context&&<span className="portal-topbar-context">{context}</span>}
   </div>
   <div className="portal-topbar-actions">

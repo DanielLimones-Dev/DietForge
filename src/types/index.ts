@@ -6,10 +6,20 @@ export interface Client {
   notes?: string;
   prep_type?: string;
   tags?: string[];
+  group_ids?: string[];
+  modality?: "presencial" | "online";
+  onboarding_questionnaire?: boolean;
   check_in_interval_days?: number;
   next_check_in_date?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface ClientGroup {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
 }
 
 export const TAGS_LIST = [
@@ -224,6 +234,8 @@ export interface CustomExercise {
   updated_at: string;
 }
 
+export type IntensityType = "rir" | "rpe" | "percent_1rm";
+
 export interface TrainingPrescription {
   load_kg?: number;
   week: number;
@@ -232,6 +244,8 @@ export interface TrainingPrescription {
   reps_max: number;
   rir_start: number;
   rir_end: number;
+  intensity_type?: IntensityType;
+  intensity_value?: number;
 }
 
 export interface TrainingExercise {

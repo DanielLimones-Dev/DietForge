@@ -1133,7 +1133,7 @@ html:has(.dark>.care-portal),body:has(.dark>.care-portal){background:#08130f;col
 .portal-fact-copy strong{font-size:13px;font-weight:700;color:var(--p-ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* Cuatro destinos, sin submenús. */
-.portal-app .portal-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:6px;border:1px solid var(--p-line);border-radius:16px;background:var(--p-surface);box-shadow:var(--p-shadow)}
+.portal-app .portal-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:6px;border:1px solid var(--p-line);border-radius:16px;background:var(--p-surface);box-shadow:var(--p-shadow)}
 .portal-app .portal-tabs>button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 12px;border:1px solid transparent;border-radius:12px;background:transparent;color:var(--p-muted);font-size:13.5px;font-weight:650;white-space:nowrap;cursor:pointer;transition:background .18s,color .18s,box-shadow .18s,transform .18s}
 .portal-app .portal-tabs>button:hover{background:var(--p-soft);color:var(--p-brand)}
 .portal-app .portal-tabs>button.selected{border-color:transparent;background:linear-gradient(150deg,var(--p-brand),var(--p-brand-strong));color:#fff;box-shadow:0 12px 24px -18px var(--p-brand)}
@@ -1255,14 +1255,15 @@ html:has(.dark>.care-portal),body:has(.dark>.care-portal){background:#08130f;col
 .portal-app .care-onboarding .portal-button{text-decoration:none}
 
 /* Check-in: dos datos obligatorios, opcionales plegados. */
-.portal-checkin{display:grid;gap:16px;margin-top:16px}
-.portal-checkin-required{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.portal-checkin{display:grid;gap:18px;margin-top:16px}
+.portal-checkin>fieldset{display:grid;gap:18px}
+.portal-checkin-required{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 .portal-checkin-required label{display:grid;gap:7px;font-size:12px;font-weight:650;color:var(--p-muted)}
 .portal-checkin-required label>span{display:inline-flex;align-items:center;gap:6px;color:var(--p-ink)}
 .portal-checkin-required label>span svg{color:var(--p-brand)}
 .portal-app .portal-checkin-required input{min-height:48px;padding:11px 13px;border:1px solid var(--p-line);border-radius:12px;background:var(--p-soft);color:var(--p-ink);font-size:15px;font-weight:600}
 .portal-app .portal-checkin-required input:focus{border-color:var(--p-brand);background:var(--p-surface);box-shadow:0 0 0 3px color-mix(in srgb,var(--p-brand) 18%,transparent)}
-.portal-checklist{display:grid;gap:9px}
+.portal-checklist{display:grid;gap:12px}
 .portal-optional{border:1px solid var(--p-line);border-radius:14px;background:var(--p-surface);overflow:hidden}
 .portal-optional>summary{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:11px;padding:13px 14px;cursor:pointer;list-style:none}
 .portal-optional>summary::-webkit-details-marker{display:none}
@@ -1356,14 +1357,15 @@ html:has(.dark>.care-portal),body:has(.dark>.care-portal){background:#08130f;col
 .portal-app .agenda-state-help{margin:12px 0 0;font-size:11px;line-height:1.55;color:var(--p-muted)}
 
 /* Coach: acceso del cliente y espera. */
-.portal-app .portal-access-card{display:grid;gap:14px}
+.portal-app .portal-access-card{display:grid;gap:10px;padding:14px 18px}
+.portal-app .portal-access-card .portal-section-head{align-items:center;gap:10px}
 .portal-app .care-access-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0;padding:0;list-style:none}
 .portal-app .care-access-steps li{display:flex;align-items:flex-start;gap:9px;padding:12px;border:1px solid var(--p-line);border-radius:12px;background:var(--p-soft);font-size:12px;line-height:1.5;color:var(--p-muted)}
 .portal-app .care-access-steps li b{display:grid;place-items:center;width:22px;height:22px;flex:none;border-radius:50%;background:var(--p-brand);color:#fff;font-size:11px;font-weight:800}
-.portal-app .care-access-form{display:grid;grid-template-columns:minmax(200px,1.6fr) repeat(4,auto);align-items:end;gap:10px;margin:0}
-.portal-app .care-access-form label{display:grid;gap:6px;font-size:11px;font-weight:650;color:var(--p-muted)}
-.portal-app .care-access-form input{min-height:44px;padding:10px 12px;border:1px solid var(--p-line);border-radius:11px;background:var(--p-soft);color:var(--p-ink);font-size:13px}
-.portal-app .care-access-form button,.portal-app .care-access-form .care-portal-link{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 14px;border:1px solid var(--p-line);border-radius:11px;background:var(--p-surface);color:var(--p-brand-strong);font-size:12px;font-weight:700;text-decoration:none}
+.portal-app .care-access-form{display:grid;grid-template-columns:minmax(200px,1.6fr) repeat(4,auto);align-items:end;gap:8px;margin:0}
+.portal-app .care-access-form label{display:grid;gap:4px;font-size:11px;font-weight:650;color:var(--p-muted)}
+.portal-app .care-access-form input{min-height:36px;padding:7px 10px;border:1px solid var(--p-line);border-radius:10px;background:var(--p-soft);color:var(--p-ink);font-size:12.5px}
+.portal-app .care-access-form button,.portal-app .care-access-form .care-portal-link{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border:1px solid var(--p-line);border-radius:10px;background:var(--p-surface);color:var(--p-brand-strong);font-size:12px;font-weight:700;text-decoration:none}
 .portal-app .care-access-form button:hover,.portal-app .care-access-form .care-portal-link:hover{background:var(--p-brand-soft);border-color:color-mix(in srgb,var(--p-brand) 40%,var(--p-line))}
 .portal-access-note{margin:0;font-size:11px;color:var(--p-muted)}
 .portal-waiting{display:grid;justify-items:center;gap:10px;max-width:540px;margin:clamp(16px,4vh,44px) auto 0;text-align:center}
@@ -1450,8 +1452,8 @@ html:has(.dark>.care-portal),body:has(.dark>.care-portal){background:#08130f;col
 .portal-app .portal-mesocycle>header h2{color:var(--p-ink)}
 .portal-app .portal-mesocycle-note{border-left-color:var(--p-brand);background:var(--p-soft);color:var(--p-muted);font-size:12.5px}
 .portal-app .portal-week-tabs button{min-height:52px;border:1px solid var(--p-line);border-radius:11px;background:var(--p-surface);color:var(--p-muted);font-size:12px;font-weight:650}
-.portal-app .portal-week-tabs button:hover{border-color:color-mix(in srgb,var(--p-brand) 40%,var(--p-line));color:var(--p-brand-strong)}
-.portal-app .portal-week-tabs .selected{border-color:transparent;background:linear-gradient(150deg,var(--p-brand),var(--p-brand-strong));color:#fff}
+.portal-app .portal-week-tabs button:not(.selected):hover{border-color:color-mix(in srgb,var(--p-brand) 40%,var(--p-line));color:var(--p-brand-strong)}
+.portal-app .portal-week-tabs .selected,.portal-app .portal-week-tabs button.selected:hover{border-color:transparent;background:linear-gradient(150deg,var(--p-brand),var(--p-brand-strong));color:#fff}
 .portal-app .portal-week-tabs .selected small{color:#d6fff0}
 .portal-app .portal-training-day{border-color:var(--p-line);background:var(--p-surface)}
 .portal-app .portal-training-day>header{background:var(--p-soft)}
@@ -1464,20 +1466,24 @@ html:has(.dark>.care-portal),body:has(.dark>.care-portal){background:#08130f;col
 .portal-app .portal-training-exercise dd{margin:0;font-size:12.5px;font-weight:700;color:var(--p-ink);font-variant-numeric:tabular-nums}
 .portal-app .portal-workout-heading h2{color:var(--p-ink)}
 .portal-app .portal-workout-live{background:var(--p-brand-soft);color:var(--p-brand-strong)}
+.portal-app .portal-workout{gap:12px}
 .portal-app .portal-workout .care-notice{border:1px solid var(--p-line);background:var(--p-soft);color:var(--p-muted);font-size:11.5px;line-height:1.55}
-.portal-app .portal-workout-picker{border-color:var(--p-line);border-radius:15px;background:var(--p-soft)}
+.portal-app .portal-workout-picker{gap:9px;padding:12px;border-color:var(--p-line);border-radius:14px;background:var(--p-soft)}
 .portal-app .portal-workout-picker label{color:var(--p-muted);font-size:11px}
-.portal-app .portal-workout-picker select{min-height:44px;border:1px solid var(--p-line);border-radius:11px;background:var(--p-surface);color:var(--p-ink);font-size:13px}
-.portal-app .portal-workout-weeks button,.portal-app .portal-workout-days button{min-height:44px;border:1px solid var(--p-line);border-radius:11px;background:var(--p-surface);color:var(--p-muted);font-size:11.5px;font-weight:650}
-.portal-app .portal-workout-days button{padding:9px 11px}
-.portal-app .portal-workout-days button strong{color:var(--p-ink)}
+.portal-app .portal-workout-picker select{min-height:38px;border:1px solid var(--p-line);border-radius:10px;background:var(--p-surface);color:var(--p-ink);font-size:12.5px}
+.portal-app .portal-workout-weeks button{min-height:32px;min-width:52px;padding:5px 10px;border:1px solid var(--p-line);border-radius:9px;background:var(--p-surface);color:var(--p-muted);font-size:11px;font-weight:650}
+.portal-app .portal-workout-days button{display:inline-flex;align-items:center;gap:6px;min-width:auto;min-height:36px;padding:6px 11px;border:1px solid var(--p-line);border-radius:10px;background:var(--p-surface);color:var(--p-muted);font-size:11.5px;font-weight:650;white-space:nowrap}
+.portal-app .portal-workout-days button strong{color:var(--p-ink);font-size:11.5px}
+.portal-app .portal-workout-days button small{font-size:10px;opacity:.72}
 .portal-app .portal-workout-weeks .selected,.portal-app .portal-workout-days .selected{border-color:transparent;background:linear-gradient(150deg,var(--p-brand),var(--p-brand-strong));color:#fff}
 .portal-app .portal-workout-days .selected strong,.portal-app .portal-workout-days .selected small,.portal-app .portal-workout-days .selected span{color:#fff}
-.portal-app .portal-workout-start{min-height:50px;border-color:transparent;border-radius:12px;background:linear-gradient(150deg,var(--p-brand),var(--p-brand-strong));color:#fff;font-size:13.5px;font-weight:750;box-shadow:0 14px 26px -20px var(--p-brand)}
+.portal-app .portal-workout-start{min-height:40px;width:fit-content;padding:0 20px;border-color:transparent;border-radius:10px;background:linear-gradient(150deg,var(--p-brand),var(--p-brand-strong));color:#fff;font-size:13px;font-weight:750;box-shadow:0 10px 20px -16px var(--p-brand)}
 .portal-app .portal-workout-start:hover:not(:disabled){background:var(--p-brand-strong);color:#fff}
-.portal-app .portal-workout-history{border-top:1px solid var(--p-line);padding-top:16px}
-.portal-app .portal-workout-history h3{color:var(--p-ink);font-size:15px}
-.portal-app .portal-workout-history .care-list button{min-height:42px;border:1px solid var(--p-line);border-radius:10px;background:var(--p-surface);color:var(--p-brand-strong);font-size:12px;font-weight:650}
+@media(max-width:520px){.portal-app .portal-workout-start{width:100%}}
+.portal-app .portal-workout-history{border-top:1px solid var(--p-line);padding-top:12px}
+.portal-app .portal-workout-history h3{color:var(--p-ink);font-size:14px}
+.portal-app .portal-workout-history p{margin:4px 0 0;font-size:12px}
+.portal-app .portal-workout-history .care-list button{min-height:38px;border:1px solid var(--p-line);border-radius:10px;background:var(--p-surface);color:var(--p-brand-strong);font-size:12px;font-weight:650}
 .portal-app .portal-workout-history .care-list button:hover{background:var(--p-brand-soft)}
 .portal-app .portal-set-number{display:inline-grid;place-items:center;min-width:22px;height:22px;border-radius:7px;background:var(--p-soft);font-size:10.5px;font-weight:750;color:var(--p-muted)}
 .portal-app .portal-workout-active .care-inset{padding:14px}
@@ -2282,3 +2288,601 @@ html:has(.dark>.care-portal),body:has(.dark>.care-portal){background:#08130f;col
 @media(max-width:760px){.calc-pro-strategy-grid{grid-template-columns:1fr}.calc-pro-kpi-grid,.calc-pro-macro-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.calc-pro-compare-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.calc-pro-header,.calc-pro-body{padding-inline:15px}.calc-pro-notice{margin-inline:15px}}
 @media(max-width:480px){.calc-pro-formula-grid,.calc-pro-perkg-grid,.calc-pro-kpi-grid,.calc-pro-macro-strip,.calc-pro-compare-grid{grid-template-columns:1fr}}
 
+
+/* Selector de intensidad RIR / RPE / % 1RM en TrainingPlanner */
+.training-intensity-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.training-intensity-field > label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--df-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.training-intensity-inputs {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.3rem;
+  align-items: center;
+}
+.training-intensity-inputs select {
+  height: 2.15rem;
+  padding: 0 0.4rem;
+  border: 1px solid var(--df-border, #d8e4df);
+  border-radius: 0.55rem;
+  background: var(--df-surface, #fff);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: inherit;
+}
+
+/* ChatHub estilo WhatsApp (aislado de .care-page) */
+.chat-hub-page {
+  max-width: 1450px;
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+  color: var(--clinical-text);
+}
+.chat-hub-top h1 {
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  margin: 4px 0 2px;
+}
+.chat-hub-shell {
+  display: grid;
+  grid-template-columns: clamp(220px, 28%, 310px) minmax(0, 1fr);
+  min-height: 560px;
+  border: 1px solid var(--clinical-line);
+  border-radius: 18px;
+  background: var(--clinical-surface);
+  overflow: hidden;
+  box-shadow: 0 12px 35px -30px #0f172a;
+}
+.chat-hub-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-right: 1px solid var(--clinical-line);
+  background: var(--clinical-surface);
+}
+.chat-hub-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  min-height: 40px;
+  border: 1px solid var(--clinical-line);
+  border-radius: 11px;
+  background: var(--clinical-soft);
+  color: var(--clinical-muted);
+}
+.chat-hub-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--clinical-text);
+  font-size: 13px;
+  outline: none;
+}
+.chat-hub-list {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  overflow-y: auto;
+  max-height: 490px;
+}
+.chat-hub-empty-list {
+  text-align: center;
+  padding: 24px 8px;
+  font-size: 12px;
+  color: var(--clinical-muted);
+}
+.chat-hub-contact {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--clinical-text);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+.chat-hub-contact:hover {
+  background: var(--clinical-soft);
+  border-color: var(--clinical-line);
+}
+.chat-hub-contact.is-active {
+  background: var(--clinical-primary);
+  color: #fff;
+  border-color: transparent;
+}
+.chat-hub-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: grid;
+  place-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--clinical-primary) 14%, transparent);
+  color: var(--clinical-primary);
+}
+.chat-hub-contact.is-active .chat-hub-avatar {
+  background: #ffffff2e;
+  color: #fff;
+}
+.chat-hub-avatar.is-header {
+  background: var(--clinical-primary);
+  color: #fff;
+}
+.chat-hub-contact-meta {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+.chat-hub-contact-meta strong {
+  font-size: 13.5px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-hub-contact-meta small {
+  font-size: 11px;
+  color: var(--clinical-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-hub-contact.is-active .chat-hub-contact-meta small {
+  color: #ffffffcc;
+}
+.chat-hub-thread {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--clinical-surface);
+}
+.chat-hub-thread-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--clinical-line);
+  background: var(--clinical-surface);
+}
+.chat-hub-thread-user {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.chat-hub-thread-user h2 {
+  font-size: 15px;
+  font-weight: 750;
+  margin: 0;
+}
+.chat-hub-thread-user p {
+  font-size: 11px;
+  color: var(--clinical-muted);
+  margin: 2px 0 0;
+}
+.chat-hub-thread-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.chat-hub-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 440px;
+  background: #f0f5f2;
+}
+.dark .chat-hub-messages {
+  background: #0a1612;
+}
+.chat-hub-row {
+  display: flex;
+}
+.chat-hub-row.is-coach {
+  justify-content: flex-end;
+}
+.chat-hub-row.is-client {
+  justify-content: flex-start;
+}
+.chat-hub-bubble {
+  max-width: min(76%, 540px);
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  box-shadow: 0 2px 8px #0000000d;
+}
+.chat-hub-bubble.is-coach {
+  background: var(--clinical-primary);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.chat-hub-bubble.is-client {
+  background: var(--clinical-surface);
+  color: var(--clinical-text);
+  border: 1px solid var(--clinical-line);
+  border-bottom-left-radius: 4px;
+}
+.chat-hub-bubble p {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.chat-hub-bubble time {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  text-align: right;
+  opacity: 0.72;
+}
+.chat-hub-empty-thread,
+.chat-hub-status {
+  margin: auto;
+  text-align: center;
+  color: var(--clinical-muted);
+  font-size: 13px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 32px;
+}
+.chat-hub-error {
+  margin: 0;
+  padding: 9px 16px;
+  font-size: 12px;
+  color: #b91c1c;
+  background: #fef2f2;
+  border-top: 1px solid #fecaca;
+}
+.dark .chat-hub-error {
+  background: #2c1418;
+  color: #fca5a5;
+  border-color: #5b232a;
+}
+.chat-hub-composer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--clinical-line);
+  background: var(--clinical-surface);
+}
+.chat-hub-composer input {
+  flex: 1;
+  min-width: 0;
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid var(--clinical-line);
+  border-radius: 12px;
+  background: var(--clinical-soft);
+  color: var(--clinical-text);
+  font-size: 13.5px;
+}
+@media (max-width: 560px) {
+  .chat-hub-shell {
+    grid-template-columns: 1fr;
+  }
+  .chat-hub-sidebar {
+    border-right: 0;
+    border-bottom: 1px solid var(--clinical-line);
+  }
+  .chat-hub-list {
+    max-height: 220px;
+  }
+}
+.chat-hub-entry,
+.client-chat-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chat-day-divider {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0;
+}
+.chat-day-divider span {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--clinical-line) 75%, var(--clinical-surface));
+  color: var(--clinical-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.chat-hub-bubble.is-coach p {
+  color: #ffffff;
+}
+.client-chat-row {
+  display: flex;
+}
+.client-chat-row.is-mine {
+  justify-content: flex-end;
+}
+.client-chat-row.is-theirs {
+  justify-content: flex-start;
+}
+.client-chat-bubble {
+  max-width: min(82%, 540px);
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  box-shadow: 0 2px 8px #0000000d;
+}
+.client-chat-bubble.is-mine {
+  background: var(--p-fill, #0a7a57);
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+.client-chat-bubble.is-theirs {
+  background: var(--p-surface, var(--clinical-surface));
+  color: var(--p-ink, var(--clinical-text));
+  border: 1px solid var(--p-line, var(--clinical-line));
+  border-bottom-left-radius: 4px;
+}
+.portal-app .care-card .client-chat-bubble.is-mine p,
+.client-chat-bubble.is-mine p {
+  margin: 0;
+  color: #ffffff;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.portal-app .care-card .client-chat-bubble.is-theirs p,
+.client-chat-bubble.is-theirs p {
+  margin: 0;
+  color: var(--p-ink, var(--clinical-text));
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.client-chat-bubble time {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  text-align: right;
+  opacity: 0.8;
+  color: inherit;
+}
+
+/* Barra vertical compacta de días (L, M, M, J, V...) + animación de gota y ondas */
+.portal-days-layout {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.portal-day-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: sticky;
+  top: 84px;
+}
+.portal-day-pill {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 46px;
+  padding: 6px;
+  border: 1px solid var(--p-line);
+  border-radius: 14px;
+  background: var(--p-surface);
+  color: var(--p-ink);
+  cursor: pointer;
+  transition: transform 180ms cubic-bezier(.22, 1, .36, 1), border-color 180ms ease, background 180ms ease, box-shadow 220ms ease;
+}
+.portal-day-pill:hover:not(.is-active) {
+  border-color: color-mix(in srgb, var(--p-brand) 45%, var(--p-line));
+  background: var(--p-soft);
+  transform: translateY(-1px);
+}
+.portal-day-pill:active {
+  transform: scale(0.95);
+}
+.portal-day-pill.is-rest:not(.is-active) {
+  opacity: 0.65;
+}
+.portal-day-pill.is-active {
+  border-color: transparent;
+  background: linear-gradient(155deg, var(--p-fill, var(--p-brand)), var(--p-fill-strong, var(--p-brand-strong)));
+  color: var(--p-on-fill, #fff);
+  box-shadow: 0 10px 22px -14px var(--p-brand);
+}
+.portal-day-letter {
+  position: relative;
+  z-index: 1;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.portal-day-ripple {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.portal-day-drop {
+  position: absolute;
+  left: var(--drop-x, 50%);
+  top: var(--drop-y, 50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  transform: translate(-50%, -50%) scale(0.4);
+  opacity: 0;
+  pointer-events: none;
+  animation: portal-drop-impact 340ms cubic-bezier(.16, 1, .3, 1) forwards;
+}
+.portal-day-ring {
+  position: absolute;
+  left: var(--drop-x, 50%);
+  top: var(--drop-y, 50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  border: 0.9px solid rgba(255, 255, 255, 0.45);
+  background: transparent;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+}
+.portal-day-ring.is-one {
+  animation: portal-drop-ripple 960ms cubic-bezier(.12, .85, .25, 1) forwards;
+}
+.portal-day-ring.is-two {
+  border-width: 0.7px;
+  border-color: rgba(255, 255, 255, 0.34);
+  animation: portal-drop-ripple 1120ms cubic-bezier(.12, .85, .25, 1) 130ms forwards;
+}
+.portal-day-ring.is-three {
+  border-width: 0.55px;
+  border-color: rgba(255, 255, 255, 0.22);
+  animation: portal-drop-ripple 1260ms cubic-bezier(.12, .85, .25, 1) 270ms forwards;
+}
+.portal-day-stage {
+  transform-origin: 0% var(--panel-ripple-y, 20%);
+  animation: portal-iphone-window 420ms cubic-bezier(0.22, 1.08, 0.36, 1) both;
+  will-change: transform, opacity, border-radius, filter;
+}
+.portal-day-exercise-item {
+  animation: portal-exercise-in 340ms cubic-bezier(.22, 1, .36, 1) both;
+  animation-delay: calc(min(var(--ex-i, 0), 8) * 30ms + 80ms);
+}
+@keyframes portal-drop-impact {
+  0% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1.3);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+}
+@keyframes portal-drop-ripple {
+  0% {
+    opacity: 0.62;
+    width: 4px;
+    height: 4px;
+  }
+  45% {
+    opacity: 0.34;
+  }
+  100% {
+    opacity: 0;
+    width: 108px;
+    height: 108px;
+  }
+}
+@keyframes portal-iphone-window {
+  0% {
+    opacity: 0;
+    border-radius: 26px;
+    filter: blur(2px);
+    transform: translate3d(-10px, 0, 0) scale(0.62);
+  }
+  65% {
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    border-radius: 14px;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+@keyframes portal-exercise-in {
+  0% {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 540px) {
+  .portal-days-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .portal-day-rail {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .portal-day-pill {
+    flex: 1 0 54px;
+    min-height: 48px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .portal-day-pill,
+  .portal-day-ring,
+  .portal-day-drop,
+  .portal-day-stage,
+  .portal-day-exercise-item {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+.portal-has-ripple {
+  position: relative;
+  overflow: hidden;
+}
+.portal-btn-ripple {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+  z-index: 0;
+}
+.portal-app button:not(.selected):not(.portal-button-primary):not(.is-done):not(.portal-workout-start):not(.is-active) .portal-btn-ripple .portal-day-drop {
+  background: color-mix(in srgb, var(--p-brand, #0a7a57) 55%, transparent);
+}
+.portal-app button:not(.selected):not(.portal-button-primary):not(.is-done):not(.portal-workout-start):not(.is-active) .portal-btn-ripple .portal-day-ring {
+  border-color: color-mix(in srgb, var(--p-brand, #0a7a57) 42%, transparent);
+}
+.portal-app button:not(.selected):not(.portal-button-primary):not(.is-done):not(.portal-workout-start):not(.is-active) .portal-btn-ripple .portal-day-ring.is-two {
+  border-color: color-mix(in srgb, var(--p-brand, #0a7a57) 30%, transparent);
+}
+.portal-app button:not(.selected):not(.portal-button-primary):not(.is-done):not(.portal-workout-start):not(.is-active) .portal-btn-ripple .portal-day-ring.is-three {
+  border-color: color-mix(in srgb, var(--p-brand, #0a7a57) 18%, transparent);
+}

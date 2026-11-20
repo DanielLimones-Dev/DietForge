@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { CheckInPhoto } from "./CheckInPhoto";
 import { calculateWeightTrend, getRateLabel } from "@/lib/trends";
 import { checkWeightRate } from "@/lib/alerts";
-import { TrendingUp, AlertTriangle, Info, Camera, X, ChevronUp, ChevronDown, Minus, ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { TrendingUp, AlertTriangle, Info, Camera, X, ChevronUp, ChevronDown, Minus, ChevronLeft, ChevronRight, Pencil, Trash2, ArrowLeftRight } from "lucide-react";
 
 function fmtDate(d: string): string {
   const [y, m, day] = d.slice(0, 10).split("-");
@@ -35,6 +35,30 @@ export function CheckInHistory({ clientId, phase, onEdit, onDelete }: Props) {
   const [selected, setSelected] = useState<CheckIn | null>(null);
   const [feedback, setFeedback] = useState("");
   const [photoViewer, setPhotoViewer] = useState<{ photos: PhotoRef[]; index: number } | null>(null);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [compareMode, setCompareMode] = useState<"side" | "slider">("side");
+  const [compareSplit, setCompareSplit] = useState(50);
+  const [compareBeforeId, setCompareBeforeId] = useState<number>(0);
+  const [compareAfterId, setCompareAfterId] = useState<number>(0);
+  const [compareAngle, setCompareAngle] = useState<string>("all");
+
+  const checkinsWithPhotos = checkins
+    .map((c) => {
+      const fromDb = db.getPhotosForCheckIn(c.id);
+      const photos = fromDb.length > 0 ? fromDb : (c.photos ?? []);
+      return { checkin: c, photos };
+    })
+    .filter((entry) => entry.photos.length > 0);
+
+  const openCompare = () => {
+    if (checkinsWithPhotos.length >= 2) {
+      setCompareBeforeId(checkinsWithPhotos[checkinsWithPhotos.length - 1].checkin.id);
+      setCompareAfterId(checkinsWithPhotos[0].checkin.id);
+    }
+    setCompareAngle("all");
+    setCompareSplit(50);
+    setCompareOpen(true);
+  };
 
   const goPhoto = useCallback((dir: number) => {
     setPhotoViewer((prev) => {
@@ -46,15 +70,18 @@ export function CheckInHistory({ clientId, phase, onEdit, onDelete }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!photoViewer) return;
+    if (!photoViewer && !compareOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setPhotoViewer(null);
-      if (e.key === "ArrowLeft") goPhoto(-1);
-      if (e.key === "ArrowRight") goPhoto(1);
+      if (e.key === "Escape") {
+        setPhotoViewer(null);
+        setCompareOpen(false);
+      }
+      if (photoViewer && e.key === "ArrowLeft") goPhoto(-1);
+      if (photoViewer && e.key === "ArrowRight") goPhoto(1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [photoViewer, goPhoto]);
+  }, [photoViewer, compareOpen, goPhoto]);
   const [detailView, setDetailView] = useState<CheckIn | null>(null);
 
   const trend = calculateWeightTrend(checkins);
@@ -77,11 +104,21 @@ export function CheckInHistory({ clientId, phase, onEdit, onDelete }: Props) {
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
-      <h3 className="font-semibold flex items-center gap-2 mb-4 dark:text-white">
-        <TrendingUp className="w-4 h-4 text-brand-600" />
-        Check-ins
-        <span className="text-xs text-gray-400 font-normal ml-auto">{checkins.length} registros</span>
-      </h3>
+      <div className="flex items-center gap-2 mb-4">
+        <h3 className="font-semibold flex items-center gap-2 dark:text-white">
+          <TrendingUp className="w-4 h-4 text-brand-600" />
+          Check-ins
+        </h3>
+        <button
+          type="button"
+          onClick={openCompare}
+          className="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-brand-50 text-brand-700 hover:bg-brand-100 dark:bg-brand-900/30 dark:text-brand-300 dark:hover:bg-brand-900/50 transition-colors"
+        >
+          <ArrowLeftRight className="w-3.5 h-3.5" aria-hidden="true" />
+          Comparar Antes / Después
+        </button>
+        <span className="text-xs text-gray-400 font-normal">{checkins.length} registros</span>
+      </div>
 
       {trend.weeklyChange !== null && (
         <div className="grid grid-cols-3 gap-3 mb-4">
@@ -331,6 +368,144 @@ export function CheckInHistory({ clientId, phase, onEdit, onDelete }: Props) {
           </div>
         </div>
       )}
+
+      {compareOpen && checkinsWithPhotos.length < 2 && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4" onClick={() => setCompareOpen(false)}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="compare-empty-title"
+            className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 w-full max-w-md animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h4 id="compare-empty-title" className="font-semibold text-base dark:text-white flex items-center gap-2">
+                <ArrowLeftRight className="w-4 h-4 text-brand-600" aria-hidden="true" />
+                Comparador Antes / Después
+              </h4>
+              <button type="button" aria-label="Cerrar comparador" onClick={() => setCompareOpen(false)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-300">
+              Se necesitan al menos <strong>2 check-ins con foto</strong> para comparar Antes y Después.
+              Actualmente este cliente tiene <strong>{checkinsWithPhotos.length}</strong> check-in{checkinsWithPhotos.length === 1 ? "" : "s"} con foto.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {compareOpen && checkinsWithPhotos.length >= 2 && (() => {
+        const beforeEntry = checkinsWithPhotos.find((e) => e.checkin.id === compareBeforeId) ?? checkinsWithPhotos[checkinsWithPhotos.length - 1];
+        const afterEntry = checkinsWithPhotos.find((e) => e.checkin.id === compareAfterId) ?? checkinsWithPhotos[0];
+        const angleOptions = Array.from(new Set([...beforeEntry.photos, ...afterEntry.photos].map((p) => p.angle)));
+        const beforePhoto = (compareAngle === "all" ? beforeEntry.photos[0] : beforeEntry.photos.find((p) => p.angle === compareAngle)) ?? beforeEntry.photos[0];
+        const afterPhoto = (compareAngle === "all" ? afterEntry.photos[0] : afterEntry.photos.find((p) => p.angle === compareAngle)) ?? afterEntry.photos[0];
+        const weightDelta = afterEntry.checkin.weight - beforeEntry.checkin.weight;
+        const bfDelta = afterEntry.checkin.body_fat != null && beforeEntry.checkin.body_fat != null ? afterEntry.checkin.body_fat - beforeEntry.checkin.body_fat : null;
+
+        return (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75 p-4" onClick={() => setCompareOpen(false)}>
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="compare-modal-title"
+              className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 w-full max-w-4xl max-h-[92vh] overflow-y-auto animate-scale-in"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <h4 id="compare-modal-title" className="font-semibold text-base dark:text-white flex items-center gap-2">
+                    <ArrowLeftRight className="w-4 h-4 text-brand-600" aria-hidden="true" />
+                    Comparador Antes / Después
+                  </h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    Δ Peso: <strong className={weightDelta <= 0 ? "text-emerald-600" : "text-amber-600"}>{weightDelta > 0 ? "+" : ""}{weightDelta.toFixed(1)} kg</strong>
+                    {bfDelta != null && <> · Δ Grasa: <strong>{bfDelta > 0 ? "+" : ""}{bfDelta.toFixed(1)}%</strong></>}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="inline-flex rounded-lg border border-gray-200 dark:border-gray-700 p-0.5 bg-gray-50 dark:bg-gray-800" role="group" aria-label="Modo de comparación">
+                    <button type="button" onClick={() => setCompareMode("side")} className={`px-2.5 py-1 text-xs rounded-md font-medium transition-colors ${compareMode === "side" ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500"}`}>Lado a lado</button>
+                    <button type="button" onClick={() => setCompareMode("slider")} className={`px-2.5 py-1 text-xs rounded-md font-medium transition-colors ${compareMode === "slider" ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm" : "text-gray-500"}`}>Deslizador</button>
+                  </div>
+                  <button type="button" aria-label="Cerrar comparador" onClick={() => setCompareOpen(false)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                <label className="text-xs text-gray-600 dark:text-gray-300 flex flex-col gap-1">
+                  Antes
+                  <select className="px-2.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm" value={beforeEntry.checkin.id} onChange={(e) => setCompareBeforeId(Number(e.target.value))}>
+                    {checkinsWithPhotos.map((entry) => (
+                      <option key={entry.checkin.id} value={entry.checkin.id}>
+                        {fmtDate(entry.checkin.date)} · {entry.checkin.weight} kg
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs text-gray-600 dark:text-gray-300 flex flex-col gap-1">
+                  Después
+                  <select className="px-2.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm" value={afterEntry.checkin.id} onChange={(e) => setCompareAfterId(Number(e.target.value))}>
+                    {checkinsWithPhotos.map((entry) => (
+                      <option key={entry.checkin.id} value={entry.checkin.id}>
+                        {fmtDate(entry.checkin.date)} · {entry.checkin.weight} kg
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs text-gray-600 dark:text-gray-300 flex flex-col gap-1">
+                  Pose / Ángulo
+                  <select className="px-2.5 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm" value={compareAngle} onChange={(e) => setCompareAngle(e.target.value)}>
+                    <option value="all">Primera disponible</option>
+                    {angleOptions.map((angle) => (
+                      <option key={angle} value={angle}>{angle.replace(/_/g, " ")}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              {compareMode === "side" ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <figure className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 border border-gray-200 dark:border-gray-700">
+                    <CheckInPhoto src={beforePhoto.data} alt={`Antes ${fmtDate(beforeEntry.checkin.date)}`} className="w-full h-80 object-contain rounded-lg bg-black/5" />
+                    <figcaption className="mt-2 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+                      <strong>Antes · {fmtDate(beforeEntry.checkin.date)}</strong>
+                      <span>{beforeEntry.checkin.weight} kg{beforeEntry.checkin.body_fat != null ? ` · ${beforeEntry.checkin.body_fat}%` : ""}</span>
+                    </figcaption>
+                  </figure>
+                  <figure className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 border border-gray-200 dark:border-gray-700">
+                    <CheckInPhoto src={afterPhoto.data} alt={`Después ${fmtDate(afterEntry.checkin.date)}`} className="w-full h-80 object-contain rounded-lg bg-black/5" />
+                    <figcaption className="mt-2 flex items-center justify-between text-xs text-gray-600 dark:text-gray-300">
+                      <strong>Después · {fmtDate(afterEntry.checkin.date)}</strong>
+                      <span>{afterEntry.checkin.weight} kg{afterEntry.checkin.body_fat != null ? ` · ${afterEntry.checkin.body_fat}%` : ""}</span>
+                    </figcaption>
+                  </figure>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="relative w-full h-96 bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                    <CheckInPhoto src={afterPhoto.data} alt={`Después ${fmtDate(afterEntry.checkin.date)}`} className="absolute inset-0 w-full h-full object-contain" />
+                    <div className="absolute inset-0" style={{ clipPath: `inset(0 ${100 - compareSplit}% 0 0)` }}>
+                      <CheckInPhoto src={beforePhoto.data} alt={`Antes ${fmtDate(beforeEntry.checkin.date)}`} className="w-full h-full object-contain" />
+                    </div>
+                    <div className="absolute top-0 bottom-0 w-0.5 bg-white shadow-md pointer-events-none" style={{ left: `${compareSplit}%` }} />
+                    <span className="absolute top-3 left-3 px-2 py-1 rounded bg-black/60 text-white text-[11px]">Antes · {fmtDate(beforeEntry.checkin.date)}</span>
+                    <span className="absolute top-3 right-3 px-2 py-1 rounded bg-black/60 text-white text-[11px]">Después · {fmtDate(afterEntry.checkin.date)}</span>
+                  </div>
+                  <label className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-300">
+                    <span>Antes</span>
+                    <input type="range" min={0} max={100} value={compareSplit} onChange={(e) => setCompareSplit(Number(e.target.value))} aria-label="Deslizador de comparación Antes y Después" className="flex-1 accent-brand-600" />
+                    <span>Después</span>
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { trainingDateValue, trainingDays, validTrainingDate } from './training';
 export interface PerformedSet { kg:number; reps:number; rir:number; completed:boolean }
 export interface SessionExercise { exercise_id:string; name:string; library_id?:string; target:TrainingPrescription; sets:PerformedSet[] }
 export interface TrainingSession { date:string; program_id:number; day_id:string; week:number; completed:boolean; fatigue:number; notes:string; exercises:SessionExercise[] }
-export interface Activity { id:string; kind:'session'|'meal'|'checkin'|'event'|'appointment'; data:Record<string,unknown>; updated_at?:string }
+export interface Activity { id:string; kind:'session'|'meal'|'checkin'|'event'|'appointment'|'challenge_90'|'chat_message'; data:Record<string,unknown>; updated_at?:string }
 export interface VolumeRange { min:number; max:number }
 export function makeSession(program:TrainingProgram,dayId:string,week:number):TrainingSession {
  const day=trainingDays(program,week).find(d=>d.id===dayId);
